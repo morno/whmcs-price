@@ -2,7 +2,7 @@
 
 ![WordPress Version](https://img.shields.io/badge/wordpress-%3E%3D%205.0-blue.svg)
 ![PHP Version](https://img.shields.io/badge/php-%3E%3D%208.0-8892bf.svg)
-![License](https://img.shields.io/badge/license-GPL--2.0-orange.svg)
+![License](https://img.shields.io/badge/license-GPL--3.0-orange.svg)
 ![Maintained](https://img.shields.io/badge/maintained-yes-brightgreen.svg)
 
 A modernized, secure, and lightweight WordPress plugin to display real-time pricing for products and domains from your WHMCS instance.
