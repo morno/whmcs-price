@@ -62,6 +62,16 @@ To ensure maximum performance, the plugin uses **WordPress Transients** to cache
 
 ---
 
+## 📜 Project History & Status
+
+This fork was created to resolve critical issues in the original plugin which had become incompatible with modern web environments.
+
+* **Original Plugin:** [WHMCS Price on WordPress.org](https://wordpress.org/plugins/whmcs-price/)
+* **The Problem:** Users reported the [plugin was no longer working](https://wordpress.org/support/topic/this-plugin-has-not-been-working-recently/) with recent PHP/WP updates.
+* **The Solution:** I have taken over development in this repository. I have also reached out to the community to [officially become the maintainer](https://wordpress.org/support/topic/update-the-plugin-11/) on the WordPress.org repository.
+
+---
+
 ## 👨‍💻 Developers
 * **Maintained by:** [Tobias Sörensson (Morno)](https://github.com/morno)
 * **Original Dev:** MohammadReza Kamali
