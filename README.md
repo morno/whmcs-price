@@ -13,7 +13,7 @@ This is an updated and refactored version of the WHMCS Price plugin, maintained 
 
 * **PHP 8.x Compatible:** Full support for modern hosting environments.
 * **Safe Data Fetching:** Uses WHMCS data feeds (HTTP) instead of direct SQL, making it compatible with firewalled or remote WHMCS setups.
-* **Enhanced Security:** Database credentials and URLs are stored using **AES-256-CBC encryption** via OpenSSL.
+* **Safe Data Fetching: Uses WHMCS data feeds (HTTP) via wp_remote_get instead of direct SQL connections, ensuring compatibility with all hosting providers.
 * **Admin Bar Integration:** Clear your price cache instantly with one click from the WordPress top menu.
 
 ---
