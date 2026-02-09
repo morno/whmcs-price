@@ -16,13 +16,9 @@ class WHMCSPrice
     {
         add_action('admin_menu', [$this, 'whmcspr_plugin_page']);
         add_action('admin_init', [$this, 'whmcspr_init']);
-        // Removed redundant load_textdomain as it is handled in the main file
         add_action('admin_bar_menu', [$this, 'add_admin_bar_clear_cache'], 100);
     }
 
-    /**
-     * Add the settings page to the WordPress admin menu.
-     */
     public function whmcspr_plugin_page()
     {
         add_menu_page(
@@ -36,17 +32,13 @@ class WHMCSPrice
         );
     }
 
-    /**
-     * Display the admin page content.
-     */
     public function whmcspr_admin_page()
     {
-        // Security Check: Ensure user has permission
         if (!current_user_can('manage_options')) {
             return;
         }
 
-        // Handle Cache Clear with Nonce for security
+        // Handle Cache Clear from form with Security Nonce
         if (isset($_POST['whmcs_clear_cache'])) {
             check_admin_referer('whmcs_clear_cache_action');
             $this->clear_whmcs_cache();
@@ -56,7 +48,7 @@ class WHMCSPrice
         $this->options = get_option('whmcs_price_option', []);
         ?>
         <div class="wrap">
-            <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+            <h1><?php esc_html_e('WHMCS Price Options', 'whmcs-price'); ?></h1>
             <form method="post" action="options.php">
                 <?php
                 settings_fields('price_option_group');
@@ -70,22 +62,19 @@ class WHMCSPrice
             <form method="post" action="">
                 <?php wp_nonce_field('whmcs_clear_cache_action'); ?>
                 <input type="hidden" name="whmcs_clear_cache" value="1" />
-                <?php submit_button(__('Clear WHMCS Cache', 'whmcs-price'), 'secondary'); ?>
+                <input type="submit" class="button button-secondary" value="<?php esc_html_e('Clear Cache', 'whmcs-price'); ?>" />
             </form>
         </div>
         <?php
     }
 
-    /**
-     * Register settings and fields.
-     */
     public function whmcspr_init()
     {
         register_setting('price_option_group', 'whmcs_price_option', [$this, 'sanitize']);
 
         add_settings_section(
             'setting_section_id',
-            __('API Settings', 'whmcs-price'),
+            '',
             [$this, 'print_section_info'],
             'whmcs_price'
         );
@@ -97,23 +86,28 @@ class WHMCSPrice
             'whmcs_price',
             'setting_section_id'
         );
-        
-        // Shortcode instructions sections
-        add_settings_section(
-            'shortcode_section_id',
-            __('Usage Instructions', 'whmcs-price'),
-            null,
-            'whmcs_price'
+
+        add_settings_field(
+            'products',
+            __('Product Pricing', 'whmcs-price'),
+            [$this, 'p_price_callback'],
+            'whmcs_price',
+            'setting_section_id'
+        );
+
+        add_settings_field(
+            'domains',
+            __('Domain Pricing', 'whmcs-price'),
+            [$this, 'd_price_callback'],
+            'whmcs_price',
+            'setting_section_id'
         );
     }
 
-    /**
-     * Sanitize user input.
-     */
     public function sanitize($input): array
     {
         $new_input = [];
-        if (isset($input['whmcs_url'])) {
+        if (!empty($input['whmcs_url'])) {
             $new_input['whmcs_url'] = esc_url_raw(trim($input['whmcs_url']));
         }
         return $new_input;
@@ -121,22 +115,69 @@ class WHMCSPrice
 
     public function print_section_info()
     {
-        esc_html_e('Enter your WHMCS API details below to fetch dynamic pricing.', 'whmcs-price');
+        echo esc_html__('Dynamic way for extracting price from WHMCS for use on the pages of your website!', 'whmcs-price') . '<br /><br />';
+        echo esc_html__('Please input your WHMCS URL :', 'whmcs-price');
     }
 
     public function whmcs_url_callback()
     {
         $whmcs_url = $this->options['whmcs_url'] ?? '';
+
+        if (!empty($whmcs_url) && !filter_var($whmcs_url, FILTER_VALIDATE_URL)) {
+            printf('<p style="color:red">%s</p>', esc_html__('Hey! Your domain is not valid!', 'whmcs-price'));
+        }
+
         printf(
-            '<input type="url" id="whmcs_url" name="whmcs_price_option[whmcs_url]" value="%s" class="regular-text" placeholder="https://whmcs.example.com" />',
+            '<input type="url" id="whmcs_url" class="regular-text" style="direction:ltr;" name="whmcs_price_option[whmcs_url]" value="%s" placeholder="https://whmcsdomain.tld" />',
             esc_attr($whmcs_url)
         );
-        echo '<p class="description">' . esc_html__('The root URL of your WHMCS installation (without trailing slash).', 'whmcs-price') . '</p>';
+        
+        echo '<p style="color:green">' . esc_html__('Valid URL Format: https://whmcs.com (Don\'t use "/" at the end of WHMCS URL)', 'whmcs-price') . '</p>';
+        echo '<p>' . esc_html__('Note: After changing price in WHMCS, if you are using a cache plugin in your WordPress, to update price you must remove the cache for posts and pages.', 'whmcs-price') . '</p>';
+        echo '<hr>';
     }
 
-    /**
-     * Clear WHMCS cache using WordPress Transients API standard.
-     */
+    public function p_price_callback()
+    {
+        ?>
+        <strong><?php esc_html_e('How to use shortcode in:', 'whmcs-price'); ?></strong><br /><br />
+        <?php esc_html_e('Post / Pages:', 'whmcs-price'); ?>
+        <input type="text" style="width:380px; direction:ltr; cursor: pointer;"
+               value="[whmcs pid=&quot;1&quot; show=&quot;name,description,price&quot; bc=&quot;1m&quot;]"
+               onclick="this.select()" readonly />
+        <br /><br />
+        <?php esc_html_e('Theme:', 'whmcs-price'); ?>
+        <input type="text" style="width:600px; direction:ltr; cursor: pointer;"
+               value="&lt;?php echo do_shortcode(&#39;[whmcs pid=&quot;1&quot; show=&quot;name,description,price&quot; bc=&quot;1m&quot;]&#39;); ?&gt;"
+               onclick="this.select()" readonly />
+        <br /><br />
+        <pre><strong><?php esc_html_e('English Document:', 'whmcs-price'); ?></strong><br />
+1. <?php esc_html_e('Change pid value in shortcode with your Product ID.', 'whmcs-price'); ?><br />
+2. <?php esc_html_e('Add show="" to toggle the name, description, price from the data feed of WHMCS', 'whmcs-price'); ?><br />
+3. <?php esc_html_e('Change bc value in shortcode with your Billing Cycle Product. Billing Cycles are:', 'whmcs-price'); ?><br /><br />
+<code><?php esc_html_e('Monthly (1 Month): bc="1m"', 'whmcs-price'); ?><br /><?php esc_html_e('Quarterly (3 Month): bc="3m"', 'whmcs-price'); ?><br /><?php esc_html_e('Semiannually (6 Month): bc="6m"', 'whmcs-price'); ?><br /><?php esc_html_e('Annually (1 Year): bc="1y"', 'whmcs-price'); ?><br /><?php esc_html_e('Biennially (2 Year): bc="2y"', 'whmcs-price'); ?><br /><?php esc_html_e('Triennially (3 Year): bc="3y"', 'whmcs-price'); ?></code></pre>
+        <hr>
+        <?php
+    }
+
+    public function d_price_callback()
+    {
+        ?>
+        <strong><?php esc_html_e('How to use shortcode in:', 'whmcs-price'); ?></strong><br /><br />
+        <?php esc_html_e('Post / Pages:', 'whmcs-price'); ?> 
+        <input type="text" style="width:343px; direction:ltr; cursor: pointer;" value="[whmcs tld=&quot;com&quot; type=&quot;register&quot; reg=&quot;1y&quot;]" onclick="this.select()" readonly /><br /><br />
+        <?php esc_html_e('Theme:', 'whmcs-price'); ?> 
+        <input type="text" style="width:500px; direction:ltr; cursor: pointer;" value="&lt;?php echo do_shortcode(&#39;[whmcs tld=&quot;com&quot; type=&quot;register&quot; reg=&quot;1y&quot;]&#39;); ?&gt;" onclick="this.select()" readonly /><br /><br />
+        
+        <pre><strong><?php esc_html_e('English Document:', 'whmcs-price'); ?></strong><br />
+1. <?php esc_html_e('Change tld value in shortcode with your Domain TLD (com, org, net, ...).', 'whmcs-price'); ?><br />
+2. <?php esc_html_e('Change type value in shortcode with register, renew, transfer.', 'whmcs-price'); ?><br />
+3. <?php esc_html_e('Change reg value in shortcode with your Register Period of TLD. Register Periods are:', 'whmcs-price'); ?><br /><br /><code><?php esc_html_e('Annually (1 Year): reg="1y"', 'whmcs-price'); ?><br /><?php esc_html_e('Biennially (2 Year): reg="2y"', 'whmcs-price'); ?><br /><?php esc_html_e('Triennially (3 Year): reg="3y"', 'whmcs-price'); ?></code><br />
+4. <?php esc_html_e('If left like this [whmcs tld], it will call without any Domain TLD and will take all the TLDs that are in WHMCS.', 'whmcs-price'); ?></pre>
+        <hr>
+        <?php
+    }
+
     public function clear_whmcs_cache()
     {
         global $wpdb;
@@ -144,9 +185,6 @@ class WHMCSPrice
         $wpdb->query("DELETE FROM $wpdb->options WHERE option_name LIKE '_transient_timeout_whmcs_%'");
     }
 
-    /**
-     * Add clear cache button to admin bar.
-     */
     public function add_admin_bar_clear_cache($admin_bar)
     {
         if (current_user_can('manage_options')) {
@@ -161,7 +199,7 @@ class WHMCSPrice
                 check_admin_referer('whmcs_clear_cache_admin_bar');
                 $this->clear_whmcs_cache();
                 add_action('admin_notices', function () {
-                    echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Cache cleared successfully!', 'whmcs-price') . '</p></div>';
+                    echo "<div class='notice notice-success is-dismissible'><p>" . esc_html__('Cache cleared successfully!', 'whmcs-price') . "</p></div>";
                 });
             }
         }
