@@ -1,52 +1,81 @@
 <?php
 /*
  * Plugin Name: WHMCS Price
- * Plugin URI: 
- * Description: Dynamic way for extracting product & domain price from WHMCS for use on the pages of your website!', 'whmcs-price');
- * Version: 2.1
- * Author: MohammadReza Kamali, Tobias Sörensson
- * Author URI: https://www.iranwebsv.net, https://weconnect.se
-*/
+ * Plugin URI:  https://github.com/morno/whmcs-price
+ * Description: Dynamic way for extracting product & domain price from WHMCS for use on the pages of your website!
+ * Version:     2.2.0
+ * Requires at least: 5.0
+ * Requires PHP: 7.4
+ * Author:      MohammadReza Kamali, Tobias Sörensson
+ * Text Domain: whmcs-price
+ * Domain Path: /languages
+ * Author URI:  https://weconnect.se
+ * License:     GPL-3.0-or-later
+ * License URI: https://www.gnu.org/licenses/gpl-3.0.html
+ */
+
 /**
  * Developer : MohammadReza Kamali, Tobias Sörensson
  * Web Site  : IRANWebServer.Net, weconnect.se
  * E-Mail    : kamali@iranwebsv.net, tobias@weconnect.se
- * السلام علیک یا علی ابن موسی الرضا
  */
 
-if (!defined('ABSPATH')) {
-    wp_die(__('Access Denied', 'whmcs-price'));
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
 }
 
-// Define constants directly
-define('WP_WHMCS_Prices_ROOT', __FILE__);
-define('WP_WHMCS_Prices_DIR', plugin_dir_path(WP_WHMCS_Prices_ROOT));
-define('WP_WHMCS_Prices_URL', plugin_dir_url(WP_WHMCS_Prices_ROOT));
+// 2. Define constants with unique prefix
+define( 'WHMCS_PRICE_VERSION', '2.2.0' );
+define( 'WHMCS_PRICE_DIR', plugin_dir_path( __FILE__ ) );
+define( 'WHMCS_PRICE_URL', plugin_dir_url( __FILE__ ) );
 
-// Short Codes
-require_once WP_WHMCS_Prices_DIR . 'includes/short_code/short_code.php';
+// Backwards compatibility for existing files (short_code.php and settings.php)
+define( 'WP_WHMCS_Prices_DIR', WHMCS_PRICE_DIR );
+define( 'WP_WHMCS_Prices_URL', WHMCS_PRICE_URL );
 
-// Check WordPress Version
-$wp_version = get_bloginfo('version');
+/**
+ * 3. Load API Service First
+ * This class is the engine for both Shortcodes and Gutenberg.
+ */
+require_once WHMCS_PRICE_DIR . 'includes/class-whmcs-api.php';
 
-if (!is_admin() || is_multisite() || version_compare($wp_version, '3.5', '<')) {
-    return;
+/**
+ * 4. Load text domain for translations
+ */
+function whmcs_price_load_textdomain() {
+    load_plugin_textdomain( 
+        'whmcs-price', 
+        false, 
+        dirname( plugin_basename( __FILE__ ) ) . '/languages' 
+    );
 }
+add_action( 'init', 'whmcs_price_load_textdomain' );
 
-/*------------------------------------------------------------------------------------------------*/
-/* CONSTANTS */
-/*------------------------------------------------------------------------------------------------*/
+/**
+ * 5. Initialize the plugin functionality
+ */
+function whmcs_price_init() {
+    // Load Shortcodes (Required for current functionality)
+    $shortcode_file = WHMCS_PRICE_DIR . 'includes/short_code/short_code.php';
+    if ( file_exists( $shortcode_file ) ) {
+        require_once $shortcode_file;
+    }
 
-define('SF_UUPE_VERSION', '1.0');
+    // Load Settings and Admin logic
+    if ( is_admin() ) {
+        // Compatibility check for Multisite if you wish to maintain your original restriction
+        if ( is_multisite() ) {
+            return;
+        }
 
-/*------------------------------------------------------------------------------------------------*/
-/* INIT */
-/*------------------------------------------------------------------------------------------------*/
-
-// Setting
-require_once WP_WHMCS_Prices_DIR . 'includes/settings.php';
-
-// Initialize the plugin
-if (is_admin()) {
-    new WHMCSPrice(); // This will trigger the class constructor
+        $settings_file = WHMCS_PRICE_DIR . 'includes/settings.php';
+        if ( file_exists( $settings_file ) ) {
+            require_once $settings_file;
+            
+            if ( class_exists( 'WHMCSPrice' ) ) {
+                new WHMCSPrice();
+            }
+        }
+    }
 }
+add_action( 'plugins_loaded', 'whmcs_price_init' );
