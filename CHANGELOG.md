@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.1] - 2026-02-10
+### Added
+- Implemented redirect-safe cache clearing from the Admin Bar (prevents double execution on page refresh).
+- Added success notices when clearing cache via the Admin Bar.
+
+### Fixed
+- Resolved browser console warnings by fixing duplicate HTML `id` and `name` attributes in the settings page.
+- Fixed minor PHPDoc alignment to better follow WordPress Coding Standards.
+
+### Changed
+- Updated plugin versioning to 2.2.1 across all core files.
+- Improved shortcode usage examples for better clarity.
+
 ## [2.2.0] - 2026-02-10
 ### Added
 - Complete **PHPDoc documentation** in English for all classes and functions following WordPress Coding Standards.

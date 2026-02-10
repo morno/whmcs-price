@@ -3,7 +3,7 @@
  * Plugin Name: WHMCS Price
  * Plugin URI:  https://github.com/morno/whmcs-price
  * Description: Dynamic way for extracting product & domain price from WHMCS for use on the pages of your website!
- * Version:     2.2.0
+ * Version:     2.2.1
  * Requires at least: 5.0
  * Requires PHP: 7.4
  * Author:      MohammadReza Kamali, Tobias Sörensson
@@ -23,7 +23,7 @@
  * @package  WHMCS_Price
  * @author   MohammadReza Kamali, Tobias Sörensson
  * @license  GPL-3.0-or-later
- * @version  2.2.0
+ * @version  2.2.1
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -35,7 +35,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * * Used for file pathing and versioning throughout the plugin.
  * @since 2.2.0
  */
-define( 'WHMCS_PRICE_VERSION', '2.2.0' );
+define( 'WHMCS_PRICE_VERSION', '2.2.1' );
 define( 'WHMCS_PRICE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WHMCS_PRICE_URL', plugin_dir_url( __FILE__ ) );
 

@@ -70,8 +70,11 @@ function whmcs_func($atts) {
             'price'       => __('Price', 'whmcs-price'),
         ];
 
+        // Create a unique ID for the table based on PIDs to satisfy browser requirements
+        $table_id = 'whmcs-table-' . md5($atts['pid'] . $atts['bc']);
+
         // Start table output
-        $output = "<table class='whmcs-product-table'><thead><tr>";
+        $output = "<table id='" . esc_attr($table_id) . "' class='whmcs-product-table'><thead><tr>";
         foreach ($show as $header) { 
             $label = $header_labels[strtolower(trim($header))] ?? ucfirst($header);
             $output .= "<th>" . esc_html($label) . "</th>"; 
@@ -99,7 +102,9 @@ function whmcs_func($atts) {
     if (!empty($atts['tld'])) {
         $reg_period = str_replace('y', '', $atts['reg']);
         $price = WHMCS_Price_API::get_domain_price($atts['tld'], $atts['type'], $reg_period);
-        return "<div class='whmcs-price'>" . esc_html($price) . "</div>";
+        // Create a unique ID for the domain container
+        $domain_id = 'whmcs-price-' . esc_attr(sanitize_title($atts['tld']));
+        return "<div id='" . $domain_id . "' class='whmcs-price'>" . esc_html($price) . "</div>";
     }
 
     return '';
