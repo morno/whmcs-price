@@ -15,6 +15,12 @@ This is an updated and refactored version of the WHMCS Price plugin, maintained 
 * **Safe Data Fetching:** Uses WHMCS data feeds (HTTP) via wp_remote_get instead of direct SQL connections, ensuring compatibility with all hosting providers.
 * **Admin Bar Integration:** Clear your price cache instantly with one click from the WordPress top menu.
 
+## 🌍 Localization
+This plugin is translation-ready. If you want to contribute a translation:
+1. Use the `languages/whmcs-price.pot` file as a template.
+2. Create your `.po` and `.mo` files (e.g., `whmcs-price-sv_SE.po`).
+3. Submit a Pull Request!
+
 ---
 
 ## 🛠 Installation

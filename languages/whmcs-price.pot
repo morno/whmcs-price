@@ -1,0 +1,166 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: whmcs-price 2.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-05-22 10:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.8\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-KeywordsList: __;_e;esc_html__;esc_attr__;esc_html_e;esc_attr_e;_n:1,2;_x:1,2c;_ex:1,2c\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPathExcluded-0: .github\n"
+"X-Poedit-SearchPathExcluded-1: languages\n"
+
+#: includes/settings.php:25 includes/settings.php:51
+msgid "WHMCS Price Options"
+msgstr ""
+
+#: includes/settings.php:26
+msgid "WHMCS Price Settings"
+msgstr ""
+
+#: includes/settings.php:45 includes/settings.php:202
+msgid "Cache cleared successfully!"
+msgstr ""
+
+#: includes/settings.php:61
+msgid "Maintenance"
+msgstr ""
+
+#: includes/settings.php:65
+msgid "Clear Cache"
+msgstr ""
+
+#: includes/settings.php:84
+msgid "WHMCS URL"
+msgstr ""
+
+#: includes/settings.php:92
+msgid "Product Pricing"
+msgstr ""
+
+#: includes/settings.php:100
+msgid "Domain Pricing"
+msgstr ""
+
+#: includes/settings.php:118
+msgid "Dynamic way for extracting price from WHMCS for use on the pages of your website!"
+msgstr ""
+
+#: includes/settings.php:119
+msgid "Please input your WHMCS URL :"
+msgstr ""
+
+#: includes/settings.php:127
+msgid "Hey! Your domain is not valid!"
+msgstr ""
+
+#: includes/settings.php:135
+msgid "Valid URL Format: https://whmcs.com (Don't use \"/\" at the end of WHMCS URL)"
+msgstr ""
+
+#: includes/settings.php:136
+msgid "Note: After changing price in WHMCS, if you are using a cache plugin in your WordPress, to update price you must remove the cache for posts and pages."
+msgstr ""
+
+#: includes/settings.php:143 includes/settings.php:166
+msgid "How to use shortcode in:"
+msgstr ""
+
+#: includes/settings.php:144 includes/settings.php:167
+msgid "Post / Pages:"
+msgstr ""
+
+#: includes/settings.php:149 includes/settings.php:169
+msgid "Theme:"
+msgstr ""
+
+#: includes/settings.php:154 includes/settings.php:172
+msgid "English Document:"
+msgstr ""
+
+#: includes/settings.php:155
+msgid "Change pid value in shortcode with your Product ID."
+msgstr ""
+
+#: includes/settings.php:156
+msgid "Add show=\"\" to toggle the name, description, price from the data feed of WHMCS"
+msgstr ""
+
+#: includes/settings.php:157
+msgid "Change bc value in shortcode with your Billing Cycle Product. Billing Cycles are:"
+msgstr ""
+
+#: includes/settings.php:158
+msgid "Monthly (1 Month): bc=\"1m\""
+msgstr ""
+
+#: includes/settings.php:158
+msgid "Quarterly (3 Month): bc=\"3m\""
+msgstr ""
+
+#: includes/settings.php:158
+msgid "Semiannually (6 Month): bc=\"6m\""
+msgstr ""
+
+#: includes/settings.php:158
+msgid "Annually (1 Year): bc=\"1y\""
+msgstr ""
+
+#: includes/settings.php:158
+msgid "Biennially (2 Year): bc=\"2y\""
+msgstr ""
+
+#: includes/settings.php:158
+msgid "Triennially (3 Year): bc=\"3y\""
+msgstr ""
+
+#: includes/settings.php:173
+msgid "Change tld value in shortcode with your Domain TLD (com, org, net, ...)."
+msgstr ""
+
+#: includes/settings.php:174
+msgid "Change type value in shortcode with register, renew, transfer."
+msgstr ""
+
+#: includes/settings.php:175
+msgid "Change reg value in shortcode with your Register Period of TLD. Register Periods are:"
+msgstr ""
+
+#: includes/settings.php:175
+msgid "Annually (1 Year): reg=\"1y\""
+msgstr ""
+
+#: includes/settings.php:175
+msgid "Biennially (2 Year): reg=\"2y\""
+msgstr ""
+
+#: includes/settings.php:175
+msgid "Triennially (3 Year): reg=\"3y\""
+msgstr ""
+
+#: includes/settings.php:176
+msgid "If left like this [whmcs tld], it will call without any Domain TLD and will take all the TLDs that are in WHMCS."
+msgstr ""
+
+#: includes/settings.php:193 includes/settings.php:195
+msgid "Clear WHMCS Cache"
+msgstr ""
+
+#: includes/short_code/short_code.php:32
+msgid "Name"
+msgstr ""
+
+#: includes/short_code/short_code.php:33
+msgid "Description"
+msgstr ""
+
+#: includes/short_code/short_code.php:34
+msgid "Price"
+msgstr ""

@@ -1,8 +1,17 @@
 <?php
 /**
+ * Plugin Settings and Admin UI
+ *
+ * Handles the admin menu, settings registration, and provides 
+ * usage documentation within the WordPress dashboard.
+ * 
  * Developer: MohammadReza Kamali, Tobias Sörensson
  * Website: IRANWebServer.Net, weconnect.se
  * License: GPL-3.0-or-later
+ * 
+ * * @package WHMCS_Price
+ * @subpackage Admin
+ * @since 2.2.0
  */
 
 // Prevent direct access
@@ -10,8 +19,17 @@ defined('ABSPATH') || exit;
 
 class WHMCSPrice
 {
+    /**
+     * Holds the values to be used in the fields callbacks.
+     * * @since 2.2.0
+     * @var array
+     */
     private array $options = [];
-
+    
+    /**
+     * Start up the class and register admin hooks.
+     * * @since 2.2.0
+     */
     public function __construct()
     {
         add_action('admin_menu', [$this, 'whmcspr_plugin_page']);
@@ -19,6 +37,11 @@ class WHMCSPrice
         add_action('admin_bar_menu', [$this, 'add_admin_bar_clear_cache'], 100);
     }
 
+    /**
+     * Add the settings page to the WordPress admin menu.
+     * * @since 2.2.0
+     * @return void
+     */
     public function whmcspr_plugin_page()
     {
         add_menu_page(
@@ -32,6 +55,12 @@ class WHMCSPrice
         );
     }
 
+    /**
+     * Render the admin settings page.
+     * * Handles manual cache clearing via POST and displays the settings form.
+     * * @since 2.2.0
+     * @return void
+     */
     public function whmcspr_admin_page()
     {
         if (!current_user_can('manage_options')) {
@@ -68,6 +97,11 @@ class WHMCSPrice
         <?php
     }
 
+    /**
+     * Initialize settings, sections, and fields.
+     * * @since 2.2.0
+     * @return void
+     */
     public function whmcspr_init()
     {
         register_setting('price_option_group', 'whmcs_price_option', [$this, 'sanitize']);
@@ -104,6 +138,13 @@ class WHMCSPrice
         );
     }
 
+    /**
+     * Sanitize each setting field to ensure data integrity.
+     *
+     * @since 2.2.0
+     * @param array $input Contains all settings fields as array keys.
+     * @return array The sanitized input array.
+     */
     public function sanitize($input): array
     {
         $new_input = [];
@@ -113,12 +154,22 @@ class WHMCSPrice
         return $new_input;
     }
 
+    /**
+     * Print the main section description.
+     * * @since 2.2.0
+     * @return void
+     */
     public function print_section_info()
     {
         echo esc_html__('Dynamic way for extracting price from WHMCS for use on the pages of your website!', 'whmcs-price') . '<br /><br />';
         echo esc_html__('Please input your WHMCS URL :', 'whmcs-price');
     }
 
+    /**
+     * Render the WHMCS URL input field with validation feedback.
+     * * @since 2.2.0
+     * @return void
+     */
     public function whmcs_url_callback()
     {
         $whmcs_url = $this->options['whmcs_url'] ?? '';
@@ -137,6 +188,11 @@ class WHMCSPrice
         echo '<hr>';
     }
 
+    /**
+     * Display product pricing shortcode usage instructions.
+     * * @since 2.2.0
+     * @return void
+     */
     public function p_price_callback()
     {
         ?>
@@ -160,6 +216,11 @@ class WHMCSPrice
         <?php
     }
 
+    /**
+     * Display domain pricing shortcode usage instructions.
+     * * @since 2.2.0
+     * @return void
+     */
     public function d_price_callback()
     {
         ?>
@@ -178,6 +239,12 @@ class WHMCSPrice
         <?php
     }
 
+    /**
+     * Clear all cached WHMCS data from the WordPress Options table.
+     * * Deletes all transients and timeout transients associated with the plugin.
+     * * @since 2.2.0
+     * @return void
+     */
     public function clear_whmcs_cache()
     {
         global $wpdb;
@@ -185,6 +252,13 @@ class WHMCSPrice
         $wpdb->query("DELETE FROM $wpdb->options WHERE option_name LIKE '_transient_timeout_whmcs_%'");
     }
 
+    /**
+     * Add a "Clear WHMCS Cache" button to the WordPress Admin Bar.
+     * * Includes security nonce validation for the clear cache action.
+     * * @since 2.2.0
+     * @param WP_Admin_Bar $admin_bar The WordPress Admin Bar object.
+     * @return void
+     */
     public function add_admin_bar_clear_cache($admin_bar)
     {
         if (current_user_can('manage_options')) {

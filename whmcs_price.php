@@ -15,32 +15,51 @@
  */
 
 /**
- * Developer : MohammadReza Kamali, Tobias Sörensson
- * Web Site  : IRANWebServer.Net, weconnect.se
- * E-Mail    : kamali@iranwebsv.net, tobias@weconnect.se
+ * Main Plugin File
+ *
+ * This file initializes the plugin, defines constants, and loads
+ * the necessary includes for the API, settings, and shortcodes.
+ *
+ * @package  WHMCS_Price
+ * @author   MohammadReza Kamali, Tobias Sörensson
+ * @license  GPL-3.0-or-later
+ * @version  2.2.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-// 2. Define constants with unique prefix
+/**
+ * Define plugin constants.
+ * * Used for file pathing and versioning throughout the plugin.
+ * @since 2.2.0
+ */
 define( 'WHMCS_PRICE_VERSION', '2.2.0' );
 define( 'WHMCS_PRICE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WHMCS_PRICE_URL', plugin_dir_url( __FILE__ ) );
 
-// Backwards compatibility for existing files (short_code.php and settings.php)
+/**
+ * Backwards compatibility for legacy files.
+ * Provides support if older add-ons or custom code use the old naming convention.
+ */
 define( 'WP_WHMCS_Prices_DIR', WHMCS_PRICE_DIR );
 define( 'WP_WHMCS_Prices_URL', WHMCS_PRICE_URL );
 
 /**
- * 3. Load API Service First
- * This class is the engine for both Shortcodes and Gutenberg.
+ * Load the API Service Class.
+ * This class handles all data retrieval and caching from WHMCS.
  */
 require_once WHMCS_PRICE_DIR . 'includes/class-whmcs-api.php';
 
 /**
- * 4. Load text domain for translations
+ * Load plugin text domain for translations.
+ *
+ * Tells WordPress where to find the .mo and .po files for the 
+ * 'whmcs-price' text domain.
+ *
+ * @since 2.2.0
+ * @return void
  */
 function whmcs_price_load_textdomain() {
     load_plugin_textdomain( 
@@ -52,18 +71,24 @@ function whmcs_price_load_textdomain() {
 add_action( 'init', 'whmcs_price_load_textdomain' );
 
 /**
- * 5. Initialize the plugin functionality
+ * Initialize the plugin functionality.
+ *
+ * Hooks into 'plugins_loaded' to ensure all dependencies are available.
+ * Loads shortcodes for the frontend and settings for the admin area.
+ *
+ * @since 2.2.0
+ * @return void
  */
 function whmcs_price_init() {
-    // Load Shortcodes (Required for current functionality)
+    // Load Shortcodes (Frontend)
     $shortcode_file = WHMCS_PRICE_DIR . 'includes/short_code/short_code.php';
     if ( file_exists( $shortcode_file ) ) {
         require_once $shortcode_file;
     }
 
-    // Load Settings and Admin logic
+    // Load Admin Settings (Dashboard only)
     if ( is_admin() ) {
-        // Compatibility check for Multisite if you wish to maintain your original restriction
+        // We typically don't run the settings UI on multisite networks unless activated there
         if ( is_multisite() ) {
             return;
         }
@@ -72,6 +97,9 @@ function whmcs_price_init() {
         if ( file_exists( $settings_file ) ) {
             require_once $settings_file;
             
+            /**
+             * Instantiate the WHMCSPrice settings class.
+             */
             if ( class_exists( 'WHMCSPrice' ) ) {
                 new WHMCSPrice();
             }
