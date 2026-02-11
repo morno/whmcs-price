@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: whmcs-price\n"
-"POT-Creation-Date: 2026-02-09 19:00+0100\n"
-"PO-Revision-Date: 2026-02-09 19:01+0100\n"
+"POT-Creation-Date: 2026-02-10 20:48+0100\n"
+"PO-Revision-Date: 2026-02-11 06:49+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: sv_SE\n"
@@ -17,39 +17,39 @@ msgstr ""
 "X-Poedit-SearchPathExcluded-0: .github\n"
 "X-Poedit-SearchPathExcluded-1: languages\n"
 
-#: includes/settings.php:25 includes/settings.php:51
+#: includes/settings.php:53 includes/settings.php:94
 msgid "WHMCS Price Options"
 msgstr "WHMCS prisalternativ"
 
-#: includes/settings.php:26
+#: includes/settings.php:54
 msgid "WHMCS Price Settings"
 msgstr "WHMCS prisinställningar"
 
-#: includes/settings.php:45 includes/settings.php:202
+#: includes/settings.php:80 includes/settings.php:88
 msgid "Cache cleared successfully!"
 msgstr "Cachen har rensats!"
 
-#: includes/settings.php:61
+#: includes/settings.php:104
 msgid "Maintenance"
 msgstr "Underhåll"
 
-#: includes/settings.php:65
+#: includes/settings.php:108
 msgid "Clear Cache"
 msgstr "Rensa cache"
 
-#: includes/settings.php:84
+#: includes/settings.php:132
 msgid "WHMCS URL"
 msgstr "WHMCS-URL"
 
-#: includes/settings.php:92
+#: includes/settings.php:140
 msgid "Product Pricing"
 msgstr "Produktprissättning"
 
-#: includes/settings.php:100
+#: includes/settings.php:148
 msgid "Domain Pricing"
 msgstr "Domänprissättning"
 
-#: includes/settings.php:118
+#: includes/settings.php:177
 msgid ""
 "Dynamic way for extracting price from WHMCS for use on the pages of your "
 "website!"
@@ -57,22 +57,22 @@ msgstr ""
 "Dynamiskt sätt att hämta priser från WHMCS för användning på sidorna på din "
 "webbplats!"
 
-#: includes/settings.php:119
+#: includes/settings.php:178
 msgid "Please input your WHMCS URL :"
 msgstr "Ange din WHMCS-URL :"
 
-#: includes/settings.php:127
+#: includes/settings.php:191
 msgid "Hey! Your domain is not valid!"
 msgstr "Hej! Din domän är inte giltig!"
 
-#: includes/settings.php:135
+#: includes/settings.php:199
 msgid ""
 "Valid URL Format: https://whmcs.com (Don't use \"/\" at the end of WHMCS URL)"
 msgstr ""
 "Giltigt URL-format: https://whmcs.com (använd inte “/” i slutet av WHMCS-"
 "URL:en)"
 
-#: includes/settings.php:136
+#: includes/settings.php:200
 msgid ""
 "Note: After changing price in WHMCS, if you are using a cache plugin in your "
 "WordPress, to update price you must remove the cache for posts and pages."
@@ -81,27 +81,27 @@ msgstr ""
 "cachetillägg i WordPress, måste du rensa cachen för inlägg och sidor för att "
 "uppdatera priset."
 
-#: includes/settings.php:143 includes/settings.php:166
+#: includes/settings.php:212 includes/settings.php:245
 msgid "How to use shortcode in:"
 msgstr "Så använder du kortkod i:"
 
-#: includes/settings.php:144 includes/settings.php:167
+#: includes/settings.php:213 includes/settings.php:246
 msgid "Post / Pages:"
 msgstr "Inlägg / sidor:"
 
-#: includes/settings.php:149 includes/settings.php:169
+#: includes/settings.php:218 includes/settings.php:247
 msgid "Theme:"
 msgstr "Tema:"
 
-#: includes/settings.php:154 includes/settings.php:172
-msgid "English Document:"
-msgstr "Engelsk dokumentation:"
+#: includes/settings.php:223 includes/settings.php:250
+msgid "Documentation:"
+msgstr "Dokumentation:"
 
-#: includes/settings.php:155
+#: includes/settings.php:224
 msgid "Change pid value in shortcode with your Product ID."
 msgstr "Ändra pid-värdet i kortkoden till ditt produkt-ID."
 
-#: includes/settings.php:156
+#: includes/settings.php:225
 msgid ""
 "Add show=\"\" to toggle the name, description, price from the data feed of "
 "WHMCS"
@@ -109,7 +109,7 @@ msgstr ""
 "Lägg till show=\"\" för att växla visning av namn, beskrivning och pris från "
 "WHMCS-datakällan"
 
-#: includes/settings.php:157
+#: includes/settings.php:226
 msgid ""
 "Change bc value in shortcode with your Billing Cycle Product. Billing Cycles "
 "are:"
@@ -117,41 +117,41 @@ msgstr ""
 "Ändra bc-värdet i kortkoden till produktens faktureringsperiod. "
 "Faktureringsperioder är:"
 
-#: includes/settings.php:158
+#: includes/settings.php:227
 msgid "Monthly (1 Month): bc=\"1m\""
 msgstr "Månadsvis (1 månad): bc=\"1m\""
 
-#: includes/settings.php:158
+#: includes/settings.php:228
 msgid "Quarterly (3 Month): bc=\"3m\""
 msgstr "Kvartalsvis (3 månader): bc=\"3m\""
 
-#: includes/settings.php:158
+#: includes/settings.php:229
 msgid "Semiannually (6 Month): bc=\"6m\""
 msgstr "Halvårsvis (6 månader): bc=\"6m\""
 
-#: includes/settings.php:158
+#: includes/settings.php:230
 msgid "Annually (1 Year): bc=\"1y\""
 msgstr "Årsvis (1 år): bc=\"1y\""
 
-#: includes/settings.php:158
+#: includes/settings.php:231
 msgid "Biennially (2 Year): bc=\"2y\""
 msgstr "Vartannat år (2 år): bc=\"2y\""
 
-#: includes/settings.php:158
+#: includes/settings.php:232
 msgid "Triennially (3 Year): bc=\"3y\""
 msgstr "Vart tredje år (3 år): bc=\"3y\""
 
-#: includes/settings.php:173
+#: includes/settings.php:251
 msgid ""
 "Change tld value in shortcode with your Domain TLD (com, org, net, ...)."
 msgstr ""
 "Ändra tld-värdet i kortkoden till din domäns toppdomän (com, org, net, …)."
 
-#: includes/settings.php:174
+#: includes/settings.php:252
 msgid "Change type value in shortcode with register, renew, transfer."
 msgstr "Ändra type-värdet i kortkoden till register, renew eller transfer."
 
-#: includes/settings.php:175
+#: includes/settings.php:253
 msgid ""
 "Change reg value in shortcode with your Register Period of TLD. Register "
 "Periods are:"
@@ -159,19 +159,19 @@ msgstr ""
 "Ändra reg-värdet i kortkoden till toppdomänens registreringsperiod. "
 "Registreringsperioder är:"
 
-#: includes/settings.php:175
+#: includes/settings.php:253
 msgid "Annually (1 Year): reg=\"1y\""
 msgstr "Årsvis (1 år): reg=\"1y\""
 
-#: includes/settings.php:175
+#: includes/settings.php:253
 msgid "Biennially (2 Year): reg=\"2y\""
 msgstr "Vartannat år (2 år): reg=\"2y\""
 
-#: includes/settings.php:175
+#: includes/settings.php:253
 msgid "Triennially (3 Year): reg=\"3y\""
 msgstr "Vart tredje år (3 år): reg=\"3y\""
 
-#: includes/settings.php:176
+#: includes/settings.php:254
 msgid ""
 "If left like this [whmcs tld], it will call without any Domain TLD and will "
 "take all the TLDs that are in WHMCS."
@@ -179,18 +179,25 @@ msgstr ""
 "Om den lämnas så här [whmcs tld], kommer den att anropas utan någon "
 "toppdomän och hämtar då alla toppdomäner som finns i WHMCS."
 
-#: includes/settings.php:193 includes/settings.php:195
+#: includes/settings.php:285 includes/settings.php:287
 msgid "Clear WHMCS Cache"
 msgstr "Rensa WHMCS-cache"
 
-#: includes/short_code/short_code.php:32
+#: includes/settings.php:307
+msgid "Unauthorized access."
+msgstr "Obehörig åtkomst."
+
+#: includes/short_code/short_code.php:68
 msgid "Name"
 msgstr "Namn"
 
-#: includes/short_code/short_code.php:33
+#: includes/short_code/short_code.php:69
 msgid "Description"
 msgstr "Beskrivning"
 
-#: includes/short_code/short_code.php:34
+#: includes/short_code/short_code.php:70
 msgid "Price"
 msgstr "Pris"
+
+#~ msgid "English Document:"
+#~ msgstr "Engelsk dokumentation:"

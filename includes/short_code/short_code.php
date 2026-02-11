@@ -103,8 +103,8 @@ function whmcs_func($atts) {
         $reg_period = str_replace('y', '', $atts['reg']);
         $price = WHMCS_Price_API::get_domain_price($atts['tld'], $atts['type'], $reg_period);
         // Create a unique ID for the domain container
-        $domain_id = 'whmcs-price-' . esc_attr(sanitize_title($atts['tld']));
-        return "<div id='" . $domain_id . "' class='whmcs-price'>" . esc_html($price) . "</div>";
+        $domain_id = 'whmcs-price-' . esc_attr( sanitize_title( $atts['tld'] ) );
+        return "<div id='" . $domain_id . "' class='whmcs-price'>" . esc_html( $price ) . "</div>";
     }
 
     return '';

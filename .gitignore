@@ -1,0 +1,17 @@
+# Build artifacts
+*.zip
+build_temp/
+build.ps1
+
+# OS files
+Thumbs.db
+.DS_Store
+
+webServerAPISettings.json
+.vscode/
+# Default: keep repository files in LF
+* text=auto eol=lf
+
+# (Optional) Windows scripts
+*.bat text eol=crlf
+*.cmd text eol=crlf

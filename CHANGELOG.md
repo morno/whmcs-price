@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.2] - 2026-02-10
+
+### Fixed
+- Fixed a typo in the domain price shortcode output that could trigger PHP notices by referencing an undefined variable; now correctly uses `$domain_id` when rendering the wrapper `<div>` id.
+- Updated Swedish language files in the `languages/` directory.
+
+### Changed
+- Updated plugin versioning to 2.2.2 across all core files.
+
 ## [2.2.1] - 2026-02-10
 ### Added
 - Implemented redirect-safe cache clearing from the Admin Bar (prevents double execution on page refresh).
