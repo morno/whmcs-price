@@ -1,8 +1,9 @@
 # WHMCS Price Integration 🚀
 
-![WordPress Version](https://img.shields.io/badge/wordpress-%3E%3D%205.0-blue.svg)
-![PHP Version](https://img.shields.io/badge/php-%3E%3D%208.0-8892bf.svg)
-![License](https://img.shields.io/badge/license-GPL--3.0-orange.svg)
+![WordPress Version](https://img.shields.io/badge/wordpress-%3E%3D%206.7-blue.svg)
+![PHP Version](https://img.shields.io/badge/php-%3E%3D%208.1-8892bf.svg)
+![License](https://img.shields.io/badge/license-GPL--2.0--or--later-orange.svg)
+![Version](https://img.shields.io/badge/version-2.2.2-brightgreen.svg)
 ![Maintained](https://img.shields.io/badge/maintained-yes-brightgreen.svg)
 
 A modernized, secure, and lightweight WordPress plugin to display real-time pricing for products and domains from your WHMCS instance.
@@ -11,7 +12,7 @@ A modernized, secure, and lightweight WordPress plugin to display real-time pric
 
 This is an updated and refactored version of the WHMCS Price plugin, maintained by **Tobias Sörensson (Morno)**. 
 
-* **PHP 8.x Compatible:** Full support for modern hosting environments.
+* **PHP 8.1+ Compatible:** Full support for modern hosting environments.
 * **Safe Data Fetching:** Uses WHMCS data feeds (HTTP) via wp_remote_get instead of direct SQL connections, ensuring compatibility with all hosting providers.
 * **Admin Bar Integration:** Clear your price cache instantly with one click from the WordPress top menu.
 
@@ -84,4 +85,4 @@ This fork was created to resolve critical issues in the original plugin which ha
 ---
 
 ## License
-This project is licensed under the GPLv3 License.
+This project is licensed under the **GPLv2 or later** (to ensure full compatibility with the WordPress.org Plugin Directory).
