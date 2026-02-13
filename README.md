@@ -1,4 +1,4 @@
-# WHMCS Price Integration 🚀
+# WHMCS Price 🚀
 
 ![WordPress Version](https://img.shields.io/badge/wordpress-%3E%3D%206.9-blue.svg)
 ![PHP Version](https://img.shields.io/badge/php-%3E%3D%208.1-8892bf.svg)
@@ -86,4 +86,5 @@ This fork was created to resolve critical issues in the original plugin which ha
 
 ## License
 This plugin is licensed under the GPLv2 or later.
+
 
