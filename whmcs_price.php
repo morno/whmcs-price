@@ -1,17 +1,18 @@
 <?php
 /*
- * Plugin Name: WHMCS Price
- * Plugin URI:  https://github.com/morno/whmcs-price
- * Description: Dynamic way for extracting product & domain price from WHMCS for use on the pages of your website!
- * Version:     2.2.2
- * Requires at least: 5.0
- * Requires PHP: 7.4
- * Author:      MohammadReza Kamali, Tobias Sörensson
- * Text Domain: whmcs-price
- * Domain Path: /languages
- * Author URI:  https://weconnect.se
- * License:     GPL-3.0-or-later
- * License URI: https://www.gnu.org/licenses/gpl-3.0.html
+ * Plugin Name:       WHMCS Price
+ * Plugin URI:        https://github.com/morno/whmcs-price
+ * Description:       A modernized and secure way to display real-time pricing for products and domains from your WHMCS instance.
+ * Version:           2.2.2
+ * Requires at least: 6.0
+ * Tested up to:      6.9
+ * Requires PHP:      8.1
+ * Author:            Tobias Sörensson (Morno), MohammadReza Kamali
+ * Author URI:        https://github.com/morno
+ * Text Domain:       whmcs-price
+ * Domain Path:       /languages
+ * License:           GPLv2 or later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  */
 
 /**
@@ -20,10 +21,9 @@
  * This file initializes the plugin, defines constants, and loads
  * the necessary includes for the API, settings, and shortcodes.
  *
- * @package  WHMCS_Price
- * @author   MohammadReza Kamali, Tobias Sörensson
- * @license  GPL-3.0-or-later
- * @version  2.2.1
+ * @package   WHMCS_Price
+ * @author    Tobias Sörensson, MohammadReza Kamali
+ * @license   GPL-2.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
