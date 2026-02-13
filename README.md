@@ -85,5 +85,5 @@ This fork was created to resolve critical issues in the original plugin which ha
 ---
 
 ## License
+This plugin is licensed under the GPLv2 or later.
 
-This project is licensed under the **GPLv2 or later** (to ensure full compatibility with the WordPress.org Plugin Directory).
