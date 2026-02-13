@@ -15,3 +15,4 @@ webServerAPISettings.json
 # (Optional) Windows scripts
 *.bat text eol=crlf
 *.cmd text eol=crlf
+build .sh
