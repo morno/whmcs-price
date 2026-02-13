@@ -2,14 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.2.2] - 2026-02-10
+## [2.2.2] - 2026-02-13
 
 ### Fixed
-- Fixed a typo in the domain price shortcode output that could trigger PHP notices by referencing an undefined variable; now correctly uses `$domain_id` when rendering the wrapper `<div>` id.
+- Fixed a typo in the domain price shortcode output that could trigger PHP notices by referencing an undefined variable.
 - Updated Swedish language files in the `languages/` directory.
 
 ### Changed
-- Updated plugin versioning to 2.2.2 across all core files.
+- **WordPress Directory Compliance:** Updated "Tested up to" value to 6.7 to match the current stable WordPress release.
+- **Readme Optimization:** Refactored `readme.txt` headers and spacing to ensure compatibility with the WordPress.org plugin parser.
+- **License Clarification:** Added explicit GPLv2 license declaration to `README.md` as requested by the plugin review team.
+- **Version Alignment:** Synchronized versioning (2.2.2) across all core files, `readme.txt`, and `README.md`.
+
+### Removed
+- Removed the `/assets/` directory from the plugin distribution (to be managed via SVN assets as per WordPress.org guidelines).
 
 ## [2.2.1] - 2026-02-10
 ### Added
