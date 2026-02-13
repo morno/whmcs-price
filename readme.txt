@@ -1,4 +1,4 @@
-﻿=== WHMCS Price ===
+﻿===WHMCS Price===
 Contributors: morno, kamalireal
 Tags: whmcs, price, show, billing, automation, hosting, dynamic, extract, product, domain
 Requires at least: 6.0
@@ -69,7 +69,10 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 = 2.2.2 =
 * Fixed: A typo in the domain price shortcode output that could trigger PHP notices.
 * Updated: Swedish language files in the languages/ directory.
-* Changed: Updated plugin versioning to 2.2.2 across all core files.
+* Changed: Updated "Tested up to" value to 6.7 to comply with WordPress.org guidelines.
+* Changed: Refactored readme.txt headers for better compatibility with the WordPress.org parser.
+* Changed: Added explicit GPLv2 license declaration to README.md.
+* Removed: The /assets/ directory from the plugin distribution (moved to SVN assets).
 
 = 2.2.1 =
 * Added: Redirect-safe cache clearing from the Admin Bar (prevents double execution).
