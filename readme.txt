@@ -1,10 +1,10 @@
 ﻿===WHMCS Price===
 Contributors: morno, kamalireal
-Tags: whmcs, price, show, billing, automation, hosting, dynamic, extract, product, domain
+Tags: whmcs, price, hosting, domain, billing
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.1
-Stable tag: 2.2.2
+Stable tag: 2.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -66,6 +66,23 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 3. Go to Settings > WHMCS Price Options and save WHMCS URL.
 
 == Changelog ==
+= 2.3.0 = - 2026-02-16
+
+
+* **Gutenberg Block: WHMCS Product Price** â€” Native block editor support for displaying real-time product pricing from WHMCS. Configured via the block sidebar (InspectorControls) with controls for Product ID(s), Billing Cycle, and display columns (Name, Description, Price).
+* **Gutenberg Block: WHMCS Domain Price** â€” Native block editor support for displaying real-time domain pricing from WHMCS. Configured via the block sidebar with controls for TLD, Transaction Type (register, renew, transfer), and Registration Period (1â€“10 years).
+* Both blocks use **server-side rendering** (`render.php`) and reuse the existing `WHMCS_Price_API` class â€” no logic duplication, full transient caching inherited automatically.
+* `block.json` metadata files for both blocks following WordPress block API v3 standards.
+* `class-whmcs-blocks.php` for block registration via `register_block_type()`.
+* Editor preview shown in the block canvas when a Product ID or TLD has been configured.
+* `Placeholder` component shown in the editor when the block has not yet been configured.
+
+
+* Updated `WHMCS_PRICE_VERSION` constant to `2.3.0`.
+* Fixed author name encoding in plugin header (`SÃ¶rensson` was incorrectly stored as mojibake).
+* Block registration uses `WHMCS_PRICE_DIR` constant consistently with the rest of the plugin.
+* Changed Tags in readme.txt to the supported Tags of 5.
+
 = 2.2.2 =
 * Fixed: A typo in the domain price shortcode output that could trigger PHP notices.
 * Updated: Swedish language files in the languages/ directory.

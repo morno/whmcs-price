@@ -1,0 +1,40 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "whmcs-price/product",
+	"version": "1.0.0",
+	"title": "WHMCS Product Price",
+	"category": "widgets",
+	"icon": "tag",
+	"description": "Display real-time product pricing from your WHMCS instance.",
+	"keywords": [ "whmcs", "price", "product", "hosting" ],
+	"supports": {
+		"html": false,
+		"align": false
+	},
+	"attributes": {
+		"pid": {
+			"type": "string",
+			"default": ""
+		},
+		"billingCycle": {
+			"type": "string",
+			"default": "1y"
+		},
+		"show": {
+			"type": "array",
+			"default": [ "name", "price" ],
+			"items": {
+				"type": "string"
+			}
+		},
+		"displayStyle": {
+			"type": "string",
+			"default": "table"
+		}
+	},
+	"textdomain": "whmcs-price",
+	"editorScript": "file:../build/whmcs-price-product.js",
+	"style": "file:../build/whmcs-price-product.css",
+	"render": "file:./render.php"
+}

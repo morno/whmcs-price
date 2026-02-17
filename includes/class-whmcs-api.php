@@ -36,6 +36,25 @@ class WHMCS_Price_API {
     }
 
     /**
+     * Log debug messages when WP_DEBUG is enabled.
+     *
+     * @since 2.3.0
+     * @access private
+     * @param string $message The message to log.
+     * @param array  $context Additional context data.
+     * @return void
+     */
+    private static function debug_log( $message, $context = array() ) {
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+            $log_message = '[WHMCS Price] ' . $message;
+            if ( ! empty( $context ) ) {
+                $log_message .= ' | Context: ' . wp_json_encode( $context );
+            }
+            error_log( $log_message );
+        }
+    }
+
+    /**
      * Clean WHMCS JS-feed responses by stripping Javascript wrappers.
      *
      * WHMCS feeds are often delivered as 'document.write' JS strings. 
@@ -67,20 +86,62 @@ class WHMCS_Price_API {
      */
     public static function get_product_data($pid, $billing_cycle, $attribute) {
         $whmcs_url = self::get_url();
-        if (empty($whmcs_url)) return 'NA';
+        
+        if (empty($whmcs_url)) {
+            self::debug_log( 'Product data request failed: WHMCS URL not configured', array(
+                'pid' => $pid,
+                'billing_cycle' => $billing_cycle,
+                'attribute' => $attribute,
+            ) );
+            return 'NA';
+        }
 
         $cache_key = "whmcs_product_{$pid}_{$billing_cycle}_{$attribute}";
         $cached = get_transient($cache_key);
-        if ($cached !== false) return $cached;
+        
+        if ($cached !== false) {
+            self::debug_log( 'Product data served from cache', array(
+                'cache_key' => $cache_key,
+                'value' => $cached,
+            ) );
+            return $cached;
+        }
 
         $url = "{$whmcs_url}/feeds/productsinfo.php?pid={$pid}&get={$attribute}&billingcycle={$billing_cycle}";
+        
+        self::debug_log( 'Fetching product data from WHMCS', array(
+            'url' => $url,
+            'pid' => $pid,
+            'billing_cycle' => $billing_cycle,
+            'attribute' => $attribute,
+        ) );
+        
         $response = wp_remote_get($url);
 
-        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+        if (is_wp_error($response)) {
+            self::debug_log( 'Product data request error', array(
+                'error' => $response->get_error_message(),
+                'url' => $url,
+            ) );
+            return 'NA';
+        }
+
+        $response_code = wp_remote_retrieve_response_code($response);
+        if ( $response_code !== 200 ) {
+            self::debug_log( 'Product data request failed with HTTP error', array(
+                'response_code' => $response_code,
+                'url' => $url,
+            ) );
             return 'NA';
         }
 
         $data = self::clean_response(wp_remote_retrieve_body($response));
+        
+        self::debug_log( 'Product data fetched successfully', array(
+            'cache_key' => $cache_key,
+            'value' => $data,
+        ) );
+        
         set_transient($cache_key, $data, self::$cache_expiry);
 
         return $data;
@@ -97,23 +158,135 @@ class WHMCS_Price_API {
      * @return string Returns the formatted price string or 'NA' on failure.
      */
     public static function get_domain_price($tld, $type, $reg_period) {
+     /**
+	 * @phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Conditional debug logging
+	 */
         $whmcs_url = self::get_url();
-        if (empty($whmcs_url)) return 'NA';
+        
+        if (empty($whmcs_url)) {
+            self::debug_log( 'Domain price request failed: WHMCS URL not configured', array(
+                'tld' => $tld,
+                'type' => $type,
+                'reg_period' => $reg_period,
+            ) );
+            return 'NA';
+        }
 
         $tld = ltrim($tld, '.');
         $cache_key = "whmcs_domain_{$tld}_{$type}_{$reg_period}";
         $cached = get_transient($cache_key);
-        if ($cached !== false) return $cached;
+        
+        if ($cached !== false) {
+            self::debug_log( 'Domain price served from cache', array(
+                'cache_key' => $cache_key,
+                'value' => $cached,
+            ) );
+            return $cached;
+        }
 
         $url = "{$whmcs_url}/feeds/domainprice.php?tld=.{$tld}&type={$type}&regperiod={$reg_period}&format=1";
+        
+        self::debug_log( 'Fetching domain price from WHMCS', array(
+            'url' => $url,
+            'tld' => $tld,
+            'type' => $type,
+            'reg_period' => $reg_period,
+        ) );
+        
         $response = wp_remote_get($url);
 
-        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+        if (is_wp_error($response)) {
+            self::debug_log( 'Domain price request error', array(
+                'error' => $response->get_error_message(),
+                'url' => $url,
+            ) );
+            return 'NA';
+        }
+
+        $response_code = wp_remote_retrieve_response_code($response);
+        if ( $response_code !== 200 ) {
+            self::debug_log( 'Domain price request failed with HTTP error', array(
+                'response_code' => $response_code,
+                'url' => $url,
+            ) );
             return 'NA';
         }
 
         $data = self::clean_response(wp_remote_retrieve_body($response));
+        
+        self::debug_log( 'Domain price fetched successfully', array(
+            'cache_key' => $cache_key,
+            'value' => $data,
+        ) );
+        
         set_transient($cache_key, $data, self::$cache_expiry);
+
+        return $data;
+    }
+
+    /**
+     * Fetch All Domain Prices from WHMCS (no specific TLD).
+     *
+     * When no TLD is specified, WHMCS returns pricing for all available
+     * domain extensions as a raw string or HTML table depending on the feed.
+     *
+     * @since 2.3.0
+     * @access public
+     * @return string Returns the raw domain pricing data or 'NA' on failure.
+     */
+    public static function get_all_domain_prices() {
+        $whmcs_url = self::get_url();
+        
+        if ( empty( $whmcs_url ) ) {
+            self::debug_log( 'All domain prices request failed: WHMCS URL not configured' );
+            return 'NA';
+        }
+
+        $cache_key = 'whmcs_domain_all';
+        $cached    = get_transient( $cache_key );
+        
+        if ( $cached !== false ) {
+            self::debug_log( 'All domain prices served from cache', array(
+                'cache_key' => $cache_key,
+                'data_length' => strlen( $cached ),
+            ) );
+            return $cached;
+        }
+
+        $url = "{$whmcs_url}/feeds/domainpricing.php";
+        
+        self::debug_log( 'Fetching all domain prices from WHMCS', array(
+            'url' => $url,
+        ) );
+        
+        $response = wp_remote_get( $url );
+
+        if ( is_wp_error( $response ) ) {
+            self::debug_log( 'All domain prices request error', array(
+                'error' => $response->get_error_message(),
+                'url' => $url,
+            ) );
+            return 'NA';
+        }
+
+        $response_code = wp_remote_retrieve_response_code( $response );
+        if ( $response_code !== 200 ) {
+            self::debug_log( 'All domain prices request failed with HTTP error', array(
+                'response_code' => $response_code,
+                'url' => $url,
+            ) );
+            return 'NA';
+        }
+
+        $data = self::clean_response( wp_remote_retrieve_body( $response ) );
+        
+        self::debug_log( 'All domain prices fetched successfully', array(
+            'cache_key' => $cache_key,
+            'data_length' => strlen( $data ),
+            'first_100_chars' => substr( $data, 0, 100 ),
+        ) );
+        
+        set_transient( $cache_key, $data, self::$cache_expiry );
 
         return $data;
     }

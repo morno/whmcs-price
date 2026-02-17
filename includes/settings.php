@@ -4,50 +4,29 @@
  *
  * Handles the admin menu, settings registration, and provides 
  * usage documentation within the WordPress dashboard.
- * * Developer: MohammadReza Kamali, Tobias Sörensson
+ *
+ * Developer: MohammadReza Kamali, Tobias Sörensson
  * Website: IRANWebServer.Net, weconnect.se
  * License: GPL-3.0-or-later
- * * @package    WHMCS_Price
+ *
+ * @package    WHMCS_Price
  * @subpackage Admin
  * @since      2.2.0
  */
 
-// Prevent direct access
 defined( 'ABSPATH' ) || exit;
 
 class WHMCSPrice {
 
-	/**
-	 * Holds the values to be used in the fields callbacks.
-	 *
-	 * @since 2.2.0
-	 * @var array
-	 */
 	private array $options = array();
 
-	/**
-	 * Start up the class and register admin hooks.
-	 *
-	 * @since 2.2.0
-	 */
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'whmcspr_plugin_page' ) );
 		add_action( 'admin_init', array( $this, 'whmcspr_init' ) );
 		add_action( 'admin_bar_menu', array( $this, 'add_admin_bar_clear_cache' ), 100 );
-
-		/**
-		 * Handle the redirect-safe cache clearing.
-		 * @since 2.2.1
-		 */
 		add_action( 'admin_init', array( $this, 'handle_admin_bar_clear_cache_action' ) );
 	}
 
-	/**
-	 * Add the settings page to the WordPress admin menu.
-	 *
-	 * @since 2.2.0
-	 * @return void
-	 */
 	public function whmcspr_plugin_page() {
 		add_menu_page(
 			__( 'WHMCS Price Options', 'whmcs-price' ),
@@ -60,30 +39,17 @@ class WHMCSPrice {
 		);
 	}
 
-	/**
-	 * Render the admin settings page.
-	 *
-	 * Handles manual cache clearing via POST and displays the settings form.
-	 *
-	 * @since 2.2.0
-	 * @return void
-	 */
 	public function whmcspr_admin_page() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 
-		// Handle Cache Clear from form with Security Nonce.
 		if ( isset( $_POST['whmcs_clear_cache'] ) ) {
 			check_admin_referer( 'whmcs_clear_cache_action' );
 			$this->clear_whmcs_cache();
 			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Cache cleared successfully!', 'whmcs-price' ) . '</p></div>';
 		}
 
-		/**
-		 * Show notice if cache was cleared via Admin Bar redirect.
-		 * @since 2.2.1
-		 */
 		if ( isset( $_GET['cache_cleared'] ) && '1' === $_GET['cache_cleared'] ) {
 			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Cache cleared successfully!', 'whmcs-price' ) . '</p></div>';
 		}
@@ -111,12 +77,6 @@ class WHMCSPrice {
 		<?php
 	}
 
-	/**
-	 * Initialize settings, sections, and fields.
-	 *
-	 * @since 2.2.0
-	 * @return void
-	 */
 	public function whmcspr_init() {
 		register_setting( 'price_option_group', 'whmcs_price_option', array( $this, 'sanitize' ) );
 
@@ -152,13 +112,6 @@ class WHMCSPrice {
 		);
 	}
 
-	/**
-	 * Sanitize each setting field to ensure data integrity.
-	 *
-	 * @since 2.2.0
-	 * @param array $input Contains all settings fields as array keys.
-	 * @return array The sanitized input array.
-	 */
 	public function sanitize( $input ): array {
 		$new_input = array();
 		if ( ! empty( $input['whmcs_url'] ) ) {
@@ -167,23 +120,11 @@ class WHMCSPrice {
 		return $new_input;
 	}
 
-	/**
-	 * Print the main section description.
-	 *
-	 * @since 2.2.0
-	 * @return void
-	 */
 	public function print_section_info() {
 		echo esc_html__( 'Dynamic way for extracting price from WHMCS for use on the pages of your website!', 'whmcs-price' ) . '<br /><br />';
 		echo esc_html__( 'Please input your WHMCS URL :', 'whmcs-price' );
 	}
 
-	/**
-	 * Render the WHMCS URL input field with validation feedback.
-	 *
-	 * @since 2.2.0
-	 * @return void
-	 */
 	public function whmcs_url_callback() {
 		$whmcs_url = $this->options['whmcs_url'] ?? '';
 
@@ -201,12 +142,6 @@ class WHMCSPrice {
 		echo '<hr>';
 	}
 
-	/**
-	 * Display product pricing shortcode usage instructions.
-	 *
-	 * @since 2.2.0
-	 * @return void
-	 */
 	public function p_price_callback() {
 		?>
 		<strong><?php esc_html_e( 'How to use shortcode in:', 'whmcs-price' ); ?></strong><br /><br />
@@ -234,49 +169,47 @@ class WHMCSPrice {
 		<?php
 	}
 
-	/**
-	 * Display domain pricing shortcode usage instructions.
-	 *
-	 * @since 2.2.0
-	 * @return void
-	 */
 	public function d_price_callback() {
 		?>
 		<strong><?php esc_html_e( 'How to use shortcode in:', 'whmcs-price' ); ?></strong><br /><br />
 		<?php esc_html_e( 'Post / Pages:', 'whmcs-price' ); ?> 
+		<input type="text" id="sample_domain_shortcode" name="sample_domain_shortcode" style="width:500px; direction:ltr; cursor: pointer;" value="[whmcs tld=&quot;com&quot; type=&quot;register&quot; reg=&quot;1y&quot;]" onclick="this.select()" readonly /><br /><br />
 		<?php esc_html_e( 'Theme:', 'whmcs-price' ); ?> 
-		<input type="text" id="sample_domain_theme" name="sample_domain_theme" style="width:500px; direction:ltr; cursor: pointer;" value="&lt;?php echo do_shortcode(&#39;[whmcs tld=&quot;your-extension&quot; type=&quot;register&quot; reg=&quot;1y&quot;]&#39;); ?&gt;" onclick="this.select()" readonly /><br /><br />
+		<input type="text" id="sample_domain_theme" name="sample_domain_theme" style="width:500px; direction:ltr; cursor: pointer;" value="&lt;?php echo do_shortcode(&#39;[whmcs tld=&quot;com&quot; type=&quot;register&quot; reg=&quot;1y&quot;]&#39;); ?&gt;" onclick="this.select()" readonly /><br /><br />
 		
 		<pre><strong><?php esc_html_e( 'Documentation:', 'whmcs-price' ); ?></strong><br />
 1. <?php esc_html_e( 'Change tld value in shortcode with your Domain TLD (com, org, net, ...).', 'whmcs-price' ); ?><br />
 2. <?php esc_html_e( 'Change type value in shortcode with register, renew, transfer.', 'whmcs-price' ); ?><br />
 3. <?php esc_html_e( 'Change reg value in shortcode with your Register Period of TLD. Register Periods are:', 'whmcs-price' ); ?><br /><br /><code><?php esc_html_e( 'Annually (1 Year): reg="1y"', 'whmcs-price' ); ?><br /><?php esc_html_e( 'Biennially (2 Year): reg="2y"', 'whmcs-price' ); ?><br /><?php esc_html_e( 'Triennially (3 Year): reg="3y"', 'whmcs-price' ); ?></code><br />
-4. <?php esc_html_e( 'If left like this [whmcs tld], it will call without any Domain TLD and will take all the TLDs that are in WHMCS.', 'whmcs-price' ); ?></pre>
+4. <?php esc_html_e( 'If left like this [whmcs tld] (without specifying a tld value), it will display all available TLDs from WHMCS.', 'whmcs-price' ); ?></pre>
 		<hr>
 		<?php
 	}
 
-	/**
-	 * Clear all cached WHMCS data from the WordPress Options table.
-	 *
-	 * Deletes all transients and timeout transients associated with the plugin.
-	 *
-	 * @since 2.2.0
-	 * @return void
-	 */
 	public function clear_whmcs_cache() {
 		global $wpdb;
-		$wpdb->query( "DELETE FROM $wpdb->options WHERE option_name LIKE '_transient_whmcs_%'" );
-		$wpdb->query( "DELETE FROM $wpdb->options WHERE option_name LIKE '_transient_timeout_whmcs_%'" );
+
+		/**
+		 * Direct DB query is necessary as WordPress has no bulk transient delete API.
+		 * We use delete_transient() for actual deletion (WordPress API).
+		 *
+		 * @phpcs:disable WordPress.DB.DirectDatabaseQuery
+		 */
+		$transient_keys = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT REPLACE(option_name, '_transient_', '') FROM $wpdb->options WHERE option_name LIKE %s",
+				$wpdb->esc_like( '_transient_whmcs_' ) . '%'
+			)
+		);
+		// @phpcs:enable
+
+		foreach ( $transient_keys as $key ) {
+			delete_transient( $key );
+		}
+
+		delete_expired_transients( true );
 	}
 
-	/**
-	 * Add a "Clear WHMCS Cache" button to the WordPress Admin Bar.
-	 *
-	 * @since 2.2.0
-	 * @param WP_Admin_Bar $admin_bar The WordPress Admin Bar object.
-	 * @return void
-	 */
 	public function add_admin_bar_clear_cache( $admin_bar ) {
 		if ( current_user_can( 'manage_options' ) ) {
 			$admin_bar->add_menu(
@@ -290,14 +223,6 @@ class WHMCSPrice {
 		}
 	}
 
-	/**
-	 * Handle the cache clearing action from admin bar and redirect.
-	 *
-	 * This prevents re-clearing the cache when the user refreshes the page.
-	 *
-	 * @since 2.2.1
-	 * @return void
-	 */
 	public function handle_admin_bar_clear_cache_action() {
 		if ( isset( $_GET['whmcs_clear_cache'] ) && '1' === $_GET['whmcs_clear_cache'] ) {
 
@@ -309,7 +234,6 @@ class WHMCSPrice {
 
 			$this->clear_whmcs_cache();
 
-			// Redirect to clean URL and add a confirmation flag.
 			$redirect_url = remove_query_arg( array( 'whmcs_clear_cache', '_wpnonce' ), add_query_arg( 'cache_cleared', '1' ) );
 
 			wp_safe_redirect( $redirect_url );

@@ -1,0 +1,41 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "whmcs-price/domain",
+	"version": "1.0.0",
+	"title": "WHMCS Domain Price",
+	"category": "widgets",
+	"icon": "admin-site",
+	"description": "Display real-time domain pricing from your WHMCS instance.",
+	"keywords": [ "whmcs", "price", "domain", "tld", "hosting" ],
+	"supports": {
+		"html": false,
+		"align": false
+	},
+	"attributes": {
+		"tld": {
+			"type": "string",
+			"default": ""
+		},
+		"transactionType": {
+			"type": "string",
+			"default": "register"
+		},
+		"regPeriod": {
+			"type": "string",
+			"default": "1y"
+		},
+		"showAll": {
+			"type": "boolean",
+			"default": false
+		},
+		"displayStyle": {
+			"type": "string",
+			"default": "table"
+		}
+	},
+	"textdomain": "whmcs-price",
+	"editorScript": "file:../build/whmcs-price-domain.js",
+	"style": "file:../build/whmcs-price-domain.css",
+	"render": "file:./render.php"
+}

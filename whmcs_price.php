@@ -3,7 +3,7 @@
  * Plugin Name:       WHMCS Price
  * Plugin URI:        https://github.com/morno/whmcs-price
  * Description:       A modernized and secure way to display real-time pricing for products and domains from your WHMCS instance.
- * Version:           2.2.2
+ * Version:           2.3.0
  * Requires at least: 6.0
  * Tested up to:      6.9
  * Requires PHP:      8.1
@@ -26,6 +26,7 @@
  * @license   GPL-2.0-or-later
  */
 
+// Exit if accessed directly to prevent unauthorized access to the plugin file.
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
@@ -35,7 +36,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * * Used for file pathing and versioning throughout the plugin.
  * @since 2.2.0
  */
-define( 'WHMCS_PRICE_VERSION', '2.2.2' );
+define( 'WHMCS_PRICE_VERSION', '2.3.0' );
 define( 'WHMCS_PRICE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WHMCS_PRICE_URL', plugin_dir_url( __FILE__ ) );
 
@@ -53,22 +54,19 @@ define( 'WP_WHMCS_Prices_URL', WHMCS_PRICE_URL );
 require_once WHMCS_PRICE_DIR . 'includes/class-whmcs-api.php';
 
 /**
- * Load plugin text domain for translations.
- *
- * Tells WordPress where to find the .mo and .po files for the 
- * 'whmcs-price' text domain.
- *
- * @since 2.2.0
- * @return void
+ * Load the Blocks Class.
+ * This class handles the registration and rendering of Gutenberg blocks for WHMCS pricing.
  */
-function whmcs_price_load_textdomain() {
-    load_plugin_textdomain( 
-        'whmcs-price', 
-        false, 
-        dirname( plugin_basename( __FILE__ ) ) . '/languages' 
-    );
-}
-add_action( 'init', 'whmcs_price_load_textdomain' );
+require_once WHMCS_PRICE_DIR . 'includes/class-whmcs-blocks.php';
+
+/**
+ * Translation note:
+ * This plugin uses the 'whmcs-price' text domain. Since WordPress 4.6,
+ * translations hosted on WordPress.org are loaded automatically.
+ * No manual load_plugin_textdomain() call is needed.
+ *
+ * @since 2.3.0
+ */
 
 /**
  * Initialize the plugin functionality.

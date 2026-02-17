@@ -1,18 +1,26 @@
-# Build artifacts
+# Build artifacts / packages
 *.zip
 build_temp/
-build.ps1
 
 # OS files
 Thumbs.db
 .DS_Store
 
+# Local config / secrets
 webServerAPISettings.json
-.vscode/
-# Default: keep repository files in LF
-* text=auto eol=lf
 
-# (Optional) Windows scripts
-*.bat text eol=crlf
-*.cmd text eol=crlf
-build .sh
+# Editor
+.vscode/
+
+# Node / bundlers
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Optional local environments
+.wp-env/
+
+# Shell scripts (if you meant to ignore it)
+build.sh

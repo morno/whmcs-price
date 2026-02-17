@@ -1,0 +1,277 @@
+/**
+ * WHMCS Domain Price Block — Frontend Styles
+ *
+ * Provides three visual styles: table (classic), badge (modern pill), and inline (compact text).
+ * Each style is self-contained and mobile-responsive.
+ *
+ * @package    WHMCS_Price
+ * @subpackage Blocks
+ * @since      2.3.0
+ */
+
+/* ==================== Table Style (Classic) ==================== */
+
+.whmcs-domain-table {
+	width: 100%;
+	max-width: 600px;
+	border-collapse: collapse;
+	margin: 20px 0;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+.whmcs-domain-table thead {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: #fff;
+}
+
+.whmcs-domain-table th {
+	padding: 16px;
+	text-align: center;
+	font-weight: 600;
+	font-size: 14px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.whmcs-domain-table tbody tr {
+	background: #fff;
+}
+
+.whmcs-domain-table td {
+	padding: 20px;
+	text-align: center;
+	font-size: 18px;
+	font-weight: 700;
+	color: #667eea;
+	border-right: 1px solid #e0e0e0;
+}
+
+.whmcs-domain-table td:last-child {
+	border-right: none;
+}
+
+/* ==================== Badge Style (Modern Pills) ==================== */
+
+.whmcs-domain-badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	align-items: center;
+	margin: 20px 0;
+}
+
+.whmcs-domain-badges__tld {
+	font-size: 24px;
+	font-weight: 800;
+	color: #1a202c;
+	margin-right: 8px;
+}
+
+.whmcs-domain-badge {
+	display: inline-flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: #fff;
+	padding: 12px 24px;
+	border-radius: 24px;
+	box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.whmcs-domain-badge:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.whmcs-domain-badge__label {
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	opacity: 0.9;
+}
+
+.whmcs-domain-badge__price {
+	font-size: 20px;
+	font-weight: 800;
+}
+
+.whmcs-domain-badge__tld {
+	font-size: 14px;
+	font-weight: 700;
+	margin-right: 4px;
+}
+
+/* Single badge variation */
+.whmcs-domain-badge--single {
+	flex-direction: row;
+	gap: 12px;
+	padding: 16px 28px;
+}
+
+.whmcs-domain-badge--single .whmcs-domain-badge__label {
+	font-size: 13px;
+}
+
+.whmcs-domain-badge--single .whmcs-domain-badge__price {
+	font-size: 22px;
+}
+
+/* ==================== Inline Style (Compact Text) ==================== */
+
+.whmcs-domain-inline {
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 16px;
+	margin: 20px 0;
+	font-size: 16px;
+	line-height: 1.6;
+}
+
+.whmcs-domain-inline__tld {
+	font-size: 20px;
+	font-weight: 800;
+	color: #667eea;
+	margin-right: 8px;
+}
+
+.whmcs-domain-inline__item {
+	color: #4a5568;
+}
+
+.whmcs-domain-inline__item strong {
+	color: #667eea;
+	font-weight: 700;
+	margin-left: 4px;
+}
+
+/* Single inline variation */
+.whmcs-domain-inline--single {
+	font-size: 18px;
+	color: #2d3748;
+}
+
+.whmcs-domain-inline--single strong {
+	color: #667eea;
+	font-weight: 800;
+}
+
+/* ==================== Fallback Default Style ==================== */
+
+.whmcs-price {
+	display: inline-block;
+	font-size: 24px;
+	font-weight: 700;
+	color: #667eea;
+	padding: 12px 24px;
+	background: #f7fafc;
+	border-radius: 8px;
+	border: 2px solid #667eea;
+	margin: 20px 0;
+}
+
+/* ==================== All TLDs Display ==================== */
+
+.whmcs-domain-all {
+	margin: 20px 0;
+	padding: 20px;
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* ==================== Mobile Responsiveness ==================== */
+
+@media (max-width: 768px) {
+	.whmcs-domain-table {
+		font-size: 14px;
+	}
+
+	.whmcs-domain-table th,
+	.whmcs-domain-table td {
+		padding: 12px 8px;
+	}
+
+	.whmcs-domain-badges {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.whmcs-domain-badge {
+		width: 100%;
+		flex-direction: row;
+		justify-content: space-between;
+	}
+
+	.whmcs-domain-inline {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+}
+
+/* ==================== All TLDs Table (from WHMCS domainpricing.php) ==================== */
+
+.whmcs-domain-all table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 20px 0;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	border-radius: 8px;
+	overflow: hidden;
+	background: #fff;
+}
+
+.whmcs-domain-all table thead {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: #fff;
+}
+
+.whmcs-domain-all table th {
+	padding: 14px 12px;
+	text-align: left;
+	font-weight: 600;
+	font-size: 13px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.whmcs-domain-all table tbody tr {
+	border-bottom: 1px solid #e0e0e0;
+	transition: background-color 0.2s ease;
+}
+
+.whmcs-domain-all table tbody tr:hover {
+	background-color: #f5f7fa;
+}
+
+.whmcs-domain-all table tbody tr:last-child {
+	border-bottom: none;
+}
+
+.whmcs-domain-all table td {
+	padding: 12px;
+	font-size: 14px;
+	color: #333;
+}
+
+.whmcs-domain-all table td:first-child {
+	font-weight: 600;
+	color: #667eea;
+}
+
+@media (max-width: 768px) {
+	.whmcs-domain-all table {
+		font-size: 12px;
+	}
+	
+	.whmcs-domain-all table th,
+	.whmcs-domain-all table td {
+		padding: 8px 6px;
+	}
+}

@@ -95,21 +95,24 @@ function whmcs_func($atts) {
     }
 
     /**
-     * 2. DOMAIN PRICING LOGIC
-     * * If 'tld' is provided, the shortcode fetches a single price string
-     * for the specified domain extension and transaction type.
+     * 2) DOMAIN PRICING
+     * If tld is provided => show a single price.
+     * If no tld => show full TLD list from domainpricing.php.
      */
     if (!empty($atts['tld'])) {
-        $reg_period = str_replace('y', '', $atts['reg']);
-        $price = WHMCS_Price_API::get_domain_price($atts['tld'], $atts['type'], $reg_period);
-        // Create a unique ID for the domain container
-        $domain_id = 'whmcs-price-' . esc_attr( sanitize_title( $atts['tld'] ) );
-        return "<div id='" . $domain_id . "' class='whmcs-price'>" . esc_html( $price ) . "</div>";
+        $reg_period = (string) preg_replace('/[^0-9]/', '', (string) $atts['reg']);
+        $reg_period = $reg_period !== '' ? $reg_period : '1';
+
+        $type = sanitize_text_field($atts['type']);
+        $price = WHMCS_Price_API::get_domain_price($atts['tld'], $type, $reg_period);
+
+        $domain_id = 'whmcs-price-' . esc_attr(sanitize_title($atts['tld']));
+        return "<div id='{$domain_id}' class='whmcs-price'>" . esc_html($price) . '</div>';
     }
 
-    return '';
+    // Fallback: no TLD => list all TLD prices
+    return WHMCS_Price_API::get_all_domain_prices();
 }
-
 /**
  * Register the [whmcs] shortcode on WordPress initialization.
  * * @since 2.2.0

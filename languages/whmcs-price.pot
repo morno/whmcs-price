@@ -1,6 +1,6 @@
-msgid ""
+﻿msgid ""
 msgstr ""
-"Project-Id-Version: whmcs-price 2.2.0\n"
+"Project-Id-Version: whmcs-price 2.3.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2024-05-22 10:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
@@ -164,3 +164,6 @@ msgstr ""
 #: includes/short_code/short_code.php:34
 msgid "Price"
 msgstr ""
+
+
+

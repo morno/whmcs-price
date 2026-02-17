@@ -1,0 +1,13 @@
+{
+	"name": "whmcs-price",
+	"version": "2.3.0",
+	"description": "Build tooling for WHMCS Price Gutenberg blocks",
+	"private": true,
+	"scripts": {
+		"build": "wp-scripts build blocks/whmcs-price-product/index.js blocks/whmcs-price-domain/index.js --output-path=blocks/build",
+		"start": "wp-scripts start blocks/whmcs-price-product/index.js blocks/whmcs-price-domain/index.js --output-path=blocks/build"
+	},
+	"devDependencies": {
+		"@wordpress/scripts": "^30.0.0"
+	}
+}

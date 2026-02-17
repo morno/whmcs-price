@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.0] - 2026-02-16
+
+### Added
+- **Gutenberg Block: WHMCS Product Price** — Native block editor support for displaying real-time product pricing from WHMCS. Configured via the block sidebar (InspectorControls) with controls for Product ID(s), Billing Cycle, and display columns (Name, Description, Price).
+- **Gutenberg Block: WHMCS Domain Price** — Native block editor support for displaying real-time domain pricing from WHMCS. Configured via the block sidebar with controls for TLD, Transaction Type (register, renew, transfer), and Registration Period (1–10 years).
+- Both blocks use **server-side rendering** (`render.php`) and reuse the existing `WHMCS_Price_API` class — no logic duplication, full transient caching inherited automatically.
+- `block.json` metadata files for both blocks following WordPress block API v3 standards.
+- `class-whmcs-blocks.php` for block registration via `register_block_type()`.
+- Editor preview shown in the block canvas when a Product ID or TLD has been configured.
+- `Placeholder` component shown in the editor when the block has not yet been configured.
+
+### Changed
+- Updated `WHMCS_PRICE_VERSION` constant to `2.3.0`.
+- Fixed author name encoding in plugin header (`Sörensson` was incorrectly stored as mojibake).
+- Block registration uses `WHMCS_PRICE_DIR` constant consistently with the rest of the plugin.
+- Changed Tags in readme.txt to the supported Tags of 5.
+
 ## [2.2.2] - 2026-02-13
 
 ### Fixed
