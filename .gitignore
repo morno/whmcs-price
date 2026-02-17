@@ -18,9 +18,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+webpack.config.js
+package*.json
 
 # Optional local environments
 .wp-env/
 
 # Shell scripts (if you meant to ignore it)
 build.sh
+build.ps1
