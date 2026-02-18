@@ -1,12 +1,12 @@
-﻿msgid ""
+#, fuzzy
+msgid ""
 msgstr ""
 "Project-Id-Version: whmcs-price 2.3.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-05-22 10:00+0000\n"
+"POT-Creation-Date: 2026-02-18 07:10+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -16,155 +16,365 @@ msgstr ""
 "X-Poedit-SearchPath-0: .\n"
 "X-Poedit-SearchPathExcluded-0: .github\n"
 "X-Poedit-SearchPathExcluded-1: languages\n"
+"X-Poedit-SearchPathExcluded-2: node_modules\n"
 
-#: includes/settings.php:25 includes/settings.php:51
-msgid "WHMCS Price Options"
+#: blocks/whmcs-price-domain/edit.js:27 blocks/whmcs-price-domain/render.php:38
+#: blocks/whmcs-price-domain/render.php:90
+msgid "Register"
 msgstr ""
 
-#: includes/settings.php:26
-msgid "WHMCS Price Settings"
+#: blocks/whmcs-price-domain/edit.js:28 blocks/whmcs-price-domain/render.php:39
+#: blocks/whmcs-price-domain/render.php:91
+msgid "Renew"
 msgstr ""
 
-#: includes/settings.php:45 includes/settings.php:202
-msgid "Cache cleared successfully!"
+#: blocks/whmcs-price-domain/edit.js:29 blocks/whmcs-price-domain/render.php:40
+#: blocks/whmcs-price-domain/render.php:92
+msgid "Transfer"
 msgstr ""
 
-#: includes/settings.php:61
-msgid "Maintenance"
+#: blocks/whmcs-price-domain/edit.js:36
+msgid "1 Year"
 msgstr ""
 
-#: includes/settings.php:65
-msgid "Clear Cache"
+#: blocks/whmcs-price-domain/edit.js:37
+msgid "2 Years"
 msgstr ""
 
-#: includes/settings.php:84
-msgid "WHMCS URL"
+#: blocks/whmcs-price-domain/edit.js:38
+msgid "3 Years"
 msgstr ""
 
-#: includes/settings.php:92
-msgid "Product Pricing"
+#: blocks/whmcs-price-domain/edit.js:39
+msgid "4 Years"
 msgstr ""
 
-#: includes/settings.php:100
-msgid "Domain Pricing"
+#: blocks/whmcs-price-domain/edit.js:40
+msgid "5 Years"
 msgstr ""
 
-#: includes/settings.php:118
-msgid "Dynamic way for extracting price from WHMCS for use on the pages of your website!"
+#: blocks/whmcs-price-domain/edit.js:41
+msgid "6 Years"
 msgstr ""
 
-#: includes/settings.php:119
-msgid "Please input your WHMCS URL :"
+#: blocks/whmcs-price-domain/edit.js:42
+msgid "7 Years"
 msgstr ""
 
-#: includes/settings.php:127
-msgid "Hey! Your domain is not valid!"
+#: blocks/whmcs-price-domain/edit.js:43
+msgid "8 Years"
 msgstr ""
 
-#: includes/settings.php:135
-msgid "Valid URL Format: https://whmcs.com (Don't use \"/\" at the end of WHMCS URL)"
+#: blocks/whmcs-price-domain/edit.js:44
+msgid "9 Years"
 msgstr ""
 
-#: includes/settings.php:136
-msgid "Note: After changing price in WHMCS, if you are using a cache plugin in your WordPress, to update price you must remove the cache for posts and pages."
+#: blocks/whmcs-price-domain/edit.js:45
+msgid "10 Years"
 msgstr ""
 
-#: includes/settings.php:143 includes/settings.php:166
-msgid "How to use shortcode in:"
+#: blocks/whmcs-price-domain/edit.js:52 blocks/whmcs-price-product/edit.js:48
+msgid "Table (Classic)"
 msgstr ""
 
-#: includes/settings.php:144 includes/settings.php:167
-msgid "Post / Pages:"
+#: blocks/whmcs-price-domain/edit.js:53
+msgid "Badge"
 msgstr ""
 
-#: includes/settings.php:149 includes/settings.php:169
-msgid "Theme:"
+#: blocks/whmcs-price-domain/edit.js:54
+msgid "Inline"
 msgstr ""
 
-#: includes/settings.php:154 includes/settings.php:172
-msgid "English Document:"
+#: blocks/whmcs-price-domain/edit.js:74
+msgid "Domain Settings"
 msgstr ""
 
-#: includes/settings.php:155
-msgid "Change pid value in shortcode with your Product ID."
+#: blocks/whmcs-price-domain/edit.js:78
+msgid "TLD"
 msgstr ""
 
-#: includes/settings.php:156
-msgid "Add show=\"\" to toggle the name, description, price from the data feed of WHMCS"
+#: blocks/whmcs-price-domain/edit.js:79
+msgid "Domain extension without dot, e.g. com, net, se. Leave empty to show all available TLDs."
 msgstr ""
 
-#: includes/settings.php:157
-msgid "Change bc value in shortcode with your Billing Cycle Product. Billing Cycles are:"
+#: blocks/whmcs-price-domain/edit.js:84
+msgid "Registration Period"
 msgstr ""
 
-#: includes/settings.php:158
-msgid "Monthly (1 Month): bc=\"1m\""
+#: blocks/whmcs-price-domain/edit.js:90
+msgid "Show all transaction types"
 msgstr ""
 
-#: includes/settings.php:158
-msgid "Quarterly (3 Month): bc=\"3m\""
+#: blocks/whmcs-price-domain/edit.js:92
+msgid "Showing Register, Renew and Transfer in a table."
 msgstr ""
 
-#: includes/settings.php:158
-msgid "Semiannually (6 Month): bc=\"6m\""
+#: blocks/whmcs-price-domain/edit.js:93
+msgid "Showing a single transaction type."
 msgstr ""
 
-#: includes/settings.php:158
-msgid "Annually (1 Year): bc=\"1y\""
+#: blocks/whmcs-price-domain/edit.js:101
+msgid "Transaction Type"
 msgstr ""
 
-#: includes/settings.php:158
-msgid "Biennially (2 Year): bc=\"2y\""
+#: blocks/whmcs-price-domain/edit.js:110 blocks/whmcs-price-product/edit.js:119
+msgid "Display Style"
 msgstr ""
 
-#: includes/settings.php:158
-msgid "Triennially (3 Year): bc=\"3y\""
+#: blocks/whmcs-price-domain/edit.js:114
+msgid "Choose how to display pricing"
 msgstr ""
 
-#: includes/settings.php:173
-msgid "Change tld value in shortcode with your Domain TLD (com, org, net, ...)."
+#: blocks/whmcs-price-domain/edit.js:127
+msgid "WHMCS Domain Price"
 msgstr ""
 
-#: includes/settings.php:174
-msgid "Change type value in shortcode with register, renew, transfer."
+#: blocks/whmcs-price-domain/edit.js:131
+msgid "All TLDs — configure in ⚙ Settings"
 msgstr ""
 
-#: includes/settings.php:175
-msgid "Change reg value in shortcode with your Register Period of TLD. Register Periods are:"
+#: blocks/whmcs-price-domain/edit.js:135
+#, javascript-format
+msgid ".%1$s — Register/Renew/Transfer — %2$s — Style: %3$s"
 msgstr ""
 
-#: includes/settings.php:175
-msgid "Annually (1 Year): reg=\"1y\""
+#: blocks/whmcs-price-domain/edit.js:142
+#, javascript-format
+msgid ".%1$s — %2$s — %3$s — Style: %4$s"
 msgstr ""
 
-#: includes/settings.php:175
-msgid "Biennially (2 Year): reg=\"2y\""
+#: blocks/whmcs-price-product/edit.js:27
+msgid "Monthly (1m)"
 msgstr ""
 
-#: includes/settings.php:175
-msgid "Triennially (3 Year): reg=\"3y\""
+#: blocks/whmcs-price-product/edit.js:28
+msgid "Quarterly (3m)"
 msgstr ""
 
-#: includes/settings.php:176
-msgid "If left like this [whmcs tld], it will call without any Domain TLD and will take all the TLDs that are in WHMCS."
+#: blocks/whmcs-price-product/edit.js:29
+msgid "Semi-Annually (6m)"
 msgstr ""
 
-#: includes/settings.php:193 includes/settings.php:195
-msgid "Clear WHMCS Cache"
+#: blocks/whmcs-price-product/edit.js:30
+msgid "Annually (1y)"
 msgstr ""
 
-#: includes/short_code/short_code.php:32
+#: blocks/whmcs-price-product/edit.js:31
+msgid "Biennially (2y)"
+msgstr ""
+
+#: blocks/whmcs-price-product/edit.js:32
+msgid "Triennially (3y)"
+msgstr ""
+
+#: blocks/whmcs-price-product/edit.js:39
+#: blocks/whmcs-price-product/render.php:50
+#: includes/short_code/short_code.php:68
 msgid "Name"
 msgstr ""
 
-#: includes/short_code/short_code.php:33
+#: blocks/whmcs-price-product/edit.js:40
+#: blocks/whmcs-price-product/render.php:51
+#: includes/short_code/short_code.php:69
 msgid "Description"
 msgstr ""
 
-#: includes/short_code/short_code.php:34
+#: blocks/whmcs-price-product/edit.js:41
+#: blocks/whmcs-price-product/render.php:52
+#: includes/short_code/short_code.php:70
 msgid "Price"
 msgstr ""
 
+#: blocks/whmcs-price-product/edit.js:49
+msgid "Cards"
+msgstr ""
 
+#: blocks/whmcs-price-product/edit.js:50
+msgid "Pricing Grid"
+msgstr ""
 
+#: blocks/whmcs-price-product/edit.js:85
+msgid "Product Settings"
+msgstr ""
 
+#: blocks/whmcs-price-product/edit.js:89
+msgid "Product ID(s)"
+msgstr ""
+
+#: blocks/whmcs-price-product/edit.js:90
+msgid "Comma-separated WHMCS Product IDs, e.g. 1,2,3"
+msgstr ""
+
+#: blocks/whmcs-price-product/edit.js:95
+msgid "Billing Cycle"
+msgstr ""
+
+#: blocks/whmcs-price-product/edit.js:103
+msgid "Display Columns"
+msgstr ""
+
+#: blocks/whmcs-price-product/edit.js:123
+msgid "Choose how to display products"
+msgstr ""
+
+#: blocks/whmcs-price-product/edit.js:136
+#: blocks/whmcs-price-product/edit.js:150
+msgid "WHMCS Product Price"
+msgstr ""
+
+#: blocks/whmcs-price-product/edit.js:138
+msgid "Configure this block using the settings panel. Click the block, then open the Settings panel (⚙) in the top-right corner of the editor."
+msgstr ""
+
+#: blocks/whmcs-price-product/edit.js:143
+msgid "👆 Click this block → then click ⚙ Settings in the top-right corner"
+msgstr ""
+
+#: blocks/whmcs-price-product/edit.js:155
+#, javascript-format
+msgid "PID: %1$s — Cycle: %2$s — Style: %3$s"
+msgstr ""
+
+#: blocks/whmcs-price-product/render.php:30
+msgid "WHMCS Product Price: Please enter a Product ID in the block settings."
+msgstr ""
+
+#: includes/settings.php:32 includes/settings.php:60
+msgid "WHMCS Price Options"
+msgstr ""
+
+#: includes/settings.php:33
+msgid "WHMCS Price Settings"
+msgstr ""
+
+#: includes/settings.php:50 includes/settings.php:54
+msgid "Cache cleared successfully!"
+msgstr ""
+
+#: includes/settings.php:70
+msgid "Maintenance"
+msgstr ""
+
+#: includes/settings.php:74
+msgid "Clear Cache"
+msgstr ""
+
+#: includes/settings.php:92
+msgid "WHMCS URL"
+msgstr ""
+
+#: includes/settings.php:100
+msgid "Product Pricing"
+msgstr ""
+
+#: includes/settings.php:108
+msgid "Domain Pricing"
+msgstr ""
+
+#: includes/settings.php:124
+msgid "Dynamic way for extracting price from WHMCS for use on the pages of your website!"
+msgstr ""
+
+#: includes/settings.php:125
+msgid "Please input your WHMCS URL :"
+msgstr ""
+
+#: includes/settings.php:132
+msgid "Hey! Your domain is not valid!"
+msgstr ""
+
+#: includes/settings.php:140
+msgid "Valid URL Format: https://whmcs.com (Don't use \"/\" at the end of WHMCS URL)"
+msgstr ""
+
+#: includes/settings.php:141
+msgid "Note: After changing price in WHMCS, if you are using a cache plugin in your WordPress, to update price you must remove the cache for posts and pages."
+msgstr ""
+
+#: includes/settings.php:147 includes/settings.php:174
+msgid "How to use shortcode in:"
+msgstr ""
+
+#: includes/settings.php:148 includes/settings.php:175
+msgid "Post / Pages:"
+msgstr ""
+
+#: includes/settings.php:153 includes/settings.php:177
+msgid "Theme:"
+msgstr ""
+
+#: includes/settings.php:158 includes/settings.php:180
+msgid "Documentation:"
+msgstr ""
+
+#: includes/settings.php:159
+msgid "Change pid value in shortcode with your Product ID."
+msgstr ""
+
+#: includes/settings.php:160
+msgid "Add show=\"\" to toggle the name, description, price from the data feed of WHMCS"
+msgstr ""
+
+#: includes/settings.php:161
+msgid "Change bc value in shortcode with your Billing Cycle Product. Billing Cycles are:"
+msgstr ""
+
+#: includes/settings.php:162
+msgid "Monthly (1 Month): bc=\"1m\""
+msgstr ""
+
+#: includes/settings.php:163
+msgid "Quarterly (3 Month): bc=\"3m\""
+msgstr ""
+
+#: includes/settings.php:164
+msgid "Semiannually (6 Month): bc=\"6m\""
+msgstr ""
+
+#: includes/settings.php:165
+msgid "Annually (1 Year): bc=\"1y\""
+msgstr ""
+
+#: includes/settings.php:166
+msgid "Biennially (2 Year): bc=\"2y\""
+msgstr ""
+
+#: includes/settings.php:167
+msgid "Triennially (3 Year): bc=\"3y\""
+msgstr ""
+
+#: includes/settings.php:181
+msgid "Change tld value in shortcode with your Domain TLD (com, org, net, ...)."
+msgstr ""
+
+#: includes/settings.php:182
+msgid "Change type value in shortcode with register, renew, transfer."
+msgstr ""
+
+#: includes/settings.php:183
+msgid "Change reg value in shortcode with your Register Period of TLD. Register Periods are:"
+msgstr ""
+
+#: includes/settings.php:183
+msgid "Annually (1 Year): reg=\"1y\""
+msgstr ""
+
+#: includes/settings.php:183
+msgid "Biennially (2 Year): reg=\"2y\""
+msgstr ""
+
+#: includes/settings.php:183
+msgid "Triennially (3 Year): reg=\"3y\""
+msgstr ""
+
+#: includes/settings.php:184
+msgid "If left like this [whmcs tld] (without specifying a tld value), it will display all available TLDs from WHMCS."
+msgstr ""
+
+#: includes/settings.php:218 includes/settings.php:220
+msgid "Clear WHMCS Cache"
+msgstr ""
+
+#: includes/settings.php:232
+msgid "Unauthorized access."
+msgstr ""
