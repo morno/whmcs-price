@@ -7,6 +7,9 @@ on:
     paths:
       - "**/*.php"
 
+permissions:
+  contents: write
+
 jobs:
   make-pot:
     runs-on: ubuntu-latest
@@ -20,6 +23,8 @@ jobs:
           curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
           chmod +x wp-cli.phar
           sudo mv wp-cli.phar /usr/local/bin/wp
+          wp --info --allow-root
+          wp package install wp-cli/i18n-command --allow-root
 
       - name: Generate .pot file
         run: |
