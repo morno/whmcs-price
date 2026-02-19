@@ -2,15 +2,27 @@ name: Plugin Check
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   plugin-check:
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
       - name: Checkout code
@@ -22,28 +34,41 @@ jobs:
           php-version: '8.1'
           tools: composer
 
-      - name: Install WordPress Plugin Check
+      - name: Install WP-CLI + WordPress
         run: |
           composer create-project wp-cli/wp-cli-bundle --no-dev /tmp/wp-cli
-          sudo ln -s /tmp/wp-cli/vendor/bin/wp /usr/local/bin/wp
+          sudo ln -sf /tmp/wp-cli/vendor/bin/wp /usr/local/bin/wp
+
           wp core download --path=/tmp/wordpress --allow-root
+
           wp config create \
             --path=/tmp/wordpress \
             --dbname=test \
             --dbuser=root \
             --dbpass=root \
+            --dbhost=127.0.0.1:3306 \
+            --skip-check \
             --allow-root
+
+          wp core install \
+            --path=/tmp/wordpress \
+            --url=http://localhost \
+            --title="CI" \
+            --admin_user=admin \
+            --admin_password=admin \
+            --admin_email=admin@example.com \
+            --allow-root
+
           mkdir -p /tmp/wordpress/wp-content/plugins/whmcs-price
-          cp -r . /tmp/wordpress/wp-content/plugins/whmcs-price
+          rsync -a --delete ./ /tmp/wordpress/wp-content/plugins/whmcs-price/
+
           wp plugin install plugin-check --activate \
             --path=/tmp/wordpress \
             --allow-root
 
-      - name: Run Plugin Check
+      - name: Run Plugin Check (show output)
         run: |
           wp plugin check whmcs-price \
             --path=/tmp/wordpress \
             --allow-root \
-            --format=table \
-            --ignore-warnings
-        continue-on-error: false
+            --format=table
