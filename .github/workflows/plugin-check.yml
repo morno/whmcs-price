@@ -1,0 +1,49 @@
+name: Plugin Check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  plugin-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer
+
+      - name: Install WordPress Plugin Check
+        run: |
+          composer create-project wp-cli/wp-cli-bundle --no-dev /tmp/wp-cli
+          sudo ln -s /tmp/wp-cli/vendor/bin/wp /usr/local/bin/wp
+          wp core download --path=/tmp/wordpress --allow-root
+          wp config create \
+            --path=/tmp/wordpress \
+            --dbname=test \
+            --dbuser=root \
+            --dbpass=root \
+            --allow-root
+          mkdir -p /tmp/wordpress/wp-content/plugins/whmcs-price
+          cp -r . /tmp/wordpress/wp-content/plugins/whmcs-price
+          wp plugin install plugin-check --activate \
+            --path=/tmp/wordpress \
+            --allow-root
+
+      - name: Run Plugin Check
+        run: |
+          wp plugin check whmcs-price \
+            --path=/tmp/wordpress \
+            --allow-root \
+            --format=table \
+            --ignore-warnings
+        continue-on-error: false
