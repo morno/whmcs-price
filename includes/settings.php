@@ -226,7 +226,7 @@ class WHMCSPrice {
     	foreach ( $ttl_options as $value => $label ) {
         	printf(
             	'<option value="%d" %s>%s</option>',
-            	$value,
+            	absint( $value ),
             	selected( $current_ttl, $value, false ),
             	esc_html( $label )
         	);

@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.2] - 2026-02-19
+
+### Fixed
+- **Escape Fix**: Applied `absint()` to integer output in `cache_ttl_callback()` in
+  `settings.php` to satisfy WordPress escaping standards (PHPCS `WordPress.Security.EscapeOutput`).
+
 ## [2.3.1] - 2026-02-19
 
 ### Security
