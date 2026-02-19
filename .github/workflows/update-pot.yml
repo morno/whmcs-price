@@ -19,17 +19,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install WP-CLI
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer
+
+      - name: Install WP-CLI + i18n-command (local)
         run: |
-          curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-          chmod +x wp-cli.phar
-          sudo mv wp-cli.phar /usr/local/bin/wp
-          wp --info --allow-root
-          wp package install wp-cli/i18n-command --allow-root
+          composer require --no-interaction --no-progress --no-plugins --no-scripts \
+            wp-cli/wp-cli-bundle:^2 \
+            wp-cli/i18n-command:^2
 
       - name: Generate .pot file
         run: |
-          wp i18n make-pot . languages/whmcs-price.pot \
+          ./vendor/bin/wp i18n make-pot . languages/whmcs-price.pot \
             --domain=whmcs-price \
             --exclude=build_temp,node_modules \
             --allow-root
@@ -41,4 +45,3 @@ jobs:
           git add languages/whmcs-price.pot
           git diff --staged --quiet || git commit -m "chore: update whmcs-price.pot [skip ci]"
           git push
-
