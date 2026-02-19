@@ -1,6 +1,7 @@
 name: Update POT file
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -40,3 +41,4 @@ jobs:
           git add languages/whmcs-price.pot
           git diff --staged --quiet || git commit -m "chore: update whmcs-price.pot [skip ci]"
           git push
+
