@@ -3,7 +3,7 @@
  * Plugin Name:       WHMCS Price
  * Plugin URI:        https://github.com/morno/whmcs-price
  * Description:       A modernized and secure way to display real-time pricing for products and domains from your WHMCS instance.
- * Version:           2.3.0
+ * Version:           2.3.1
  * Requires at least: 6.0
  * Tested up to:      6.9
  * Requires PHP:      8.1
@@ -60,13 +60,10 @@ require_once WHMCS_PRICE_DIR . 'includes/class-whmcs-api.php';
 require_once WHMCS_PRICE_DIR . 'includes/class-whmcs-blocks.php';
 
 /**
- * Translation note:
- * This plugin uses the 'whmcs-price' text domain. Since WordPress 4.6,
- * translations hosted on WordPress.org are loaded automatically.
- * No manual load_plugin_textdomain() call is needed.
- *
- * @since 2.3.0
+ * Load the Elementor Class.
+ * This class handles the registration and rendering of Elementor for WHMCS pricing.
  */
+require_once WHMCS_PRICE_DIR . 'includes/elementor/class-whmcs-elementor.php';
 
 /**
  * Initialize the plugin functionality.
@@ -79,7 +76,7 @@ require_once WHMCS_PRICE_DIR . 'includes/class-whmcs-blocks.php';
  */
 function whmcs_price_init() {
     // Load Shortcodes (Frontend)
-    $shortcode_file = WHMCS_PRICE_DIR . 'includes/short_code/short_code.php';
+    $shortcode_file = WHMCS_PRICE_DIR . 'includes/shortcode/shortcode.php';
     if ( file_exists( $shortcode_file ) ) {
         require_once $shortcode_file;
     }

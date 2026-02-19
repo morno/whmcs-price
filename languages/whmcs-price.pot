@@ -1,7 +1,7 @@
-#, fuzzy
+﻿#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: whmcs-price 2.3.0\n"
+"Project-Id-Version: whmcs-price 2.3.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-18 07:10+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
@@ -130,17 +130,17 @@ msgid "WHMCS Domain Price"
 msgstr ""
 
 #: blocks/whmcs-price-domain/edit.js:131
-msgid "All TLDs — configure in ⚙ Settings"
+msgid "All TLDs â€” configure in âš™ Settings"
 msgstr ""
 
 #: blocks/whmcs-price-domain/edit.js:135
 #, javascript-format
-msgid ".%1$s — Register/Renew/Transfer — %2$s — Style: %3$s"
+msgid ".%1$s â€” Register/Renew/Transfer â€” %2$s â€” Style: %3$s"
 msgstr ""
 
 #: blocks/whmcs-price-domain/edit.js:142
 #, javascript-format
-msgid ".%1$s — %2$s — %3$s — Style: %4$s"
+msgid ".%1$s â€” %2$s â€” %3$s â€” Style: %4$s"
 msgstr ""
 
 #: blocks/whmcs-price-product/edit.js:27
@@ -223,16 +223,16 @@ msgid "WHMCS Product Price"
 msgstr ""
 
 #: blocks/whmcs-price-product/edit.js:138
-msgid "Configure this block using the settings panel. Click the block, then open the Settings panel (⚙) in the top-right corner of the editor."
+msgid "Configure this block using the settings panel. Click the block, then open the Settings panel (âš™) in the top-right corner of the editor."
 msgstr ""
 
 #: blocks/whmcs-price-product/edit.js:143
-msgid "👆 Click this block → then click ⚙ Settings in the top-right corner"
+msgid "ðŸ‘† Click this block â†’ then click âš™ Settings in the top-right corner"
 msgstr ""
 
 #: blocks/whmcs-price-product/edit.js:155
 #, javascript-format
-msgid "PID: %1$s — Cycle: %2$s — Style: %3$s"
+msgid "PID: %1$s â€” Cycle: %2$s â€” Style: %3$s"
 msgstr ""
 
 #: blocks/whmcs-price-product/render.php:30
@@ -378,3 +378,4 @@ msgstr ""
 #: includes/settings.php:232
 msgid "Unauthorized access."
 msgstr ""
+

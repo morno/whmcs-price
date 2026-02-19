@@ -110,14 +110,31 @@ class WHMCSPrice {
 			'whmcs_price',
 			'setting_section_id'
 		);
+		
+		add_settings_field(
+    	'cache_ttl',
+    	__( 'Cache Duration', 'whmcs-price' ),
+    	array( $this, 'cache_ttl_callback' ),
+    	'whmcs_price',
+    	'setting_section_id'
+		);
 	}
 
 	public function sanitize( $input ): array {
-		$new_input = array();
-		if ( ! empty( $input['whmcs_url'] ) ) {
-			$new_input['whmcs_url'] = esc_url_raw( trim( $input['whmcs_url'] ) );
-		}
-		return $new_input;
+    	$new_input = array();
+
+    	if ( ! empty( $input['whmcs_url'] ) ) {
+        	$new_input['whmcs_url'] = esc_url_raw( trim( $input['whmcs_url'] ) );
+    	}
+
+    	$allowed_ttls = array( 3600, 7200, 10800, 21600, 43200, 86400 );
+    	if ( ! empty( $input['cache_ttl'] ) && in_array( (int) $input['cache_ttl'], $allowed_ttls, true ) ) {
+        	$new_input['cache_ttl'] = (int) $input['cache_ttl'];
+    	} else {
+        	$new_input['cache_ttl'] = 3600; // Fallback: 1 hour.
+    	}
+
+    	return $new_input;
 	}
 
 	public function print_section_info() {
@@ -184,6 +201,39 @@ class WHMCSPrice {
 4. <?php esc_html_e( 'If left like this [whmcs tld] (without specifying a tld value), it will display all available TLDs from WHMCS.', 'whmcs-price' ); ?></pre>
 		<hr>
 		<?php
+	}
+
+	/**
+ 	* Renders the cache TTL dropdown field in the admin settings page.
+ 	*
+ 	* @since  2.3.1
+ 	* @access public
+ 	* @return void
+ 	*/
+	public function cache_ttl_callback() {
+   		$current_ttl = isset( $this->options['cache_ttl'] ) ? (int) $this->options['cache_ttl'] : 3600;
+
+    	$ttl_options = array(
+        	3600  => __( '1 hour', 'whmcs-price' ),
+        	7200  => __( '2 hours', 'whmcs-price' ),
+        	10800 => __( '3 hours', 'whmcs-price' ),
+        	21600 => __( '6 hours', 'whmcs-price' ),
+        	43200 => __( '12 hours', 'whmcs-price' ),
+        	86400 => __( '24 hours', 'whmcs-price' ),
+    	);
+
+    	echo '<select id="cache_ttl" name="whmcs_price_option[cache_ttl]">';
+    	foreach ( $ttl_options as $value => $label ) {
+        	printf(
+            	'<option value="%d" %s>%s</option>',
+            	$value,
+            	selected( $current_ttl, $value, false ),
+            	esc_html( $label )
+        	);
+    	}
+    	echo '</select>';
+    	echo '<p class="description">' . esc_html__( 'How long prices are cached before fetching fresh data from WHMCS.', 'whmcs-price' ) . '</p>';
+    	echo '<hr>';
 	}
 
 	public function clear_whmcs_cache() {

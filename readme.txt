@@ -29,7 +29,7 @@ Plugin features:
 * Use this plugin to Show price in theme.
 
 == Persian Document ==
-*  برای مشاهده راهنمای فارسی از این پلاگین [اینجا کلیک کنید](https://blog.iranwebsv.net/whmcs_price)
+*  Ø¨Ø±Ø§ÛŒ Ù…Ø´Ø§Ù‡Ø¯Ù‡ Ø±Ø§Ù‡Ù†Ù…Ø§ÛŒ ÙØ§Ø±Ø³ÛŒ Ø§Ø² Ø§ÛŒÙ† Ù¾Ù„Ø§Ú¯ÛŒÙ† [Ø§ÛŒÙ†Ø¬Ø§ Ú©Ù„ÛŒÚ© Ú©Ù†ÛŒØ¯](https://blog.iranwebsv.net/whmcs_price)
 
 == Product Pricing ==
 This is the shortcode to extract product name, description, or price:
@@ -66,16 +66,36 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 3. Go to Settings > WHMCS Price Options and save WHMCS URL.
 
 == Changelog ==
+= 2.3.1 =
+* Security: **SSRF Protection**: Added validation in `get_url()` to block private IPv4/IPv6 ranges,
+  reserved IP ranges, and localhost from being used as the WHMCS URL. Prevents
+  server-side request forgery if an unauthorized party gains access to plugin settings.
+* Security: **XSS Fix**: Wrapped `get_all_domain_prices()` output in `wp_kses_post()` in the
+  `[whmcs]` shortcode fallback. Previously unescaped HTML from the WHMCS feed could
+  allow injected markup if the remote source was compromised.
+* Changed: **Cache Key Hardening**: Replaced interpolated cache keys with `md5()`-hashed keys
+  in `get_product_data()` and `get_domain_price()` to prevent key collisions and
+  oversized transient entries from arbitrary input values.
+* Changed: **Configurable Cache TTL**: Admins can now set cache duration from the plugin settings
+  page. Available options: 1, 2, 3, 6, 12, and 24 hours. Falls back to 1 hour if not
+  configured. Added `get_cache_expiry()` method to `WHMCS_Price_API` to read the
+  setting dynamically.
+* Added: **Cache Stampede Protection**: Added `acquire_lock()` method in `WHMCS_Price_API`
+  using a short-lived transient lock (10 seconds). Prevents multiple simultaneous
+  requests from hitting WHMCS when the cache is cold or has just been cleared.
+  Applied to both `get_product_data()` and `get_domain_price()`. Locks are
+  automatically released on success, HTTP error, or request failure.
+
 = 2.3.0 =
-* Added: **Gutenberg Block: WHMCS Product Price** â€” Native block editor support for displaying real-time product pricing from WHMCS. Configured via the block sidebar (InspectorControls) with controls for Product ID(s), Billing Cycle, and display columns (Name, Description, Price).
-* Added: **Gutenberg Block: WHMCS Domain Price** â€” Native block editor support for displaying real-time domain pricing from WHMCS. Configured via the block sidebar with controls for TLD, Transaction Type (register, renew, transfer), and Registration Period (1â€“10 years).
-* Added: Both blocks use **server-side rendering** (`render.php`) and reuse the existing `WHMCS_Price_API` class â€” no logic duplication, full transient caching inherited automatically.
+* Added: **Gutenberg Block: WHMCS Product Price** Ã¢â‚¬â€ Native block editor support for displaying real-time product pricing from WHMCS. Configured via the block sidebar (InspectorControls) with controls for Product ID(s), Billing Cycle, and display columns (Name, Description, Price).
+* Added: **Gutenberg Block: WHMCS Domain Price** Ã¢â‚¬â€ Native block editor support for displaying real-time domain pricing from WHMCS. Configured via the block sidebar with controls for TLD, Transaction Type (register, renew, transfer), and Registration Period (1Ã¢â‚¬â€œ10 years).
+* Added: Both blocks use **server-side rendering** (`render.php`) and reuse the existing `WHMCS_Price_API` class Ã¢â‚¬â€ no logic duplication, full transient caching inherited automatically.
 * Added: `block.json` metadata files for both blocks following WordPress block API v3 standards.
 * Added: `class-whmcs-blocks.php` for block registration via `register_block_type()`.
 * Added: Editor preview shown in the block canvas when a Product ID or TLD has been configured.
 * Added: `Placeholder` component shown in the editor when the block has not yet been configured.
 * Changed: Updated `WHMCS_PRICE_VERSION` constant to `2.3.0`.
-* Changed: Fixed author name encoding in plugin header (`SÃ¶rensson` was incorrectly stored as mojibake).
+* Changed: Fixed author name encoding in plugin header (`SÃƒÂ¶rensson` was incorrectly stored as mojibake).
 * Changed: Block registration uses `WHMCS_PRICE_DIR` constant consistently with the rest of the plugin.
 * Changed: Changed Tags in readme.txt to the supported Tags of 5.
 
