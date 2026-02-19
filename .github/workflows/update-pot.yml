@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - '**.php'
+      - "**/*.php"
 
 jobs:
   make-pot:
@@ -35,28 +35,3 @@ jobs:
           git add languages/whmcs-price.pot
           git diff --staged --quiet || git commit -m "chore: update whmcs-price.pot [skip ci]"
           git push
-```
-
----
-
-## Vad den gör
-
-Varje gång du pushar en `.php`-fil till `main` så:
-
-1. Startar GitHub en Ubuntu-server automatiskt
-2. Installerar WP-CLI
-3. Skannar hela plugin-mappen efter översättningssträngar
-4. Bygger om `.pot`-filen
-5. Committar och pushar tillbaka den uppdaterade `.pot`-filen automatiskt
-
-`[skip ci]` i commit-meddelandet ser till att den automatiska committen inte triggar ett nytt bygge i en loop.
-
----
-
-## Hur du lägger till den
-
-Skapa mappen och filen i ditt repo:
-```
-.github/
-  workflows/
-    update-pot.yml
