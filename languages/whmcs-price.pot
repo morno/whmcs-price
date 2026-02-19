@@ -1,7 +1,7 @@
 ﻿#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: whmcs-price 2.3.1\n"
+"Project-Id-Version: whmcs-price 2.4.2\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-18 07:10+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
@@ -378,4 +378,5 @@ msgstr ""
 #: includes/settings.php:232
 msgid "Unauthorized access."
 msgstr ""
+
 

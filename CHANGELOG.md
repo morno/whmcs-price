@@ -2,13 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.3.2] - 2026-02-19
+## [2.4.2] - 2026-02-19
 
 ### Fixed
 - **Escape Fix**: Applied `absint()` to integer output in `cache_ttl_callback()` in
   `settings.php` to satisfy WordPress escaping standards (PHPCS `WordPress.Security.EscapeOutput`).
 
-## [2.3.1] - 2026-02-19
+## [2.4.1] - 2026-02-19
 
 ### Security
 - **SSRF Protection**: Added validation in `get_url()` to block private IPv4/IPv6 ranges,

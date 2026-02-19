@@ -3,7 +3,7 @@
  * Plugin Name:       WHMCS Price
  * Plugin URI:        https://github.com/morno/whmcs-price
  * Description:       A modernized and secure way to display real-time pricing for products and domains from your WHMCS instance.
- * Version:           2.3.1
+ * Version:           2.4.2
  * Requires at least: 6.0
  * Tested up to:      6.9
  * Requires PHP:      8.1
