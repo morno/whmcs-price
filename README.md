@@ -3,7 +3,7 @@
 ![WordPress Version](https://img.shields.io/badge/wordpress-%3E%3D%206.9-blue.svg)
 ![PHP Version](https://img.shields.io/badge/php-%3E%3D%208.1-8892bf.svg)
 ![License](https://img.shields.io/badge/license-GPL--2.0--or--later-orange.svg)
-![Version](https://img.shields.io/badge/version-2.3.2-brightgreen.svg)
+![Version](https://img.shields.io/badge/version-2.4.2-brightgreen.svg)
 ![Maintained](https://img.shields.io/badge/maintained-yes-brightgreen.svg)
 
 A modernized, secure, and lightweight WordPress plugin to display real-time pricing for products and domains from your WHMCS instance.
@@ -74,7 +74,7 @@ This fork was created to resolve critical issues in the original plugin which ha
 
 * **Original Plugin:** [WHMCS Price on WordPress.org](https://wordpress.org/plugins/whmcs-price/)
 * **The Problem:** Users reported the [plugin was no longer working](https://wordpress.org/support/topic/this-plugin-has-not-been-working-recently/) with recent PHP/WP updates.
-* **The Solution:** I have taken over development in this repository. I have also reached out to the community to [officially become the maintainer](https://wordpress.org/support/topic/update-the-plugin-11/) on the WordPress.org repository.
+* **The Solution:** I have taken over development in this repository. I have also reached out to the community to [officially become the maintainer](https://wordpress.org/support/topic/update-the-plugin-32/#post-17684480) on the WordPress.org repository.
 
 ---
 
@@ -86,6 +86,8 @@ This fork was created to resolve critical issues in the original plugin which ha
 
 ## License
 This plugin is licensed under the GPLv2 or later.
+
+
 
 
 
