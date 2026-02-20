@@ -2,17 +2,26 @@ name: Plugin Check
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
     paths-ignore:
       - "languages/**"
       - "**/*.pot"
       - ".github/workflows/**"
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
     paths-ignore:
       - "languages/**"
       - "**/*.pot"
       - ".github/workflows/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plugin-check-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   plugin-check:
@@ -39,14 +48,17 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          php-version: "8.3"
           tools: composer
 
-      - name: Install WP-CLI + WordPress
+      - name: Install WP-CLI
         run: |
           composer create-project wp-cli/wp-cli-bundle --no-dev /tmp/wp-cli
           sudo ln -sf /tmp/wp-cli/vendor/bin/wp /usr/local/bin/wp
+          wp --info --allow-root
 
+      - name: Install WordPress + Plugin Check
+        run: |
           wp core download --path=/tmp/wordpress --allow-root
 
           wp config create \
@@ -74,7 +86,7 @@ jobs:
             --path=/tmp/wordpress \
             --allow-root
 
-      - name: Run Plugin Check (show output)
+      - name: Run Plugin Check
         run: |
           wp plugin check whmcs-price \
             --path=/tmp/wordpress \
