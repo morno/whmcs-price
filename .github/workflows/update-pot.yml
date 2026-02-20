@@ -11,8 +11,14 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: update-pot-main
+  cancel-in-progress: true
+
 jobs:
   make-pot:
+    # Prevents bot pushes from creating loops if you expand triggers later
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
 
     steps:
@@ -22,8 +28,18 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: "8.3"
           tools: composer
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: |
+            vendor
+            ~/.composer/cache
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
 
       - name: Install WP-CLI + i18n-command (local)
         run: |
@@ -38,10 +54,20 @@ jobs:
             --exclude=build_temp,node_modules \
             --allow-root
 
-      - name: Commit updated .pot file
+      - name: Commit updated .pot file (if changed)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
           git add languages/whmcs-price.pot
-          git diff --staged --quiet || git commit -m "chore: update whmcs-price.pot [skip ci]"
+
+          # Visibility in the log (control + traceability)
+          git diff --staged --stat || true
+
+          if git diff --staged --quiet; then
+            echo "No changes in POT file. Skipping commit."
+            exit 0
+          fi
+
+          git commit -m "chore: update whmcs-price.pot [skip ci]"
           git push
