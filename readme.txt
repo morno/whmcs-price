@@ -99,22 +99,21 @@ This is the shortcode to extract domain registration, renewal, or transfer price
   automatically released on success, HTTP error, or request failure.
 
 = 2.4.0 =
-### Added - Elementor Integration
-* **Elementor Product Price Widget**: Display WHMCS product pricing in Elementor with visual builder
-* Product IDs input (comma-separated)
-* Billing cycle dropdown selector
-* Display columns multi-select (name, description, price)
-* 3 display styles: Table, Cards, Pricing Grid
-* Live preview in Elementor editor
-* **Elementor Domain Price Widget**: Display WHMCS domain pricing in Elementor
-* TLD input (leave empty for all TLDs)
-* Registration period selector (1-10 years)
-* "Show all transaction types" toggle
-* Transaction type selector (register, renew, transfer)
-* 3 display styles: Table, Badge, Inline
-* Live preview in Elementor editor
-* **Custom Elementor Category**: "WHMCS Price" category in Elementor widget panel
-* **Shared Styling**: Elementor widgets reuse block CSS for consistency
+* Added: **Elementor Product Price Widget**: Display WHMCS product pricing in Elementor with visual builder
+* Added: Product IDs input (comma-separated)
+* Added: Billing cycle dropdown selector
+* Added: Display columns multi-select (name, description, price)
+* Added: 3 display styles: Table, Cards, Pricing Grid
+* Added: Live preview in Elementor editor
+* Added: **Elementor Domain Price Widget**: Display WHMCS domain pricing in Elementor
+* Added: TLD input (leave empty for all TLDs)
+* Added: Registration period selector (1-10 years)
+* Added: "Show all transaction types" toggle
+* Added: Transaction type selector (register, renew, transfer)
+* Added: 3 display styles: Table, Badge, Inline
+* Added: Live preview in Elementor editor
+* Added: **Custom Elementor Category**: "WHMCS Price" category in Elementor widget panel
+* Added: **Shared Styling**: Elementor widgets reuse block CSS for consistency
 * Changed: **File Structure**: Reorganized for better maintainability
 * Changed: Renamed `includes/short_code/` → `includes/shortcodes/`
 * Changed: Renamed `short_code.php` → `shortcode.php`
