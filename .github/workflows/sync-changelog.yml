@@ -27,15 +27,12 @@ jobs:
           import re
           import sys
 
-          # ── Read files ──────────────────────────────────────────────────────────
           with open('CHANGELOG.md', 'r', encoding='utf-8') as f:
               changelog = f.read()
 
           with open('readme.txt', 'r', encoding='utf-8') as f:
               readme = f.read()
 
-          # ── Parse all versions from CHANGELOG.md ────────────────────────────────
-          # Matches blocks like: ## [2.4.3] - 2026-02-22  ...until next ## [
           blocks = re.findall(
               r'^(##\s+\[[\d\.]+(?:-[\w\.]+)*\].*?)(?=^##\s+\[|\Z)',
               changelog,
@@ -43,7 +40,7 @@ jobs:
           )
 
           if not blocks:
-              print('No version blocks found in CHANGELOG.md — nothing to sync.')
+              print('No version blocks found in CHANGELOG.md')
               sys.exit(0)
 
           SECTION_MAP = {
@@ -56,68 +53,59 @@ jobs:
           }
 
           def convert_block(md_block):
-              """Convert a single ## [x.y.z] block to WordPress readme.txt format."""
-              lines    = md_block.splitlines()
-              out      = []
-              prefix   = ''
-              version  = None
+              lines   = md_block.splitlines()
+              out     = []
+              prefix  = ''
+              version = None
 
               for line in lines:
                   stripped = line.strip()
 
-                  # Header line: ## [2.4.3] - 2026-02-22  →  = 2.4.3 =
+                  # ## [2.4.3] - 2026-02-22  ->  = 2.4.3 =
                   m = re.match(r'^##\s+\[([\d\.]+(?:-[\w\.]+)*)\]', stripped)
                   if m:
                       version = m.group(1)
                       out.append(f'= {version} =')
                       continue
 
-                  # ### Section header
-                  m = re.match(r'^###\s+(\w+)\s*$', stripped)
+                  # ### Added - Elementor Integration  ->  prefix = "Added"
+                  # Matches first word only so "### Added - Foo" still maps correctly
+                  m = re.match(r'^###\s+(\w+)', stripped)
                   if m:
                       prefix = SECTION_MAP.get(m.group(1), m.group(1))
                       continue
 
-                  # Blank line
                   if not stripped:
                       continue
 
-                  # Bullet item
-                  m = re.match(r'^-+\s+(.+)$', stripped)
+                  # Bullet: supports both "- text" and "* text"
+                  m = re.match(r'^[-*]\s+(.+)$', stripped)
                   if m:
                       msg = m.group(1).strip()
-                      if prefix:
-                          out.append(f'* {prefix}: {msg}')
-                      else:
-                          out.append(f'* {msg}')
+                      out.append(f'* {prefix}: {msg}' if prefix else f'* {msg}')
                       continue
 
-                  # Any other text (e.g. ### Notes lines)
                   out.append(line)
 
               return version, '\n'.join(out)
 
-          # ── Build the new == Changelog == section ───────────────────────────────
           wp_entries = []
           for block in blocks:
               version, converted = convert_block(block)
               if version:
                   wp_entries.append(converted)
 
-          new_changelog_section = '== Changelog ==\n\n' + '\n\n'.join(wp_entries) + '\n\n'
+          new_section = '== Changelog ==\n\n' + '\n\n'.join(wp_entries) + '\n\n'
 
-          # ── Replace existing == Changelog == section in readme.txt ─────────────
-          # Replaces everything from == Changelog == up to (but not including)
-          # the next == Section == or end of file.
           updated = re.sub(
               r'== Changelog ==.*?(?=^== |\Z)',
-              new_changelog_section,
+              new_section,
               readme,
               flags=re.DOTALL | re.MULTILINE
           )
 
           if updated == readme:
-              print('readme.txt changelog is already up to date.')
+              print('Already up to date.')
               sys.exit(0)
 
           with open('readme.txt', 'w', encoding='utf-8') as f:
