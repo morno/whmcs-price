@@ -1,0 +1,137 @@
+name: Sync Changelog to readme.txt
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'CHANGELOG.md'
+
+jobs:
+  sync-changelog:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync changelog to readme.txt
+        run: |
+          python3 << 'PYEOF'
+          import re
+          import sys
+
+          # ── Read files ──────────────────────────────────────────────────────────
+          with open('CHANGELOG.md', 'r', encoding='utf-8') as f:
+              changelog = f.read()
+
+          with open('readme.txt', 'r', encoding='utf-8') as f:
+              readme = f.read()
+
+          # ── Parse all versions from CHANGELOG.md ────────────────────────────────
+          # Matches blocks like: ## [2.4.3] - 2026-02-22  ...until next ## [
+          blocks = re.findall(
+              r'^(##\s+\[[\d\.]+(?:-[\w\.]+)*\].*?)(?=^##\s+\[|\Z)',
+              changelog,
+              flags=re.MULTILINE | re.DOTALL
+          )
+
+          if not blocks:
+              print('No version blocks found in CHANGELOG.md — nothing to sync.')
+              sys.exit(0)
+
+          SECTION_MAP = {
+              'Added':      'Added',
+              'Changed':    'Changed',
+              'Removed':    'Removed',
+              'Fixed':      'Fix',
+              'Security':   'Security',
+              'Deprecated': 'Deprecated',
+          }
+
+          def convert_block(md_block):
+              """Convert a single ## [x.y.z] block to WordPress readme.txt format."""
+              lines    = md_block.splitlines()
+              out      = []
+              prefix   = ''
+              version  = None
+
+              for line in lines:
+                  stripped = line.strip()
+
+                  # Header line: ## [2.4.3] - 2026-02-22  →  = 2.4.3 =
+                  m = re.match(r'^##\s+\[([\d\.]+(?:-[\w\.]+)*)\]', stripped)
+                  if m:
+                      version = m.group(1)
+                      out.append(f'= {version} =')
+                      continue
+
+                  # ### Section header
+                  m = re.match(r'^###\s+(\w+)\s*$', stripped)
+                  if m:
+                      prefix = SECTION_MAP.get(m.group(1), m.group(1))
+                      continue
+
+                  # Blank line
+                  if not stripped:
+                      continue
+
+                  # Bullet item
+                  m = re.match(r'^-+\s+(.+)$', stripped)
+                  if m:
+                      msg = m.group(1).strip()
+                      if prefix:
+                          out.append(f'* {prefix}: {msg}')
+                      else:
+                          out.append(f'* {msg}')
+                      continue
+
+                  # Any other text (e.g. ### Notes lines)
+                  out.append(line)
+
+              return version, '\n'.join(out)
+
+          # ── Build the new == Changelog == section ───────────────────────────────
+          wp_entries = []
+          for block in blocks:
+              version, converted = convert_block(block)
+              if version:
+                  wp_entries.append(converted)
+
+          new_changelog_section = '== Changelog ==\n\n' + '\n\n'.join(wp_entries) + '\n\n'
+
+          # ── Replace existing == Changelog == section in readme.txt ─────────────
+          # Replaces everything from == Changelog == up to (but not including)
+          # the next == Section == or end of file.
+          updated = re.sub(
+              r'== Changelog ==.*?(?=^== |\Z)',
+              new_changelog_section,
+              readme,
+              flags=re.DOTALL | re.MULTILINE
+          )
+
+          if updated == readme:
+              print('readme.txt changelog is already up to date.')
+              sys.exit(0)
+
+          with open('readme.txt', 'w', encoding='utf-8') as f:
+              f.write(updated)
+
+          print('readme.txt updated successfully.')
+          PYEOF
+
+      - name: Commit updated readme.txt
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git diff --quiet readme.txt && echo "No changes to commit." && exit 0
+
+          git add readme.txt
+          git commit -m "chore: sync changelog to readme.txt [skip ci]"
+          git push

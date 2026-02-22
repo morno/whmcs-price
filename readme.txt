@@ -4,7 +4,7 @@ Tags: whmcs, price, hosting, domain, billing
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.1
-Stable tag: 2.4.2
+Stable tag: 2.4.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,6 +68,21 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 3. Go to Settings > WHMCS Price Options and save WHMCS URL.
 
 == Changelog ==
+
+= 2.4.2 =
+* Fixed: Applied `absint()` to integer output in `cache_ttl_callback()` in `settings.php` to satisfy WordPress escaping standards.
+
+= 2.4.1 =
+* Security: **SSRF Protection**: Added validation in `get_url()` to block private IPv4/IPv6 ranges, reserved IP ranges, and localhost from being used as the WHMCS URL.
+* Security: **XSS Fix**: Wrapped `get_all_domain_prices()` output in `wp_kses_post()` in the `[whmcs]` shortcode fallback.
+* Changed: **Cache Key Hardening**: Replaced interpolated cache keys with `md5()`-hashed keys in `get_product_data()` and `get_domain_price()`.
+* Changed: **Configurable Cache TTL**: Admins can now set cache duration from the plugin settings page. Options: 1, 2, 3, 6, 12, and 24 hours.
+* Added: **Cache Stampede Protection**: Added `acquire_lock()` method using a short-lived transient lock to prevent simultaneous requests hitting WHMCS on cold cache.
+
+= 2.4.0 =
+* Added: **Elementor Product Price Widget** — Display WHMCS product pricing in Elementor with visual builder support.
+* Added: **Elementor Domain Price Widget** — Display WHMCS domain pricing in Elementor.
+
 = 2.3.1 =
 * Security: **SSRF Protection**: Added validation in `get_url()` to block private IPv4/IPv6 ranges,
   reserved IP ranges, and localhost from being used as the WHMCS URL. Prevents
