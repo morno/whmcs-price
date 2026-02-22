@@ -1,6 +1,6 @@
 <?php
 /*
- * Plugin Name:       WHMCS Price
+ * Plugin Name:       Mornolink for WHMCS
  * Plugin URI:        https://github.com/morno/whmcs-price
  * Description:       A modernized and secure way to display real-time pricing for products and domains from your WHMCS instance.
  * Version:           2.4.2

@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.3] - 2026-02-22
+
+### Changed
+- **Plugin renamed**: Changed display name from "WHMCS Price" to "Mornolink for WHMCS" to comply with WordPress.org trademark guidelines.
+- **readme.txt**: Added `== Source Code ==` section with link to GitHub repository as required by WordPress.org.
+
+### Removed
+- **Persian documentation**: Removed link to Persian documentation from `readme.txt` as the hosting site (blog.iranwebsv.net) is no longer available.
+
 ## [2.4.2] - 2026-02-19
 
 ### Fixed

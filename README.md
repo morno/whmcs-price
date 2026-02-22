@@ -1,4 +1,4 @@
-# WHMCS Price 🚀
+# Mornolink for WHMCS 🚀
 
 ![WordPress Version](https://img.shields.io/badge/wordpress-%3E%3D%206.9-blue.svg)
 ![PHP Version](https://img.shields.io/badge/php-%3E%3D%208.1-8892bf.svg)

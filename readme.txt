@@ -1,4 +1,4 @@
-﻿===WHMCS Price===
+﻿=== Mornolink for WHMCS ===
 Contributors: morno, kamalireal
 Tags: whmcs, price, hosting, domain, billing
 Requires at least: 6.0
@@ -32,9 +32,6 @@ Plugin features:
 
 The full source code for this plugin is available on GitHub:
 https://github.com/morno/whmcs-price
-
-== Persian Document ==
-*  Ø¨Ø±Ø§ÛŒ Ù…Ø´Ø§Ù‡Ø¯Ù‡ Ø±Ø§Ù‡Ù†Ù…Ø§ÛŒ ÙØ§Ø±Ø³ÛŒ Ø§Ø² Ø§ÛŒÙ† Ù¾Ù„Ø§Ú¯ÛŒÙ† [Ø§ÛŒÙ†Ø¬Ø§ Ú©Ù„ÛŒÚ© Ú©Ù†ÛŒØ¯](https://blog.iranwebsv.net/whmcs_price)
 
 == Product Pricing ==
 This is the shortcode to extract product name, description, or price:
