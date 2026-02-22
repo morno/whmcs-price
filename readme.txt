@@ -69,21 +69,16 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 
 == Changelog ==
 
+= 2.4.3 =
+* Changed: **Plugin renamed**: Changed display name from "WHMCS Price" to "Mornolink for WHMCS" to comply with WordPress.org trademark guidelines.
+* Changed: **readme.txt**: Added `== Source Code ==` section with link to GitHub repository as required by WordPress.org.
+* Removed: **Persian documentation**: Removed link to Persian documentation from `readme.txt` as the hosting site (blog.iranwebsv.net) is no longer available.
+
 = 2.4.2 =
-* Fixed: Applied `absint()` to integer output in `cache_ttl_callback()` in `settings.php` to satisfy WordPress escaping standards.
+* Fix: **Escape Fix**: Applied `absint()` to integer output in `cache_ttl_callback()` in
+  `settings.php` to satisfy WordPress escaping standards (PHPCS `WordPress.Security.EscapeOutput`).
 
 = 2.4.1 =
-* Security: **SSRF Protection**: Added validation in `get_url()` to block private IPv4/IPv6 ranges, reserved IP ranges, and localhost from being used as the WHMCS URL.
-* Security: **XSS Fix**: Wrapped `get_all_domain_prices()` output in `wp_kses_post()` in the `[whmcs]` shortcode fallback.
-* Changed: **Cache Key Hardening**: Replaced interpolated cache keys with `md5()`-hashed keys in `get_product_data()` and `get_domain_price()`.
-* Changed: **Configurable Cache TTL**: Admins can now set cache duration from the plugin settings page. Options: 1, 2, 3, 6, 12, and 24 hours.
-* Added: **Cache Stampede Protection**: Added `acquire_lock()` method using a short-lived transient lock to prevent simultaneous requests hitting WHMCS on cold cache.
-
-= 2.4.0 =
-* Added: **Elementor Product Price Widget** — Display WHMCS product pricing in Elementor with visual builder support.
-* Added: **Elementor Domain Price Widget** — Display WHMCS domain pricing in Elementor.
-
-= 2.3.1 =
 * Security: **SSRF Protection**: Added validation in `get_url()` to block private IPv4/IPv6 ranges,
   reserved IP ranges, and localhost from being used as the WHMCS URL. Prevents
   server-side request forgery if an unauthorized party gains access to plugin settings.
@@ -103,55 +98,78 @@ This is the shortcode to extract domain registration, renewal, or transfer price
   Applied to both `get_product_data()` and `get_domain_price()`. Locks are
   automatically released on success, HTTP error, or request failure.
 
+= 2.4.0 =
+### Added - Elementor Integration
+* **Elementor Product Price Widget**: Display WHMCS product pricing in Elementor with visual builder
+* Product IDs input (comma-separated)
+* Billing cycle dropdown selector
+* Display columns multi-select (name, description, price)
+* 3 display styles: Table, Cards, Pricing Grid
+* Live preview in Elementor editor
+* **Elementor Domain Price Widget**: Display WHMCS domain pricing in Elementor
+* TLD input (leave empty for all TLDs)
+* Registration period selector (1-10 years)
+* "Show all transaction types" toggle
+* Transaction type selector (register, renew, transfer)
+* 3 display styles: Table, Badge, Inline
+* Live preview in Elementor editor
+* **Custom Elementor Category**: "WHMCS Price" category in Elementor widget panel
+* **Shared Styling**: Elementor widgets reuse block CSS for consistency
+* Changed: **File Structure**: Reorganized for better maintainability
+* Changed: Renamed `includes/short_code/` → `includes/shortcodes/`
+* Changed: Renamed `short_code.php` → `shortcode.php`
+* Changed: Added `includes/elementor/` for Elementor integration
+* Changed: Added `STRUCTURE.md` documentation
+
 = 2.3.0 =
-* Added: **Gutenberg Block: WHMCS Product Price** Ã¢â‚¬â€ Native block editor support for displaying real-time product pricing from WHMCS. Configured via the block sidebar (InspectorControls) with controls for Product ID(s), Billing Cycle, and display columns (Name, Description, Price).
-* Added: **Gutenberg Block: WHMCS Domain Price** Ã¢â‚¬â€ Native block editor support for displaying real-time domain pricing from WHMCS. Configured via the block sidebar with controls for TLD, Transaction Type (register, renew, transfer), and Registration Period (1Ã¢â‚¬â€œ10 years).
-* Added: Both blocks use **server-side rendering** (`render.php`) and reuse the existing `WHMCS_Price_API` class Ã¢â‚¬â€ no logic duplication, full transient caching inherited automatically.
+* Added: **Gutenberg Block: WHMCS Product Price** — Native block editor support for displaying real-time product pricing from WHMCS. Configured via the block sidebar (InspectorControls) with controls for Product ID(s), Billing Cycle, and display columns (Name, Description, Price).
+* Added: **Gutenberg Block: WHMCS Domain Price** — Native block editor support for displaying real-time domain pricing from WHMCS. Configured via the block sidebar with controls for TLD, Transaction Type (register, renew, transfer), and Registration Period (1–10 years).
+* Added: Both blocks use **server-side rendering** (`render.php`) and reuse the existing `WHMCS_Price_API` class — no logic duplication, full transient caching inherited automatically.
 * Added: `block.json` metadata files for both blocks following WordPress block API v3 standards.
 * Added: `class-whmcs-blocks.php` for block registration via `register_block_type()`.
 * Added: Editor preview shown in the block canvas when a Product ID or TLD has been configured.
 * Added: `Placeholder` component shown in the editor when the block has not yet been configured.
 * Changed: Updated `WHMCS_PRICE_VERSION` constant to `2.3.0`.
-* Changed: Fixed author name encoding in plugin header (`SÃƒÂ¶rensson` was incorrectly stored as mojibake).
+* Changed: Fixed author name encoding in plugin header (`Sörensson` was incorrectly stored as mojibake).
 * Changed: Block registration uses `WHMCS_PRICE_DIR` constant consistently with the rest of the plugin.
 * Changed: Changed Tags in readme.txt to the supported Tags of 5.
 
 = 2.2.2 =
-* Fixed: A typo in the domain price shortcode output that could trigger PHP notices.
-* Updated: Swedish language files in the languages/ directory.
-* Changed: Updated "Tested up to" value to 6.7 to comply with WordPress.org guidelines.
-* Changed: Refactored readme.txt headers for better compatibility with the WordPress.org parser.
-* Changed: Added explicit GPLv2 license declaration to README.md.
-* Removed: The /assets/ directory from the plugin distribution (moved to SVN assets).
+* Fix: Fixed a typo in the domain price shortcode output that could trigger PHP notices by referencing an undefined variable.
+* Fix: Updated Swedish language files in the `languages/` directory.
+* Changed: **WordPress Directory Compliance:** Updated "Tested up to" value to 6.7 to match the current stable WordPress release.
+* Changed: **Readme Optimization:** Refactored `readme.txt` headers and spacing to ensure compatibility with the WordPress.org plugin parser.
+* Changed: **License Clarification:** Added explicit GPLv2 license declaration to `README.md` as requested by the plugin review team.
+* Changed: **Version Alignment:** Synchronized versioning (2.2.2) across all core files, `readme.txt`, and `README.md`.
+* Removed: Removed the `/assets/` directory from the plugin distribution (to be managed via SVN assets as per WordPress.org guidelines).
 
 = 2.2.1 =
-* Added: Redirect-safe cache clearing from the Admin Bar (prevents double execution).
-* Added: Success notices when clearing cache via the Admin Bar.
-* Fixed: Duplicate HTML id and name attributes in the settings page.
-* Fixed: Minor PHPDoc alignment for WordPress Coding Standards.
+* Added: Implemented redirect-safe cache clearing from the Admin Bar (prevents double execution on page refresh).
+* Added: Added success notices when clearing cache via the Admin Bar.
+* Fix: Resolved browser console warnings by fixing duplicate HTML `id` and `name` attributes in the settings page.
+* Fix: Fixed minor PHPDoc alignment to better follow WordPress Coding Standards.
+* Changed: Updated plugin versioning to 2.2.1 across all core files.
+* Changed: Improved shortcode usage examples for better clarity.
 
 = 2.2.0 =
-* Added: Complete PHPDoc documentation for all classes and functions.
-* Added: New WHMCS_Price_API service class for centralized logic.
-* Added: Official Swedish (sv_SE) translation and .pot template.
-* Added: Security nonces for cache clearing actions.
-* Added: Visual feedback (admin notices) when cache is cleared.
-* Changed: Adopted Semantic Versioning (x.y.z).
-* Changed: Modernized Settings UI with improved instructions.
+* Added: Complete **PHPDoc documentation** in English for all classes and functions following WordPress Coding Standards.
+* Added: New `WHMCS_Price_API` service class to centralize data fetching and caching logic.
+* Added: Support for translation via text-domain `whmcs-price` and `/languages` folder.
+* Added: **Official Swedish (sv_SE) translation** and `.pot` template for localization.
+* Added: Security nonces for cache clearing actions in both Admin Bar and Settings page.
+* Added: Visual feedback (admin notices) when cache is successfully cleared.
+* Changed: **Adopted Semantic Versioning (x.y.z)** to allow for easier minor updates and patches.
+* Changed: Refactored shortcode logic for better performance and readability.
+* Changed: Modernized the Settings UI with improved instructions and code examples.
+* Changed: Updated minimum PHP requirement to 7.4 (recommended 8.0+) for better stability.
+* Changed: Standardized file structure following WordPress Plugin Guidelines.
+* Fix: Fixed issues with JS-feed cleaning where raw Javascript strings were sometimes displayed.
+* Fix: Resolved potential conflicts by prefixing all functions and classes correctly.
 
 = 2.1 =
 * Initial refactor of the original plugin.
-* Switched from direct SQL/Legacy API to WHMCS HTTP feeds.
+* Switched from direct SQL/Legacy API to WHMCS JS Feeds (HTTP).
 * Added WordPress Transients API for caching.
-
-= 1.3 =
-* Fix Bug
-= 1.2 =
-* Fix Bug
-= 1.1 =
-* Fix Interference Bug
-= 1.0 =
-* First Version
 
 == Screenshots ==
 1. /assets/screenshot-1.jpg
