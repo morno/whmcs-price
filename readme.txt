@@ -69,6 +69,13 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 
 == Changelog ==
 
+= 2.4.7 =
+* Fix: **Slow Save with Shortcodes**: The `[whmcs]` shortcode ran via the `the_content`
+  filter on every Gutenberg REST save request, triggering live HTTP calls to WHMCS
+  for each shortcode on the page. Added the same `REST_REQUEST` / `DOING_AUTOSAVE`
+  early return as in `render.php`, returning a lightweight HTML comment instead.
+  Frontend page loads are unaffected.
+
 = 2.4.6 =
 * Fix: **Slow Gutenberg Save**: When saving a post in the block editor, WordPress fires
   the `the_content` filter via a REST API request, which triggered server-side
