@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.7] - 2026-02-25
+
+### Fixed
+
+- **Slow Save with Shortcodes**: The `[whmcs]` shortcode ran via the `the_content`
+  filter on every Gutenberg REST save request, triggering live HTTP calls to WHMCS
+  for each shortcode on the page. Added the same `REST_REQUEST` / `DOING_AUTOSAVE`
+  early return as in `render.php`, returning a lightweight HTML comment instead.
+  Frontend page loads are unaffected.
+
 ## [2.4.6] - 2026-02-25
 
 ### Fixed

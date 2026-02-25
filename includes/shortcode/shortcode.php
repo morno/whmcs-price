@@ -32,6 +32,14 @@ defined('ABSPATH') || exit;
  * @return string HTML output containing the requested data or an empty string on failure.
  */
 function whmcs_func($atts) {
+    // Skip WHMCS API calls during Gutenberg saves and autosaves.
+    // Shortcodes run via the_content filter which fires on every REST save request,
+    // causing live HTTP calls to WHMCS on each keypress/save in the block editor.
+    // Frontend page loads are unaffected — REST_REQUEST is never set there.
+    if ( ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) ) {
+        return '<!-- whmcs-price shortcode -->';
+    }
+
     /**
      * Set default attributes and merge with user-provided ones.
      */
