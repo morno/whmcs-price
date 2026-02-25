@@ -60,6 +60,27 @@ class WHMCS_Price_API {
             }
         }
 
+        // Block cloud metadata endpoints and known internal hostnames (SSRF protection).
+        // These can bypass IP-based checks via DNS or hostname patterns.
+        $blocked_patterns = array(
+            '169.254.169.254',       // AWS / Azure / GCP instance metadata.
+            '100.100.100.200',       // Alibaba Cloud metadata.
+            'metadata.google.internal',
+            'metadata.google',
+            'instance-data',         // Some cloud providers use this hostname.
+        );
+        foreach ( $blocked_patterns as $pattern ) {
+            if ( str_contains( $host, $pattern ) ) {
+                return '';
+            }
+        }
+
+        // Enforce HTTPS to prevent credentials or data from leaking over plain HTTP.
+        $scheme = strtolower( $parsed['scheme'] ?? '' );
+        if ( 'https' !== $scheme ) {
+            return '';
+        }
+
         return $url;
     }
 
@@ -161,6 +182,24 @@ class WHMCS_Price_API {
 			return 'NA';
 		}
 
+		// Allowlist: only permit known valid attribute values to prevent parameter injection.
+		$allowed_attributes = array( 'name', 'description', 'price' );
+		if ( ! in_array( $attribute, $allowed_attributes, true ) ) {
+			self::debug_log( 'Product data request blocked: invalid attribute', array(
+				'attribute' => $attribute,
+			) );
+			return 'NA';
+		}
+
+		// Allowlist: only permit known valid billing cycles.
+		$allowed_billing_cycles = array( 'monthly', 'quarterly', 'semiannually', 'annually', 'biennially', 'triennially' );
+		if ( ! in_array( $billing_cycle, $allowed_billing_cycles, true ) ) {
+			self::debug_log( 'Product data request blocked: invalid billing cycle', array(
+				'billing_cycle' => $billing_cycle,
+			) );
+			return 'NA';
+		}
+
 		$cache_key = 'whmcs_product_' . md5( $pid . '_' . $billing_cycle . '_' . $attribute );
 		$cached    = get_transient( $cache_key );
 
@@ -181,7 +220,15 @@ class WHMCS_Price_API {
 			return 'NA';
 		}
 
-		$url = "{$whmcs_url}/feeds/productsinfo.php?pid={$pid}&get={$attribute}&billingcycle={$billing_cycle}";
+		// Use add_query_arg() to properly URL-encode all parameters and prevent query injection.
+		$url = add_query_arg(
+			array(
+				'pid'          => intval( $pid ),
+				'get'          => $attribute,
+				'billingcycle' => $billing_cycle,
+			),
+			$whmcs_url . '/feeds/productsinfo.php'
+		);
 
 		self::debug_log( 'Fetching product data from WHMCS', array(
 			'url'           => $url,
@@ -249,6 +296,24 @@ class WHMCS_Price_API {
 			return 'NA';
 		}
 
+		// Allowlist: only permit known valid transaction types to prevent parameter injection.
+		$allowed_types = array( 'register', 'renew', 'transfer' );
+		if ( ! in_array( $type, $allowed_types, true ) ) {
+			self::debug_log( 'Domain price request blocked: invalid type', array(
+				'type' => $type,
+			) );
+			return 'NA';
+		}
+
+		// Allowlist: reg_period must be a positive integer between 1 and 10.
+		$reg_period_int = intval( $reg_period );
+		if ( $reg_period_int < 1 || $reg_period_int > 10 ) {
+			self::debug_log( 'Domain price request blocked: invalid reg_period', array(
+				'reg_period' => $reg_period,
+			) );
+			return 'NA';
+		}
+
 		$tld       = ltrim( $tld, '.' );
 		$cache_key = 'whmcs_domain_' . md5( $tld . '_' . $type . '_' . $reg_period );
 		$cached    = get_transient( $cache_key );
@@ -270,7 +335,16 @@ class WHMCS_Price_API {
 			return 'NA';
 		}
 
-		$url = "{$whmcs_url}/feeds/domainprice.php?tld=.{$tld}&type={$type}&regperiod={$reg_period}&format=1";
+		// Use add_query_arg() to properly URL-encode all parameters and prevent query injection.
+		$url = add_query_arg(
+			array(
+				'tld'       => '.' . $tld,
+				'type'      => $type,
+				'regperiod' => $reg_period_int,
+				'format'    => '1',
+			),
+			$whmcs_url . '/feeds/domainprice.php'
+		);
 
 		self::debug_log( 'Fetching domain price from WHMCS', array(
 			'url'        => $url,

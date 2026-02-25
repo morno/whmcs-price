@@ -56,9 +56,26 @@ function whmcs_func($atts) {
             '1y' => 'annually', '2y' => 'biennially', '3y' => 'triennially',
         ];
 
-        $bc_r = $billing_cycles[$atts['bc']] ?? 'monthly';
-        $pids = explode(',', $atts['pid']);
-        $show = explode(',', $atts['show']);
+        // Allowlist: only permit known billing cycle codes.
+        $bc_r = $billing_cycles[ $atts['bc'] ] ?? '';
+        if ( empty( $bc_r ) ) {
+            return '';
+        }
+
+        $pids = array_map( 'intval', explode( ',', $atts['pid'] ) );
+        // Remove any zero/invalid PIDs that resulted from intval().
+        $pids = array_filter( $pids, fn($p) => $p > 0 );
+
+        // Allowlist: only permit known column names.
+        $allowed_attrs = array( 'name', 'description', 'price' );
+        $show = array_filter(
+            array_map( 'trim', explode( ',', $atts['show'] ) ),
+            fn( $a ) => in_array( $a, $allowed_attrs, true )
+        );
+
+        if ( empty( $pids ) || empty( $show ) ) {
+            return '';
+        }
 
         /**
          * Translatable labels for table headers.
@@ -100,17 +117,30 @@ function whmcs_func($atts) {
      * If no tld => show full TLD list from domainpricing.php.
      */
     if (!empty($atts['tld'])) {
+        // Sanitize: strip dot prefix and allow only alphanumeric + hyphen (valid TLD characters).
+        $tld = sanitize_text_field( ltrim( $atts['tld'], '.' ) );
+        $tld = preg_replace( '/[^a-zA-Z0-9\-]/', '', $tld );
+        if ( empty( $tld ) ) {
+            return '';
+        }
+
+        // Allowlist: only permit known transaction types.
+        $allowed_types = array( 'register', 'renew', 'transfer' );
+        $type = in_array( $atts['type'], $allowed_types, true ) ? $atts['type'] : 'register';
+
         $reg_period = (string) preg_replace('/[^0-9]/', '', (string) $atts['reg']);
         $reg_period = $reg_period !== '' ? $reg_period : '1';
 
-        $type = sanitize_text_field($atts['type']);
-        $price = WHMCS_Price_API::get_domain_price($atts['tld'], $type, $reg_period);
+        $price = WHMCS_Price_API::get_domain_price( $tld, $type, $reg_period );
 
-        $domain_id = 'whmcs-price-' . esc_attr(sanitize_title($atts['tld']));
+        $domain_id = 'whmcs-price-' . esc_attr( sanitize_title( $tld ) );
         return "<div id='{$domain_id}' class='whmcs-price'>" . esc_html($price) . '</div>';
     }
 
-    // Fallback: no TLD => list all TLD prices
+    // Fallback: no TLD => list all TLD prices.
+    // Note: get_all_domain_prices() returns raw HTML from WHMCS (domainpricing.php).
+    // wp_kses_post() is used intentionally here to allow table/list markup from a
+    // trusted admin-configured source, while still stripping scripts and unsafe attributes.
     return wp_kses_post( WHMCS_Price_API::get_all_domain_prices() );
 }
 /**

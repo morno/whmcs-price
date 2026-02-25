@@ -149,6 +149,15 @@ class WHMCSPrice {
 			printf( '<p style="color:red">%s</p>', esc_html__( 'Hey! Your domain is not valid!', 'whmcs-price' ) );
 		}
 
+		// Warn if URL is not HTTPS — the plugin requires HTTPS for security.
+		if ( ! empty( $whmcs_url ) && ! str_starts_with( strtolower( $whmcs_url ), 'https://' ) ) {
+			printf(
+				'<p style="color:orange"><strong>%s</strong> %s</p>',
+				esc_html__( 'Warning:', 'whmcs-price' ),
+				esc_html__( 'The WHMCS URL must use HTTPS. HTTP URLs are blocked for security reasons.', 'whmcs-price' )
+			);
+		}
+
 		printf(
 			'<input type="url" id="whmcs_url" class="regular-text" style="direction:ltr;" name="whmcs_price_option[whmcs_url]" value="%s" placeholder="https://whmcsdomain.tld" />',
 			esc_attr( $whmcs_url )

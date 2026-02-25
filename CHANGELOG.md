@@ -2,6 +2,62 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.4] - 2026-02-24
+
+### Security
+
+- **Query Injection Fix**: Replaced raw string concatenation for WHMCS API URLs with
+  `add_query_arg()` in `get_product_data()` and `get_domain_price()`. Previously,
+  unsanitized parameters could be used to inject additional query parameters into
+  requests sent to the WHMCS feed endpoints.
+
+- **Input Allowlists**: Added strict allowlist validation in `WHMCS_Price_API` for all
+  parameters passed to WHMCS feed URLs. `$attribute` is restricted to `name`,
+  `description`, `price`; `$billing_cycle` to the six known WHMCS cycle names;
+  `$type` to `register`, `renew`, `transfer`; and `$reg_period` to integers 1–10.
+  Requests with invalid values now return `'NA'` immediately without hitting WHMCS.
+
+- **TLD Sanitization**: The `tld` shortcode attribute is now sanitized with
+  `sanitize_text_field()` and stripped of all characters outside `[a-zA-Z0-9-]`
+  before being passed to `WHMCS_Price_API::get_domain_price()`. Previously the raw
+  unsanitized value was forwarded directly.
+
+- **Shortcode Allowlists**: The `bc` (billing cycle), `show` (columns), and `type`
+  (transaction type) shortcode attributes are now validated against allowlists before
+  being used. Invalid `bc` or empty `show` after filtering causes the shortcode to
+  return an empty string. Invalid `type` falls back to `register`.
+
+- **SSRF Hardening**: Extended the SSRF protection in `get_url()` with a blocklist
+  for known cloud metadata endpoints (`169.254.169.254`, `100.100.100.200`,
+  `metadata.google.internal`, etc.) that can bypass IP-range checks via DNS.
+  Additionally, the WHMCS URL is now required to use HTTPS; HTTP URLs are rejected
+  entirely, preventing credential or data leakage over unencrypted connections.
+
+### Fixed
+
+- **Multisite Compatibility**: Removed the early `return` that caused the plugin
+  settings page to be completely unavailable on WordPress Multisite installations.
+  The settings page now loads correctly for all admin contexts, including network
+  sites.
+
+### Added
+
+- **Directory Index Files**: Added `index.php` (silence is golden) to seven
+  subdirectories that were missing them (`languages/`, `includes/elementor/`,
+  `includes/elementor/widgets/`, `blocks/`, `blocks/whmcs-price-product/`,
+  `blocks/whmcs-price-domain/`, `blocks/build/`), preventing directory listing
+  on servers without `Options -Indexes`.
+
+- **HTTPS Warning in Admin**: The settings page now displays a visible warning
+  if the configured WHMCS URL does not use HTTPS, informing the admin that HTTP
+  URLs are blocked by the plugin.
+
+### Changed
+
+- **Code Comment**: Added an explanatory comment to the `wp_kses_post()` call in
+  the `[whmcs]` shortcode fallback (all-TLD output), documenting that the use of
+  `wp_kses_post` rather than `esc_html` is intentional and by design.
+
 ## [2.4.3] - 2026-02-22
 
 ### Changed
