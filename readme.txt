@@ -69,6 +69,15 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 
 == Changelog ==
 
+= 2.4.6 =
+* Fix: **Slow Gutenberg Save**: When saving a post in the block editor, WordPress fires
+  the `the_content` filter via a REST API request, which triggered server-side
+  rendering of both WHMCS blocks. This caused live HTTP requests to the WHMCS server
+  on every save — even though the result is never shown in the editor. Added an early
+  exit in both `render.php` files when `REST_REQUEST` or `DOING_AUTOSAVE` is defined,
+  returning a lightweight HTML comment instead. The real data continues to render
+  correctly on frontend page loads.
+
 = 2.4.5 =
 * Fix: **Gutenberg Editor Crash**: Both Gutenberg blocks (`whmcs-price/product` and
   `whmcs-price/domain`) were missing a `save` function in their `registerBlockType`
