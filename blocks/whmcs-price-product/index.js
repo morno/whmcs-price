@@ -14,4 +14,7 @@ import metadata from './block.json';
 
 registerBlockType( metadata.name, {
 	edit: Edit,
+	// Dynamic block — server-side rendered via render.php.
+	// save must return null to prevent block validation errors in the editor.
+	save: () => null,
 } );

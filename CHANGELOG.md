@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.5] - 2026-02-25
+
+### Fixed
+
+- **Gutenberg Editor Crash**: Both Gutenberg blocks (`whmcs-price/product` and
+  `whmcs-price/domain`) were missing a `save` function in their `registerBlockType`
+  call. Without `save: () => null`, WordPress attempts to serialize the block's
+  editor output as static HTML. On page reload, the editor compares the stored HTML
+  against what `save()` returns — the mismatch triggers a block validation error that
+  causes the editor to hang indefinitely on load. Added `save: () => null` to both
+  `index.js` source files and their compiled counterparts in `blocks/build/` to
+  correctly declare these as dynamic (server-side rendered) blocks.
+
 ## [2.4.4] - 2026-02-24
 
 ### Security
