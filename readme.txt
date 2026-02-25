@@ -69,6 +69,16 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 
 == Changelog ==
 
+= 2.4.5 =
+* Fix: **Gutenberg Editor Crash**: Both Gutenberg blocks (`whmcs-price/product` and
+  `whmcs-price/domain`) were missing a `save` function in their `registerBlockType`
+  call. Without `save: () => null`, WordPress attempts to serialize the block's
+  editor output as static HTML. On page reload, the editor compares the stored HTML
+  against what `save()` returns — the mismatch triggers a block validation error that
+  causes the editor to hang indefinitely on load. Added `save: () => null` to both
+  `index.js` source files and their compiled counterparts in `blocks/build/` to
+  correctly declare these as dynamic (server-side rendered) blocks.
+
 = 2.4.4 =
 * Security: **Query Injection Fix**: Replaced raw string concatenation for WHMCS API URLs with
   `add_query_arg()` in `get_product_data()` and `get_domain_price()`. Previously,
