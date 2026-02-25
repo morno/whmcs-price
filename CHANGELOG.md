@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.6] - 2026-02-25
+
+### Fixed
+
+- **Slow Gutenberg Save**: When saving a post in the block editor, WordPress fires
+  the `the_content` filter via a REST API request, which triggered server-side
+  rendering of both WHMCS blocks. This caused live HTTP requests to the WHMCS server
+  on every save — even though the result is never shown in the editor. Added an early
+  exit in both `render.php` files when `REST_REQUEST` or `DOING_AUTOSAVE` is defined,
+  returning a lightweight HTML comment instead. The real data continues to render
+  correctly on frontend page loads.
+
 ## [2.4.5] - 2026-02-25
 
 ### Fixed

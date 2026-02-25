@@ -9,6 +9,15 @@
 
 defined( 'ABSPATH' ) || exit;
 
+// Skip external WHMCS API calls during Gutenberg saves and autosaves.
+// When saving, WordPress runs the_content via REST which would trigger
+// live WHMCS HTTP requests — making every save slow.
+// The frontend page load renders the real data from cache instead.
+if ( ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) ) {
+	echo '<!-- whmcs-price block -->';
+	return;
+}
+
 // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 $whmcs_tld              = ! empty( $attributes['tld'] ) ? sanitize_text_field( $attributes['tld'] ) : '';
 $whmcs_transaction_type = ! empty( $attributes['transactionType'] ) ? sanitize_text_field( $attributes['transactionType'] ) : 'register';
