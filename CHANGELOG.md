@@ -2,6 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.5.1] - 2026-02-26
 ### Fixed
 
 - **Author name encoding**: Corrected double-encoded UTF-8 characters in the plugin
