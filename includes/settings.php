@@ -7,7 +7,8 @@
  *
  * Developer: MohammadReza Kamali, Tobias Sörensson
  * Website: IRANWebServer.Net, weconnect.se
- * License: GPL-3.0-or-later
+ * License: GPLv2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  *
  * @package    WHMCS_Price
  * @subpackage Admin

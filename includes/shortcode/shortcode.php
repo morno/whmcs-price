@@ -31,7 +31,7 @@ defined('ABSPATH') || exit;
  * }
  * @return string HTML output containing the requested data or an empty string on failure.
  */
-function whmcs_func($atts) {
+function whmcs_price_shortcode_handler( $atts ) {
     // Skip WHMCS API calls during Gutenberg saves and autosaves.
     // Shortcodes run via the_content filter which fires on every REST save request,
     // causing live HTTP calls to WHMCS on each keypress/save in the block editor.
@@ -125,9 +125,10 @@ function whmcs_func($atts) {
      * If no tld => show full TLD list from domainpricing.php.
      */
     if (!empty($atts['tld'])) {
-        // Sanitize: strip dot prefix and allow only alphanumeric + hyphen (valid TLD characters).
+        // Sanitize: strip dot prefix, allow only valid TLD characters, max 24 chars.
         $tld = sanitize_text_field( ltrim( $atts['tld'], '.' ) );
         $tld = preg_replace( '/[^a-zA-Z0-9\-]/', '', $tld );
+        $tld = substr( $tld, 0, 24 );
         if ( empty( $tld ) ) {
             return '';
         }
@@ -156,5 +157,5 @@ function whmcs_func($atts) {
  * * @since 2.2.0
  */
 add_action('init', function() {
-    add_shortcode('whmcs', 'whmcs_func');
+    add_shortcode('whmcs', 'whmcs_price_shortcode_handler');
 });

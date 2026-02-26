@@ -2,6 +2,47 @@
 
 All notable changes to this project will be documented in this file.
 
+### Fixed
+
+- **Author name encoding**: Corrected double-encoded UTF-8 characters in the plugin
+  header of `whmcs_price.php`. The author name `Sörensson` was stored as mojibake
+  (`SÃ¶rensson`) due to a file being re-encoded by an external tool or editor.
+
+- **Misplaced docblock**: The `clean_response()` method in `class-whmcs-api.php` was
+  missing its own docblock, and an orphaned docblock originally written for it had
+  ended up placed above `get_request_args()` instead. Both methods now have correct,
+  properly placed documentation.
+
+- **TLD max length**: Added a `substr()` cap of 24 characters to the TLD value in
+  the `[whmcs]` shortcode handler, preventing excessively long strings from being
+  passed to the API or generating oversized cache keys.
+
+### Changed
+
+- **Shortcode function renamed**: `whmcs_func()` renamed to
+  `whmcs_price_shortcode_handler()` to follow WordPress coding standards requiring
+  all global functions to use a unique plugin prefix.
+
+- **Blocks file renamed**: `includes/class-whmcs-blocks.php` renamed to
+  `includes/blocks.php`. The file contains only a hooked function — not a class —
+  so the `class-` prefix was misleading and against WordPress naming conventions.
+  The `require_once` reference in `whmcs_price.php` updated accordingly.
+
+- **License unified**: `includes/settings.php` had `GPL-3.0-or-later` in its file
+  header, inconsistent with the rest of the plugin. Updated to `GPLv2 or later`
+  with the correct license URI to match the main plugin header and `readme.txt`.
+
+### Added
+
+- **`uninstall.php`**: Added a proper uninstall routine that removes all plugin data
+  from the database when the plugin is deleted via the WordPress admin. Previously,
+  data was left behind after deletion. The plugin stores the following in `wp_options`:
+  - `whmcs_price_option` — plugin settings (WHMCS URL, cache TTL, custom User-Agent)
+  - `_transient_whmcs_product_*` — cached product prices (name, description, price)
+  - `_transient_whmcs_domain_*` — cached domain prices per TLD/type/period
+  - `_transient_whmcs_domain_all` — cached full TLD price list
+  - `_transient_lock_whmcs_*` — short-lived stampede-prevention locks (10 s TTL)
+
 ## [2.5.0] - 2026-02-26
 
 ### Added

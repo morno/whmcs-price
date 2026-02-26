@@ -139,17 +139,6 @@ class WHMCS_Price_API {
     }
 
     /**
-     * Clean WHMCS JS-feed responses by stripping Javascript wrappers.
-     *
-     * WHMCS feeds are often delivered as 'document.write' JS strings. 
-     * This method extracts the raw content so it can be safely used in HTML.
-     *
-     * @since 2.2.0
-     * @access private
-     * @param string $body The raw response body from the API request.
-     * @return string The cleaned text string.
-     */
-    /**
      * Build HTTP request arguments for all WHMCS API calls.
      *
      * Default User-Agent: WordPress (https://yoursite.com) whmcs-price/2.5.0
@@ -177,7 +166,18 @@ class WHMCS_Price_API {
         );
     }
 
-    private static function clean_response($body) {
+	/**
+	 * Clean WHMCS JS-feed responses by stripping Javascript wrappers.
+	 *
+	 * WHMCS feeds are often delivered as 'document.write' JS strings.
+	 * This method extracts the raw content so it can be safely used in HTML.
+	 *
+	 * @since  2.2.0
+	 * @access private
+	 * @param  string $body The raw response body from the API request.
+	 * @return string The cleaned text string.
+	 */
+	private static function clean_response($body) {
         $body = preg_replace('/document\.write\(\'/', '', $body);
         $body = preg_replace('/\'\);/', '', $body);
         return trim($body);

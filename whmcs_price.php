@@ -7,7 +7,7 @@
  * Requires at least: 6.0
  * Tested up to:      6.9
  * Requires PHP:      8.1
- * Author:            Tobias SÃ¶rensson (Morno), MohammadReza Kamali
+ * Author:            Tobias Sörensson (Morno), MohammadReza Kamali
  * Author URI:        https://github.com/morno
  * Text Domain:       whmcs-price
  * Domain Path:       /languages
@@ -22,7 +22,7 @@
  * the necessary includes for the API, settings, and shortcodes.
  *
  * @package   WHMCS_Price
- * @author    Tobias SÃ¶rensson, MohammadReza Kamali
+ * @author    Tobias Sörensson, MohammadReza Kamali
  * @license   GPL-2.0-or-later
  */
 
@@ -57,7 +57,7 @@ require_once WHMCS_PRICE_DIR . 'includes/class-whmcs-api.php';
  * Load the Blocks Class.
  * This class handles the registration and rendering of Gutenberg blocks for WHMCS pricing.
  */
-require_once WHMCS_PRICE_DIR . 'includes/class-whmcs-blocks.php';
+require_once WHMCS_PRICE_DIR . 'includes/blocks.php';
 
 /**
  * Load the Elementor Class.
