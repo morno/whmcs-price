@@ -118,6 +118,14 @@ class WHMCSPrice {
     	'whmcs_price',
     	'setting_section_id'
 		);
+
+		add_settings_field(
+			'custom_user_agent',
+			__( 'Custom User-Agent', 'whmcs-price' ),
+			array( $this, 'custom_user_agent_callback' ),
+			'whmcs_price',
+			'setting_section_id'
+		);
 	}
 
 	public function sanitize( $input ): array {
@@ -133,6 +141,18 @@ class WHMCSPrice {
     	} else {
         	$new_input['cache_ttl'] = 3600; // Fallback: 1 hour.
     	}
+
+		// Custom User-Agent: allow printable ASCII only, max 255 chars.
+		if ( ! empty( $input['custom_user_agent'] ) ) {
+			$ua = sanitize_text_field( trim( $input['custom_user_agent'] ) );
+			$ua = preg_replace( '/[^\x20-\x7E]/', '', $ua );
+			if ( strlen( $ua ) > 255 ) {
+				$ua = substr( $ua, 0, 255 );
+			}
+			if ( ! empty( $ua ) ) {
+				$new_input['custom_user_agent'] = $ua;
+			}
+		}
 
     	return $new_input;
 	}
@@ -243,6 +263,35 @@ class WHMCSPrice {
     	echo '</select>';
     	echo '<p class="description">' . esc_html__( 'How long prices are cached before fetching fresh data from WHMCS.', 'whmcs-price' ) . '</p>';
     	echo '<hr>';
+	}
+
+	/**
+	 * Renders the Custom User-Agent field in the admin settings page.
+	 *
+	 * @since  2.5.0
+	 * @access public
+	 * @return void
+	 */
+	public function custom_user_agent_callback() {
+		$current_ua = isset( $this->options['custom_user_agent'] ) ? $this->options['custom_user_agent'] : '';
+
+		$site_url       = get_bloginfo( 'url' );
+		$plugin_version = defined( 'WHMCS_PRICE_VERSION' ) ? WHMCS_PRICE_VERSION : '';
+		$default_ua     = "WordPress ({$site_url}) whmcs-price/{$plugin_version}";
+
+		printf(
+			'<input type="text" id="custom_user_agent" class="large-text" style="direction:ltr; font-family:monospace;" name="whmcs_price_option[custom_user_agent]" value="%s" placeholder="%s" />',
+			esc_attr( $current_ua ),
+			esc_attr( $default_ua )
+		);
+		echo '<p class="description">';
+		printf(
+			/* translators: %s: the auto-generated default User-Agent string */
+			esc_html__( 'Override the User-Agent sent to WHMCS. Useful for matching server or firewall allow-rules, or identifying requests in access logs. Leave blank to use the default: %s', 'whmcs-price' ),
+			'<code>' . esc_html( $default_ua ) . '</code>'
+		);
+		echo '</p>';
+		echo '<hr>';
 	}
 
 	public function clear_whmcs_cache() {

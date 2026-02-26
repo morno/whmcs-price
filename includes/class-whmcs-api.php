@@ -149,6 +149,34 @@ class WHMCS_Price_API {
      * @param string $body The raw response body from the API request.
      * @return string The cleaned text string.
      */
+    /**
+     * Build HTTP request arguments for all WHMCS API calls.
+     *
+     * Default User-Agent: WordPress (https://yoursite.com) whmcs-price/2.5.0
+     * Can be overridden via the Custom User-Agent setting in the admin.
+     *
+     * @since  2.5.0
+     * @access private
+     * @return array WordPress HTTP API argument array.
+     */
+    private static function get_request_args(): array {
+        $options    = get_option( 'whmcs_price_option', array() );
+        $custom_ua  = ! empty( $options['custom_user_agent'] ) ? trim( $options['custom_user_agent'] ) : '';
+
+        if ( ! empty( $custom_ua ) ) {
+            $user_agent = $custom_ua;
+        } else {
+            $site_url       = get_bloginfo( 'url' );
+            $plugin_version = defined( 'WHMCS_PRICE_VERSION' ) ? WHMCS_PRICE_VERSION : 'unknown';
+            $user_agent     = "WordPress ({$site_url}) whmcs-price/{$plugin_version}";
+        }
+
+        return array(
+            'user-agent' => $user_agent,
+            'timeout'    => 15,
+        );
+    }
+
     private static function clean_response($body) {
         $body = preg_replace('/document\.write\(\'/', '', $body);
         $body = preg_replace('/\'\);/', '', $body);
@@ -237,7 +265,7 @@ class WHMCS_Price_API {
 			'attribute'     => $attribute,
 		) );
 
-		$response = wp_remote_get( $url );
+		$response = wp_remote_get( $url, self::get_request_args() );
 
 		if ( is_wp_error( $response ) ) {
 			self::debug_log( 'Product data request error', array(
@@ -353,7 +381,7 @@ class WHMCS_Price_API {
 			'reg_period' => $reg_period,
 		) );
 
-		$response = wp_remote_get( $url );
+		$response = wp_remote_get( $url, self::get_request_args() );
 
 		if ( is_wp_error( $response ) ) {
 			self::debug_log( 'Domain price request error', array(
@@ -433,7 +461,7 @@ class WHMCS_Price_API {
 			'url' => $url,
 		) );
 
-		$response = wp_remote_get( $url );
+		$response = wp_remote_get( $url, self::get_request_args() );
 
 		if ( is_wp_error( $response ) ) {
 			self::debug_log( 'All domain prices request error', array(

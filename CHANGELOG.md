@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.5.0] - 2026-02-26
+
+### Added
+
+- **Custom User-Agent setting**: A new "Custom User-Agent" field has been added to
+  the plugin settings page. When filled in, this value overrides the auto-generated
+  User-Agent for all HTTP requests to WHMCS. Useful for matching server or firewall
+  allow-rules, or for identifying plugin requests in access logs.
+  Leave the field blank to use the default auto-generated string.
+
+- **Hybrid User-Agent + explicit timeout**: All HTTP requests to WHMCS now send a
+  descriptive User-Agent header and have an explicit 15-second timeout.
+
+### Changed
+
+- **Default User-Agent format**: WordPress version number removed to avoid exposing
+  version info. New format: `WordPress (https://yoursite.com) whmcs-price/2.5.0`
+
 ## [2.4.7] - 2026-02-25
 
 ### Fixed
