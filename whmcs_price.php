@@ -7,7 +7,7 @@
  * Requires at least: 6.0
  * Tested up to:      6.9
  * Requires PHP:      8.1
- * Author:            Tobias SÃ¶rensson (Morno), MohammadReza Kamali
+ * Author:            Tobias Sörensson (Morno), MohammadReza Kamali
  * Author URI:        https://github.com/morno
  * Text Domain:       whmcs-price
  * Domain Path:       /languages
