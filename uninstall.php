@@ -9,34 +9,47 @@
  * @since   2.5.1
  */
 
-// Exit if not called from WordPress uninstall process.
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
-	exit;
+    exit;
 }
 
 /**
- * Delete plugin options.
+ * Delete all options and transients for a single site.
  */
-delete_option( 'whmcs_price_option' );
+function whmcs_price_uninstall_site() {
+    global $wpdb;
 
-/**
- * Delete all WHMCS Price transients.
- *
- * WordPress has no bulk transient delete API, so we query the options
- * table directly and then use delete_transient() for each key.
- *
- * @phpcs:disable WordPress.DB.DirectDatabaseQuery
- */
-global $wpdb;
+    delete_option( 'whmcs_price_option' );
 
-$transient_keys = $wpdb->get_col(
-	$wpdb->prepare(
-		"SELECT REPLACE(option_name, '_transient_', '') FROM {$wpdb->options} WHERE option_name LIKE %s",
-		$wpdb->esc_like( '_transient_whmcs_' ) . '%'
-	)
-);
-// @phpcs:enable
+    // Prefixes to clean up: regular transients and lock transients.
+    $prefixes = array(
+        $wpdb->esc_like( '_transient_whmcs_' ) . '%',
+        $wpdb->esc_like( '_transient_lock_whmcs_' ) . '%',
+    );
 
-foreach ( $transient_keys as $key ) {
-	delete_transient( $key );
+    foreach ( $prefixes as $like ) {
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery
+        $transient_keys = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT REPLACE(option_name, '_transient_', '') FROM {$wpdb->options} WHERE option_name LIKE %s",
+                $like
+            )
+        );
+        // phpcs:enable
+
+        foreach ( $transient_keys as $key ) {
+            delete_transient( $key );
+        }
+    }
+}
+
+if ( is_multisite() ) {
+    $whmcs_price_sites = get_sites( array( 'fields' => 'ids' ) );
+    foreach ( $whmcs_price_sites as $whmcs_price_site_id ) {
+        switch_to_blog( $whmcs_price_site_id );
+        whmcs_price_uninstall_site();
+        restore_current_blog();
+    }
+} else {
+    whmcs_price_uninstall_site();
 }

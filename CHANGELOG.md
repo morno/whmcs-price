@@ -1,6 +1,115 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+## [2.5.5] - 2026-02-28
+
+### Changed
+
+- **Settings page redesigned**: The admin settings page has been completely
+  restructured for better usability. Settings are now grouped into three clearly
+  labelled `postbox` sections — **Connection** (WHMCS URL), **Performance** (Cache
+  Duration + Clear Cache), and **Advanced** (Custom User-Agent). A two-column layout
+  separates settings from reference material, keeping the form clean and focused.
+
+- **Clear Cache moved into Performance section**: The Clear Cache button now sits
+  directly alongside the Cache Duration setting instead of being isolated at the
+  bottom of the page in a separate Maintenance block.
+
+- **Documentation sidebar added**: A right-hand sidebar on the settings page provides
+  quick-reference shortcode examples and direct links to the relevant GitHub Wiki
+  pages (Getting Started, Shortcodes & Blocks, Caching, Troubleshooting, Security).
+  A **Documentation ↗** button is also added to the page title bar. This replaces
+  the old inline documentation that was rendered as fake settings fields in the
+  settings table.
+
+- **Admin notices use WordPress CSS classes**: Inline `style="color:red"` and
+  `style="color:orange"` replaced with `notice notice-error inline` and
+  `notice notice-warning inline` to match WordPress admin UI standards.
+
+- **`DOCS_URL` constant added**: GitHub Wiki base URL defined as a class constant
+  (`WHMCSPrice::DOCS_URL`) so documentation links are maintained in one place.
+
+- **`clear_whmcs_cache()` consolidated**: Lock transient cleanup (introduced in
+  v2.5.4) is now part of the main `clear_whmcs_cache()` method in the refactored
+  settings file, removing the previous inconsistency.
+
+### Fixed
+
+- **PHPCS warning on `error_log()`**: Added `phpcs:ignore` comment to the
+  `error_log()` call in `WHMCS_Price_API::debug_log()`. The call is already
+  correctly guarded behind `WP_DEBUG && WP_DEBUG_LOG` checks — the suppression
+  is intentional and documented inline.
+
+- **PHPCS warning on unprefixed variables in `uninstall.php`**: Global variables
+  `$sites` and `$site_id` in the multisite uninstall block renamed to
+  `$whmcs_price_sites` and `$whmcs_price_site_id` to satisfy the
+  `WordPress.NamingConventions.PrefixAllGlobals` standard.
+
+## [2.5.4] - 2026-02-28
+
+### Security
+
+- **Elementor widget server-side allowlists**: Both Elementor widgets accepted
+  `display_style`, `show_columns`, and `transaction_type` values directly from
+  widget settings without server-side validation. Although Elementor's SELECT
+  controls limit the UI options, values are not guaranteed to be clean on the
+  server. Added allowlist validation in `render_product_pricing()` and
+  `render_domain_pricing()` — invalid `display_style` falls back to `table`,
+  invalid `transaction_type` falls back to `register`, and invalid column names
+  are stripped from `$whmcs_show` before rendering.
+
+### Fixed
+
+- **Elementor product widget PIDs not cast to integers**: `render_product_pricing()`
+  in `product-price-widget.php` was mapping PIDs with `trim()` only, identical to
+  the bug fixed in `render.php` in v2.5.2. The same fix is now applied here —
+  `array_map( 'intval', ... )` combined with `array_filter()` to remove zero and
+  non-numeric values before any API call is made.
+
+- **Lock transients not cleared on manual cache clear**: `clear_whmcs_cache()` in
+  `settings.php` only deleted transients matching `_transient_whmcs_*`, leaving
+  cache stampede lock entries (`_transient_lock_whmcs_*`) behind every time an
+  admin clicked Clear Cache or used the Admin Bar shortcut. The method now queries
+  and deletes both prefixes, consistent with the fix applied to `uninstall.php`
+  in v2.5.2.
+
+## [2.5.2] - 2026-02-28
+
+### Security
+
+- **HTTP URL blocked at save**: The `sanitize()` method in `settings.php` now actively
+  rejects WHMCS URLs that do not use HTTPS at the point of saving. Previously the URL
+  was accepted and silently discarded later in `get_url()`, leaving the admin with no
+  feedback. A proper `add_settings_error()` notice is now shown explaining why the URL
+  was not saved.
+
+- **TLD sanitization in API layer**: `WHMCS_Price_API::get_domain_price()` now applies
+  the same character stripping (`[^a-zA-Z0-9\-]`) and 24-character length cap that the
+  shortcode handler already applied. Previously the API method trusted callers to
+  pre-sanitize, meaning direct calls from third-party code or future integrations were
+  unprotected.
+
+### Fixed
+
+- **PIDs not cast to integers in product block**: `blocks/whmcs-price-product/render.php`
+  was mapping PIDs with `trim()` only, passing raw strings to `get_product_data()`.
+  The shortcode handler correctly used `intval()` and `array_filter()`. Both paths now
+  behave identically — invalid or non-numeric PIDs are removed before any API call.
+
+- **Lock transients not removed on uninstall**: `uninstall.php` only deleted transients
+  matching `_transient_whmcs_%`, leaving cache stampede lock entries
+  (`_transient_lock_whmcs_%`) behind. Both prefixes are now explicitly queried and
+  deleted.
+
+- **Uninstall not multisite-aware**: Plugin data (options and transients) was only
+  cleaned from the main site when running on a WordPress Multisite network. The
+  uninstall routine now iterates over all sites via `get_sites()`, calls
+  `switch_to_blog()` per site, and restores context with `restore_current_blog()`.
+
+### Changed
+
+- **`uninstall.php` refactored**: Cleanup logic extracted into a local helper function
+  `whmcs_price_uninstall_site()` to avoid code duplication between single-site and
+  multisite execution paths.
 
 ## [2.5.1] - 2026-02-26
 ### Fixed

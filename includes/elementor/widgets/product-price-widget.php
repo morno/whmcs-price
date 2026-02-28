@@ -158,7 +158,10 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 		);
 
 		$whmcs_bc_mapped = isset( $whmcs_billing_cycles[ $whmcs_billing_cycle ] ) ? $whmcs_billing_cycles[ $whmcs_billing_cycle ] : 'annually';
-		$whmcs_pids      = array_map( 'trim', explode( ',', $whmcs_pid ) );
+		$whmcs_pids = array_filter(
+    		array_map( 'intval', explode( ',', $whmcs_pid ) ),
+    		fn( $p ) => $p > 0
+		);
 
 		$whmcs_header_labels = array(
 			'name'        => __( 'Name', 'whmcs-price' ),
@@ -167,6 +170,19 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 		);
 
 		$whmcs_wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_attr( $whmcs_display_style );
+
+		// Allowlist display style
+		$allowed_styles = array( 'table', 'cards', 'grid' );
+		if ( ! in_array( $whmcs_display_style, $allowed_styles, true ) ) {
+    		$whmcs_display_style = 'table';
+		}
+
+		// Allowlist show columns
+		$allowed_columns = array( 'name', 'description', 'price' );
+		$whmcs_show = array_filter(
+    		$whmcs_show,
+    		fn( $col ) => in_array( $col, $allowed_columns, true )
+		);
 
 		echo '<div class="' . esc_attr( $whmcs_wrapper_class ) . '">';
 

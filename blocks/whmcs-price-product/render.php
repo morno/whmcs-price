@@ -52,7 +52,10 @@ $whmcs_billing_cycles = array(
 );
 
 $whmcs_bc_mapped = isset( $whmcs_billing_cycles[ $whmcs_billing_cycle ] ) ? $whmcs_billing_cycles[ $whmcs_billing_cycle ] : 'annually';
-$whmcs_pids      = array_map( 'trim', explode( ',', $whmcs_pid ) );
+$whmcs_pids = array_filter(
+    array_map( 'intval', explode( ',', $whmcs_pid ) ),
+    fn( $p ) => $p > 0
+);
 
 // Translatable column header labels.
 $whmcs_header_labels = array(
