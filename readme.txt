@@ -69,6 +69,38 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 
 == Changelog ==
 
+= 2.5.5 =
+* Changed: **Settings page redesigned**: The admin settings page has been completely
+  restructured for better usability. Settings are now grouped into three clearly
+  labelled `postbox` sections — **Connection** (WHMCS URL), **Performance** (Cache
+  Duration + Clear Cache), and **Advanced** (Custom User-Agent). A two-column layout
+  separates settings from reference material, keeping the form clean and focused.
+* Changed: **Clear Cache moved into Performance section**: The Clear Cache button now sits
+  directly alongside the Cache Duration setting instead of being isolated at the
+  bottom of the page in a separate Maintenance block.
+* Changed: **Documentation sidebar added**: A right-hand sidebar on the settings page provides
+  quick-reference shortcode examples and direct links to the relevant GitHub Wiki
+  pages (Getting Started, Shortcodes & Blocks, Caching, Troubleshooting, Security).
+  A **Documentation ↗** button is also added to the page title bar. This replaces
+  the old inline documentation that was rendered as fake settings fields in the
+  settings table.
+* Changed: **Admin notices use WordPress CSS classes**: Inline `style="color:red"` and
+  `style="color:orange"` replaced with `notice notice-error inline` and
+  `notice notice-warning inline` to match WordPress admin UI standards.
+* Changed: **`DOCS_URL` constant added**: GitHub Wiki base URL defined as a class constant
+  (`WHMCSPrice::DOCS_URL`) so documentation links are maintained in one place.
+* Changed: **`clear_whmcs_cache()` consolidated**: Lock transient cleanup (introduced in
+  v2.5.4) is now part of the main `clear_whmcs_cache()` method in the refactored
+  settings file, removing the previous inconsistency.
+* Fix: **PHPCS warning on `error_log()`**: Added `phpcs:ignore` comment to the
+  `error_log()` call in `WHMCS_Price_API::debug_log()`. The call is already
+  correctly guarded behind `WP_DEBUG && WP_DEBUG_LOG` checks — the suppression
+  is intentional and documented inline.
+* Fix: **PHPCS warning on unprefixed variables in `uninstall.php`**: Global variables
+  `$sites` and `$site_id` in the multisite uninstall block renamed to
+  `$whmcs_price_sites` and `$whmcs_price_site_id` to satisfy the
+  `WordPress.NamingConventions.PrefixAllGlobals` standard.
+
 = 2.5.4 =
 * Security: **Elementor widget server-side allowlists**: Both Elementor widgets accepted
   `display_style`, `show_columns`, and `transaction_type` values directly from
