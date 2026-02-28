@@ -69,6 +69,63 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 
 == Changelog ==
 
+= 2.5.2 =
+* Security: **HTTP URL blocked at save**: The `sanitize()` method in `settings.php` now actively
+  rejects WHMCS URLs that do not use HTTPS at the point of saving. Previously the URL
+  was accepted and silently discarded later in `get_url()`, leaving the admin with no
+  feedback. A proper `add_settings_error()` notice is now shown explaining why the URL
+  was not saved.
+* Security: **TLD sanitization in API layer**: `WHMCS_Price_API::get_domain_price()` now applies
+  the same character stripping (`[^a-zA-Z0-9\-]`) and 24-character length cap that the
+  shortcode handler already applied. Previously the API method trusted callers to
+  pre-sanitize, meaning direct calls from third-party code or future integrations were
+  unprotected.
+* Fix: **PIDs not cast to integers in product block**: `blocks/whmcs-price-product/render.php`
+  was mapping PIDs with `trim()` only, passing raw strings to `get_product_data()`.
+  The shortcode handler correctly used `intval()` and `array_filter()`. Both paths now
+  behave identically — invalid or non-numeric PIDs are removed before any API call.
+* Fix: **Lock transients not removed on uninstall**: `uninstall.php` only deleted transients
+  matching `_transient_whmcs_%`, leaving cache stampede lock entries
+  (`_transient_lock_whmcs_%`) behind. Both prefixes are now explicitly queried and
+  deleted.
+* Fix: **Uninstall not multisite-aware**: Plugin data (options and transients) was only
+  cleaned from the main site when running on a WordPress Multisite network. The
+  uninstall routine now iterates over all sites via `get_sites()`, calls
+  `switch_to_blog()` per site, and restores context with `restore_current_blog()`.
+* Changed: **`uninstall.php` refactored**: Cleanup logic extracted into a local helper function
+  `whmcs_price_uninstall_site()` to avoid code duplication between single-site and
+  multisite execution paths.
+
+= 2.5.1 =
+* Fix: **Author name encoding**: Corrected double-encoded UTF-8 characters in the plugin
+  header of `whmcs_price.php`. The author name `Sörensson` was stored as mojibake
+  (`SÃ¶rensson`) due to a file being re-encoded by an external tool or editor.
+* Fix: **Misplaced docblock**: The `clean_response()` method in `class-whmcs-api.php` was
+  missing its own docblock, and an orphaned docblock originally written for it had
+  ended up placed above `get_request_args()` instead. Both methods now have correct,
+  properly placed documentation.
+* Fix: **TLD max length**: Added a `substr()` cap of 24 characters to the TLD value in
+  the `[whmcs]` shortcode handler, preventing excessively long strings from being
+  passed to the API or generating oversized cache keys.
+* Changed: **Shortcode function renamed**: `whmcs_func()` renamed to
+  `whmcs_price_shortcode_handler()` to follow WordPress coding standards requiring
+  all global functions to use a unique plugin prefix.
+* Changed: **Blocks file renamed**: `includes/class-whmcs-blocks.php` renamed to
+  `includes/blocks.php`. The file contains only a hooked function — not a class —
+  so the `class-` prefix was misleading and against WordPress naming conventions.
+  The `require_once` reference in `whmcs_price.php` updated accordingly.
+* Changed: **License unified**: `includes/settings.php` had `GPL-3.0-or-later` in its file
+  header, inconsistent with the rest of the plugin. Updated to `GPLv2 or later`
+  with the correct license URI to match the main plugin header and `readme.txt`.
+* Added: **`uninstall.php`**: Added a proper uninstall routine that removes all plugin data
+  from the database when the plugin is deleted via the WordPress admin. Previously,
+  data was left behind after deletion. The plugin stores the following in `wp_options`:
+* Added: `whmcs_price_option` — plugin settings (WHMCS URL, cache TTL, custom User-Agent)
+* Added: `_transient_whmcs_product_*` — cached product prices (name, description, price)
+* Added: `_transient_whmcs_domain_*` — cached domain prices per TLD/type/period
+* Added: `_transient_whmcs_domain_all` — cached full TLD price list
+* Added: `_transient_lock_whmcs_*` — short-lived stampede-prevention locks (10 s TTL)
+
 = 2.5.0 =
 * Added: **Custom User-Agent setting**: A new "Custom User-Agent" field has been added to
   the plugin settings page. When filled in, this value overrides the auto-generated
@@ -91,7 +148,7 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 * Fix: **Slow Gutenberg Save**: When saving a post in the block editor, WordPress fires
   the `the_content` filter via a REST API request, which triggered server-side
   rendering of both WHMCS blocks. This caused live HTTP requests to the WHMCS server
-  on every save â€” even though the result is never shown in the editor. Added an early
+  on every save — even though the result is never shown in the editor. Added an early
   exit in both `render.php` files when `REST_REQUEST` or `DOING_AUTOSAVE` is defined,
   returning a lightweight HTML comment instead. The real data continues to render
   correctly on frontend page loads.
@@ -101,7 +158,7 @@ This is the shortcode to extract domain registration, renewal, or transfer price
   `whmcs-price/domain`) were missing a `save` function in their `registerBlockType`
   call. Without `save: () => null`, WordPress attempts to serialize the block's
   editor output as static HTML. On page reload, the editor compares the stored HTML
-  against what `save()` returns â€” the mismatch triggers a block validation error that
+  against what `save()` returns — the mismatch triggers a block validation error that
   causes the editor to hang indefinitely on load. Added `save: () => null` to both
   `index.js` source files and their compiled counterparts in `blocks/build/` to
   correctly declare these as dynamic (server-side rendered) blocks.
@@ -114,7 +171,7 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 * Security: **Input Allowlists**: Added strict allowlist validation in `WHMCS_Price_API` for all
   parameters passed to WHMCS feed URLs. `$attribute` is restricted to `name`,
   `description`, `price`; `$billing_cycle` to the six known WHMCS cycle names;
-  `$type` to `register`, `renew`, `transfer`; and `$reg_period` to integers 1â€“10.
+  `$type` to `register`, `renew`, `transfer`; and `$reg_period` to integers 1–10.
   Requests with invalid values now return `'NA'` immediately without hitting WHMCS.
 * Security: **TLD Sanitization**: The `tld` shortcode attribute is now sanitized with
   `sanitize_text_field()` and stripped of all characters outside `[a-zA-Z0-9-]`
@@ -191,21 +248,21 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 * Added: **Custom Elementor Category**: "WHMCS Price" category in Elementor widget panel
 * Added: **Shared Styling**: Elementor widgets reuse block CSS for consistency
 * Changed: **File Structure**: Reorganized for better maintainability
-* Changed: Renamed `includes/short_code/` â†’ `includes/shortcodes/`
-* Changed: Renamed `short_code.php` â†’ `shortcode.php`
+* Changed: Renamed `includes/short_code/` → `includes/shortcodes/`
+* Changed: Renamed `short_code.php` → `shortcode.php`
 * Changed: Added `includes/elementor/` for Elementor integration
 * Changed: Added `STRUCTURE.md` documentation
 
 = 2.3.0 =
-* Added: **Gutenberg Block: WHMCS Product Price** â€” Native block editor support for displaying real-time product pricing from WHMCS. Configured via the block sidebar (InspectorControls) with controls for Product ID(s), Billing Cycle, and display columns (Name, Description, Price).
-* Added: **Gutenberg Block: WHMCS Domain Price** â€” Native block editor support for displaying real-time domain pricing from WHMCS. Configured via the block sidebar with controls for TLD, Transaction Type (register, renew, transfer), and Registration Period (1â€“10 years).
-* Added: Both blocks use **server-side rendering** (`render.php`) and reuse the existing `WHMCS_Price_API` class â€” no logic duplication, full transient caching inherited automatically.
+* Added: **Gutenberg Block: WHMCS Product Price** — Native block editor support for displaying real-time product pricing from WHMCS. Configured via the block sidebar (InspectorControls) with controls for Product ID(s), Billing Cycle, and display columns (Name, Description, Price).
+* Added: **Gutenberg Block: WHMCS Domain Price** — Native block editor support for displaying real-time domain pricing from WHMCS. Configured via the block sidebar with controls for TLD, Transaction Type (register, renew, transfer), and Registration Period (1–10 years).
+* Added: Both blocks use **server-side rendering** (`render.php`) and reuse the existing `WHMCS_Price_API` class — no logic duplication, full transient caching inherited automatically.
 * Added: `block.json` metadata files for both blocks following WordPress block API v3 standards.
 * Added: `class-whmcs-blocks.php` for block registration via `register_block_type()`.
 * Added: Editor preview shown in the block canvas when a Product ID or TLD has been configured.
 * Added: `Placeholder` component shown in the editor when the block has not yet been configured.
 * Changed: Updated `WHMCS_PRICE_VERSION` constant to `2.3.0`.
-* Changed: Fixed author name encoding in plugin header (`SÃ¶rensson` was incorrectly stored as mojibake).
+* Changed: Fixed author name encoding in plugin header (`Sörensson` was incorrectly stored as mojibake).
 * Changed: Block registration uses `WHMCS_PRICE_DIR` constant consistently with the rest of the plugin.
 * Changed: Changed Tags in readme.txt to the supported Tags of 5.
 
