@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.5.3] - 2026-02-28
+
+### Changed
+
+- **Settings page moved to WordPress standard location**: The plugin settings page
+  previously registered itself as a top-level menu item in the WordPress admin sidebar
+  via `add_menu_page()`. This is non-standard for a settings-only plugin and clutters
+  the sidebar unnecessarily. Replaced with `add_options_page()` so the settings page
+  now lives under **Settings > WHMCS Price Settings**, consistent with WordPress
+  conventions.
+
+- **Settings link added to plugin list**: Added a `plugin_action_links_` filter via a
+  new `add_settings_link()` method in the `WHMCSPrice` class. A **Settings** link now
+  appears directly on the plugin row under **Plugins > Installed Plugins**, making it
+  quicker to reach the settings page without navigating through the menu.
+
 ## [2.5.2] - 2026-02-28
 
 ### Security
