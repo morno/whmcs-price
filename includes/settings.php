@@ -26,19 +26,26 @@ class WHMCSPrice {
 		add_action( 'admin_init', array( $this, 'whmcspr_init' ) );
 		add_action( 'admin_bar_menu', array( $this, 'add_admin_bar_clear_cache' ), 100 );
 		add_action( 'admin_init', array( $this, 'handle_admin_bar_clear_cache_action' ) );
+		add_filter( 'plugin_action_links_' . plugin_basename( WHMCS_PRICE_DIR . 'whmcs_price.php' ), array( $this, 'add_settings_link' ) );
 	}
 
-	public function whmcspr_plugin_page() {
-		add_menu_page(
-			__( 'WHMCS Price Options', 'whmcs-price' ),
-			__( 'WHMCS Price Settings', 'whmcs-price' ),
-			'manage_options',
-			'whmcs_price',
-			array( $this, 'whmcspr_admin_page' ),
-			'dashicons-admin-generic',
-			100
-		);
+	public function add_settings_link( $links ) {
+    	$settings_link = '<a href="' . admin_url( 'options-general.php?page=whmcs_price' ) . '">' . __( 'Settings', 'whmcs-price' ) . '</a>';
+    	array_unshift( $links, $settings_link );
+    	return $links;
 	}
+	
+	public function whmcspr_plugin_page() {
+    	add_options_page(
+        	__( 'WHMCS Price Options', 'whmcs-price' ),
+        	__( 'WHMCS Price Settings', 'whmcs-price' ),
+        	'manage_options',
+        	'whmcs_price',
+        	array( $this, 'whmcspr_admin_page' )
+    	);
+	}
+
+	
 
 	public function whmcspr_admin_page() {
 		if ( ! current_user_can( 'manage_options' ) ) {
