@@ -69,6 +69,18 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 
 == Changelog ==
 
+= 2.5.3 =
+* Changed: **Settings page moved to WordPress standard location**: The plugin settings page
+  previously registered itself as a top-level menu item in the WordPress admin sidebar
+  via `add_menu_page()`. This is non-standard for a settings-only plugin and clutters
+  the sidebar unnecessarily. Replaced with `add_options_page()` so the settings page
+  now lives under **Settings > WHMCS Price Settings**, consistent with WordPress
+  conventions.
+* Changed: **Settings link added to plugin list**: Added a `plugin_action_links_` filter via a
+  new `add_settings_link()` method in the `WHMCSPrice` class. A **Settings** link now
+  appears directly on the plugin row under **Plugins > Installed Plugins**, making it
+  quicker to reach the settings page without navigating through the menu.
+
 = 2.5.2 =
 * Security: **HTTP URL blocked at save**: The `sanitize()` method in `settings.php` now actively
   rejects WHMCS URLs that do not use HTTPS at the point of saving. Previously the URL
