@@ -44,9 +44,9 @@ function whmcs_price_uninstall_site() {
 }
 
 if ( is_multisite() ) {
-    $sites = get_sites( array( 'fields' => 'ids' ) );
-    foreach ( $sites as $site_id ) {
-        switch_to_blog( $site_id );
+    $whmcs_price_sites = get_sites( array( 'fields' => 'ids' ) );
+    foreach ( $whmcs_price_sites as $whmcs_price_site_id ) {
+        switch_to_blog( $whmcs_price_site_id );
         whmcs_price_uninstall_site();
         restore_current_blog();
     }
