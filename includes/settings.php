@@ -313,27 +313,29 @@ class WHMCSPrice {
 	}
 
 	public function clear_whmcs_cache() {
-		global $wpdb;
+    	global $wpdb;
 
-		/**
-		 * Direct DB query is necessary as WordPress has no bulk transient delete API.
-		 * We use delete_transient() for actual deletion (WordPress API).
-		 *
-		 * @phpcs:disable WordPress.DB.DirectDatabaseQuery
-		 */
-		$transient_keys = $wpdb->get_col(
-			$wpdb->prepare(
-				"SELECT REPLACE(option_name, '_transient_', '') FROM $wpdb->options WHERE option_name LIKE %s",
-				$wpdb->esc_like( '_transient_whmcs_' ) . '%'
-			)
-		);
-		// @phpcs:enable
+    	$prefixes = array(
+        	$wpdb->esc_like( '_transient_whmcs_' ) . '%',
+        	$wpdb->esc_like( '_transient_lock_whmcs_' ) . '%',
+    	);
 
-		foreach ( $transient_keys as $key ) {
-			delete_transient( $key );
-		}
+    	foreach ( $prefixes as $like ) {
+        	// phpcs:disable WordPress.DB.DirectDatabaseQuery
+        	$transient_keys = $wpdb->get_col(
+            	$wpdb->prepare(
+                	"SELECT REPLACE(option_name, '_transient_', '') FROM $wpdb->options WHERE option_name LIKE %s",
+                	$like
+            	)
+        	);
+        	// phpcs:enable
 
-		delete_expired_transients( true );
+        	foreach ( $transient_keys as $key ) {
+            	delete_transient( $key );
+        	}
+    	}
+
+    	delete_expired_transients( true );
 	}
 
 	public function add_admin_bar_clear_cache( $admin_bar ) {

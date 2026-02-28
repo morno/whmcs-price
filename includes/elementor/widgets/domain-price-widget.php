@@ -161,6 +161,18 @@ class WHMCS_Price_Elementor_Domain_Widget extends \Elementor\Widget_Base {
 		$whmcs_reg_period    = str_replace( 'y', '', $whmcs_reg_period_raw );
 		$whmcs_wrapper_class = 'whmcs-domain-display whmcs-domain-display--' . esc_attr( $whmcs_display_style );
 
+		// Allowlist display style
+		$allowed_styles = array( 'table', 'badge', 'inline' );
+		if ( ! in_array( $whmcs_display_style, $allowed_styles, true ) ) {
+    		$whmcs_display_style = 'table';
+		}
+
+		// Allowlist transaction type
+		$allowed_types = array( 'register', 'renew', 'transfer' );
+		if ( ! in_array( $whmcs_transaction_type, $allowed_types, true ) ) {
+    		$whmcs_transaction_type = 'register';
+		}
+
 		echo '<div class="' . esc_attr( $whmcs_wrapper_class ) . '">';
 
 		if ( empty( $whmcs_tld ) ) {

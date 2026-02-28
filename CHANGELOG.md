@@ -1,6 +1,32 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+## [2.5.4] - 2026-02-28
+
+### Security
+
+- **Elementor widget server-side allowlists**: Both Elementor widgets accepted
+  `display_style`, `show_columns`, and `transaction_type` values directly from
+  widget settings without server-side validation. Although Elementor's SELECT
+  controls limit the UI options, values are not guaranteed to be clean on the
+  server. Added allowlist validation in `render_product_pricing()` and
+  `render_domain_pricing()` — invalid `display_style` falls back to `table`,
+  invalid `transaction_type` falls back to `register`, and invalid column names
+  are stripped from `$whmcs_show` before rendering.
+
+### Fixed
+
+- **Elementor product widget PIDs not cast to integers**: `render_product_pricing()`
+  in `product-price-widget.php` was mapping PIDs with `trim()` only, identical to
+  the bug fixed in `render.php` in v2.5.2. The same fix is now applied here —
+  `array_map( 'intval', ... )` combined with `array_filter()` to remove zero and
+  non-numeric values before any API call is made.
+
+- **Lock transients not cleared on manual cache clear**: `clear_whmcs_cache()` in
+  `settings.php` only deleted transients matching `_transient_whmcs_*`, leaving
+  cache stampede lock entries (`_transient_lock_whmcs_*`) behind every time an
+  admin clicked Clear Cache or used the Admin Bar shortcut. The method now queries
+  and deletes both prefixes, consistent with the fix applied to `uninstall.php`
+  in v2.5.2.
 
 ## [2.5.3] - 2026-02-28
 
