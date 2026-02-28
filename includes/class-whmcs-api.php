@@ -342,7 +342,15 @@ class WHMCS_Price_API {
 			return 'NA';
 		}
 
-		$tld       = ltrim( $tld, '.' );
+		$tld = ltrim( $tld, '.' );
+		$tld = preg_replace( '/[^a-zA-Z0-9\-]/', '', $tld );
+		$tld = substr( $tld, 0, 24 );
+
+		if ( empty( $tld ) ) {
+    		self::debug_log( 'Domain price request blocked: invalid TLD after sanitization' );
+    		return 'NA';
+		}
+
 		$cache_key = 'whmcs_domain_' . md5( $tld . '_' . $type . '_' . $reg_period );
 		$cached    = get_transient( $cache_key );
 

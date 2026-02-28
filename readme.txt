@@ -4,7 +4,7 @@ Tags: whmcs, price, hosting, domain, billing
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.1
-Stable tag: 2.5.1
+Stable tag: 2.5.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -91,7 +91,7 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 * Fix: **Slow Gutenberg Save**: When saving a post in the block editor, WordPress fires
   the `the_content` filter via a REST API request, which triggered server-side
   rendering of both WHMCS blocks. This caused live HTTP requests to the WHMCS server
-  on every save — even though the result is never shown in the editor. Added an early
+  on every save â€” even though the result is never shown in the editor. Added an early
   exit in both `render.php` files when `REST_REQUEST` or `DOING_AUTOSAVE` is defined,
   returning a lightweight HTML comment instead. The real data continues to render
   correctly on frontend page loads.
@@ -101,7 +101,7 @@ This is the shortcode to extract domain registration, renewal, or transfer price
   `whmcs-price/domain`) were missing a `save` function in their `registerBlockType`
   call. Without `save: () => null`, WordPress attempts to serialize the block's
   editor output as static HTML. On page reload, the editor compares the stored HTML
-  against what `save()` returns — the mismatch triggers a block validation error that
+  against what `save()` returns â€” the mismatch triggers a block validation error that
   causes the editor to hang indefinitely on load. Added `save: () => null` to both
   `index.js` source files and their compiled counterparts in `blocks/build/` to
   correctly declare these as dynamic (server-side rendered) blocks.
@@ -114,7 +114,7 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 * Security: **Input Allowlists**: Added strict allowlist validation in `WHMCS_Price_API` for all
   parameters passed to WHMCS feed URLs. `$attribute` is restricted to `name`,
   `description`, `price`; `$billing_cycle` to the six known WHMCS cycle names;
-  `$type` to `register`, `renew`, `transfer`; and `$reg_period` to integers 1–10.
+  `$type` to `register`, `renew`, `transfer`; and `$reg_period` to integers 1â€“10.
   Requests with invalid values now return `'NA'` immediately without hitting WHMCS.
 * Security: **TLD Sanitization**: The `tld` shortcode attribute is now sanitized with
   `sanitize_text_field()` and stripped of all characters outside `[a-zA-Z0-9-]`
@@ -191,21 +191,21 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 * Added: **Custom Elementor Category**: "WHMCS Price" category in Elementor widget panel
 * Added: **Shared Styling**: Elementor widgets reuse block CSS for consistency
 * Changed: **File Structure**: Reorganized for better maintainability
-* Changed: Renamed `includes/short_code/` → `includes/shortcodes/`
-* Changed: Renamed `short_code.php` → `shortcode.php`
+* Changed: Renamed `includes/short_code/` â†’ `includes/shortcodes/`
+* Changed: Renamed `short_code.php` â†’ `shortcode.php`
 * Changed: Added `includes/elementor/` for Elementor integration
 * Changed: Added `STRUCTURE.md` documentation
 
 = 2.3.0 =
-* Added: **Gutenberg Block: WHMCS Product Price** — Native block editor support for displaying real-time product pricing from WHMCS. Configured via the block sidebar (InspectorControls) with controls for Product ID(s), Billing Cycle, and display columns (Name, Description, Price).
-* Added: **Gutenberg Block: WHMCS Domain Price** — Native block editor support for displaying real-time domain pricing from WHMCS. Configured via the block sidebar with controls for TLD, Transaction Type (register, renew, transfer), and Registration Period (1–10 years).
-* Added: Both blocks use **server-side rendering** (`render.php`) and reuse the existing `WHMCS_Price_API` class — no logic duplication, full transient caching inherited automatically.
+* Added: **Gutenberg Block: WHMCS Product Price** â€” Native block editor support for displaying real-time product pricing from WHMCS. Configured via the block sidebar (InspectorControls) with controls for Product ID(s), Billing Cycle, and display columns (Name, Description, Price).
+* Added: **Gutenberg Block: WHMCS Domain Price** â€” Native block editor support for displaying real-time domain pricing from WHMCS. Configured via the block sidebar with controls for TLD, Transaction Type (register, renew, transfer), and Registration Period (1â€“10 years).
+* Added: Both blocks use **server-side rendering** (`render.php`) and reuse the existing `WHMCS_Price_API` class â€” no logic duplication, full transient caching inherited automatically.
 * Added: `block.json` metadata files for both blocks following WordPress block API v3 standards.
 * Added: `class-whmcs-blocks.php` for block registration via `register_block_type()`.
 * Added: Editor preview shown in the block canvas when a Product ID or TLD has been configured.
 * Added: `Placeholder` component shown in the editor when the block has not yet been configured.
 * Changed: Updated `WHMCS_PRICE_VERSION` constant to `2.3.0`.
-* Changed: Fixed author name encoding in plugin header (`Sörensson` was incorrectly stored as mojibake).
+* Changed: Fixed author name encoding in plugin header (`SÃ¶rensson` was incorrectly stored as mojibake).
 * Changed: Block registration uses `WHMCS_PRICE_DIR` constant consistently with the rest of the plugin.
 * Changed: Changed Tags in readme.txt to the supported Tags of 5.
 

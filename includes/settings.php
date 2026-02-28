@@ -132,9 +132,19 @@ class WHMCSPrice {
 	public function sanitize( $input ): array {
     	$new_input = array();
 
-    	if ( ! empty( $input['whmcs_url'] ) ) {
-        	$new_input['whmcs_url'] = esc_url_raw( trim( $input['whmcs_url'] ) );
-    	}
+		if ( ! empty( $input['whmcs_url'] ) ) {
+    		$url = esc_url_raw( trim( $input['whmcs_url'] ) );
+
+    		if ( ! str_starts_with( strtolower( $url ), 'https://' ) ) {
+        		add_settings_error(
+            		'whmcs_price_option',
+            		'http_url_blocked',
+            		__( 'WHMCS URL must use HTTPS. HTTP URLs are blocked for security reasons.', 'whmcs-price' )
+        		);
+    		} else {
+        		$new_input['whmcs_url'] = $url;
+    		}
+		}
 
     	$allowed_ttls = array( 3600, 7200, 10800, 21600, 43200, 86400 );
     	if ( ! empty( $input['cache_ttl'] ) && in_array( (int) $input['cache_ttl'], $allowed_ttls, true ) ) {

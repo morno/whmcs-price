@@ -2,6 +2,45 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.5.2] - 2026-02-28
+
+### Security
+
+- **HTTP URL blocked at save**: The `sanitize()` method in `settings.php` now actively
+  rejects WHMCS URLs that do not use HTTPS at the point of saving. Previously the URL
+  was accepted and silently discarded later in `get_url()`, leaving the admin with no
+  feedback. A proper `add_settings_error()` notice is now shown explaining why the URL
+  was not saved.
+
+- **TLD sanitization in API layer**: `WHMCS_Price_API::get_domain_price()` now applies
+  the same character stripping (`[^a-zA-Z0-9\-]`) and 24-character length cap that the
+  shortcode handler already applied. Previously the API method trusted callers to
+  pre-sanitize, meaning direct calls from third-party code or future integrations were
+  unprotected.
+
+### Fixed
+
+- **PIDs not cast to integers in product block**: `blocks/whmcs-price-product/render.php`
+  was mapping PIDs with `trim()` only, passing raw strings to `get_product_data()`.
+  The shortcode handler correctly used `intval()` and `array_filter()`. Both paths now
+  behave identically — invalid or non-numeric PIDs are removed before any API call.
+
+- **Lock transients not removed on uninstall**: `uninstall.php` only deleted transients
+  matching `_transient_whmcs_%`, leaving cache stampede lock entries
+  (`_transient_lock_whmcs_%`) behind. Both prefixes are now explicitly queried and
+  deleted.
+
+- **Uninstall not multisite-aware**: Plugin data (options and transients) was only
+  cleaned from the main site when running on a WordPress Multisite network. The
+  uninstall routine now iterates over all sites via `get_sites()`, calls
+  `switch_to_blog()` per site, and restores context with `restore_current_blog()`.
+
+### Changed
+
+- **`uninstall.php` refactored**: Cleanup logic extracted into a local helper function
+  `whmcs_price_uninstall_site()` to avoid code duplication between single-site and
+  multisite execution paths.
+
 ## [2.5.1] - 2026-02-26
 ### Fixed
 
