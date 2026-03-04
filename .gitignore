@@ -27,3 +27,4 @@ package*.json
 # Shell scripts (if you meant to ignore it)
 build.sh
 build.ps1
+banner-whmcs-price.svg
