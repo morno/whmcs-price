@@ -1,4 +1,4 @@
-=== Mornolink for WHMCS ===
+﻿=== Mornolink for WHMCS ===
 Contributors: morno, kamalireal
 Tags: whmcs, price, hosting, domain, billing
 Requires at least: 6.0
@@ -7,6 +7,7 @@ Requires PHP: 8.1
 Stable tag: 2.5.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
+Donate link: https://github.com/morno/whmcs-price
 
 Dynamic way for extracting product & domain price from WHMCS.
 
@@ -27,6 +28,20 @@ Plugin features:
 * Extract domain price.
 * Use this plugin to Show price in posts and pages.
 * Use this plugin to Show price in theme.
+
+== Frequently Asked Questions ==
+
+= Where do I find my Product ID? =
+Log in to WHMCS, go to Products/Services and open the product. The ID is visible in the URL or the product list.
+
+= Why does the shortcode show "NA"? =
+This usually means the WHMCS URL is not configured, the product ID doesn't exist, or the billing cycle is not active for that product.
+
+= Does this plugin support HTTPS only? =
+Yes. For security reasons the plugin requires your WHMCS URL to use HTTPS. HTTP URLs are rejected.
+
+= How do I clear the price cache? =
+Go to Settings > WHMCS Price Settings and click the Clear Cache button, or use the Admin Bar shortcut.
 
 == Source Code ==
 
@@ -297,7 +312,7 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 * Added: **Custom Elementor Category**: "WHMCS Price" category in Elementor widget panel
 * Added: **Shared Styling**: Elementor widgets reuse block CSS for consistency
 * Changed: **File Structure**: Reorganized for better maintainability
-* Changed: Renamed `includes/short_code/` → `includes/shortcodes/`
+* Changed: Renamed `includes/short_code/` → `includes/shortcodes/` 
 * Changed: Renamed `short_code.php` → `shortcode.php`
 * Changed: Added `includes/elementor/` for Elementor integration
 * Changed: Added `STRUCTURE.md` documentation
@@ -351,6 +366,14 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 * Initial refactor of the original plugin.
 * Switched from direct SQL/Legacy API to WHMCS JS Feeds (HTTP).
 * Added WordPress Transients API for caching.
+
+== Upgrade Notice ==
+
+= 2.5.5 =
+Security and multisite fixes. Recommended update for all users. Cleans up orphaned lock transients on uninstall and adds server-side validation to Elementor widgets.
+
+= 2.5.2 =
+Security release. Adds HTTPS enforcement at save time and TLD sanitization in the API layer. All users should upgrade.
 
 == Screenshots ==
 1. /assets/screenshot-1.jpg
