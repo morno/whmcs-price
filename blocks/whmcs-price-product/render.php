@@ -31,6 +31,7 @@ $whmcs_pid           = ! empty( $attributes['pid'] ) ? sanitize_text_field( $att
 $whmcs_billing_cycle = ! empty( $attributes['billingCycle'] ) ? sanitize_text_field( $attributes['billingCycle'] ) : '1y';
 $whmcs_show          = ! empty( $attributes['show'] ) && is_array( $attributes['show'] ) ? $attributes['show'] : array( 'name', 'price' );
 $whmcs_display_style = ! empty( $attributes['displayStyle'] ) ? sanitize_text_field( $attributes['displayStyle'] ) : 'table';
+$whmcs_per_period    = ! empty( $attributes['perPeriod'] ) ? sanitize_text_field( $attributes['perPeriod'] ) : '';
 // phpcs:enable
 
 // Require a Product ID to render anything meaningful.
@@ -83,7 +84,13 @@ $whmcs_wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_att
 				<?php foreach ( $whmcs_pids as $whmcs_single_pid ) : ?>
 					<tr>
 						<?php foreach ( $whmcs_show as $whmcs_attr ) : ?>
-							<td><?php echo esc_html( WHMCS_Price_API::get_product_data( intval( $whmcs_single_pid ), $whmcs_bc_mapped, sanitize_text_field( $whmcs_attr ) ) ); ?></td>
+							<?php
+							$whmcs_value = WHMCS_Price_API::get_product_data( intval( $whmcs_single_pid ), $whmcs_bc_mapped, sanitize_text_field( $whmcs_attr ) );
+							if ( 'price' === strtolower( trim( $whmcs_attr ) ) && ! empty( $whmcs_per_period ) ) {
+								$whmcs_value = whmcs_price_format_per( $whmcs_value, $whmcs_bc_mapped, 1, $whmcs_per_period );
+							}
+							?>
+							<td><?php echo wp_kses( $whmcs_value, array( 'span' => array( 'class' => array() ) ) ); ?></td>
 						<?php endforeach; ?>
 					</tr>
 				<?php endforeach; ?>
@@ -97,12 +104,15 @@ $whmcs_wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_att
 				<div class="whmcs-product-card">
 					<?php foreach ( $whmcs_show as $whmcs_attr ) : ?>
 						<?php
-						$whmcs_value = WHMCS_Price_API::get_product_data( intval( $whmcs_single_pid ), $whmcs_bc_mapped, sanitize_text_field( $whmcs_attr ) );
+						$whmcs_value      = WHMCS_Price_API::get_product_data( intval( $whmcs_single_pid ), $whmcs_bc_mapped, sanitize_text_field( $whmcs_attr ) );
 						$whmcs_attr_clean = strtolower( trim( $whmcs_attr ) );
+						if ( 'price' === $whmcs_attr_clean && ! empty( $whmcs_per_period ) ) {
+							$whmcs_value = whmcs_price_format_per( $whmcs_value, $whmcs_bc_mapped, 1, $whmcs_per_period );
+						}
 						?>
 						<div class="whmcs-product-card__<?php echo esc_attr( $whmcs_attr_clean ); ?>">
 							<?php if ( 'price' === $whmcs_attr_clean ) : ?>
-								<span class="whmcs-product-card__price-value"><?php echo esc_html( $whmcs_value ); ?></span>
+								<span class="whmcs-product-card__price-value"><?php echo wp_kses( $whmcs_value, array( 'span' => array( 'class' => array() ) ) ); ?></span>
 							<?php elseif ( 'name' === $whmcs_attr_clean ) : ?>
 								<h3 class="whmcs-product-card__title"><?php echo esc_html( $whmcs_value ); ?></h3>
 							<?php else : ?>
@@ -121,13 +131,16 @@ $whmcs_wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_att
 				<div class="whmcs-product-grid-item">
 					<?php foreach ( $whmcs_show as $whmcs_attr ) : ?>
 						<?php
-						$whmcs_value = WHMCS_Price_API::get_product_data( intval( $whmcs_single_pid ), $whmcs_bc_mapped, sanitize_text_field( $whmcs_attr ) );
+						$whmcs_value      = WHMCS_Price_API::get_product_data( intval( $whmcs_single_pid ), $whmcs_bc_mapped, sanitize_text_field( $whmcs_attr ) );
 						$whmcs_attr_clean = strtolower( trim( $whmcs_attr ) );
-						$whmcs_label = $whmcs_header_labels[ $whmcs_attr_clean ] ?? ucfirst( $whmcs_attr );
+						$whmcs_label      = $whmcs_header_labels[ $whmcs_attr_clean ] ?? ucfirst( $whmcs_attr );
+						if ( 'price' === $whmcs_attr_clean && ! empty( $whmcs_per_period ) ) {
+							$whmcs_value = whmcs_price_format_per( $whmcs_value, $whmcs_bc_mapped, 1, $whmcs_per_period );
+						}
 						?>
 						<div class="whmcs-product-grid-item__field">
 							<span class="whmcs-product-grid-item__label"><?php echo esc_html( $whmcs_label ); ?></span>
-							<span class="whmcs-product-grid-item__value"><?php echo esc_html( $whmcs_value ); ?></span>
+							<span class="whmcs-product-grid-item__value"><?php echo wp_kses( $whmcs_value, array( 'span' => array( 'class' => array() ) ) ); ?></span>
 						</div>
 					<?php endforeach; ?>
 				</div>

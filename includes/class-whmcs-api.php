@@ -11,7 +11,7 @@
  * @since      2.2.0
  */
 
-defined('ABSPATH') || exit;
+defined( 'ABSPATH' ) || exit;
 
 class WHMCS_Price_API {
 
@@ -231,7 +231,7 @@ class WHMCS_Price_API {
 		$cache_key = 'whmcs_product_' . md5( $pid . '_' . $billing_cycle . '_' . $attribute );
 		$cached    = get_transient( $cache_key );
 
-		if ( $cached !== false ) {
+		if ( false !== $cached ) {
 			self::debug_log( 'Product data served from cache', array(
 				'cache_key' => $cache_key,
 				'value'     => $cached,
@@ -277,7 +277,7 @@ class WHMCS_Price_API {
 		}
 
 		$response_code = wp_remote_retrieve_response_code( $response );
-		if ( $response_code !== 200 ) {
+		if ( 200 !== $response_code ) {
 			self::debug_log( 'Product data request failed with HTTP error', array(
 				'response_code' => $response_code,
 				'url'           => $url,
@@ -354,7 +354,7 @@ class WHMCS_Price_API {
 		$cache_key = 'whmcs_domain_' . md5( $tld . '_' . $type . '_' . $reg_period );
 		$cached    = get_transient( $cache_key );
 
-		if ( $cached !== false ) {
+		if ( false !== $cached ) {
 			self::debug_log( 'Domain price served from cache', array(
 				'cache_key' => $cache_key,
 				'value'     => $cached,
@@ -401,7 +401,7 @@ class WHMCS_Price_API {
 		}
 
 		$response_code = wp_remote_retrieve_response_code( $response );
-		if ( $response_code !== 200 ) {
+		if ( 200 !== $response_code ) {
 			self::debug_log( 'Domain price request failed with HTTP error', array(
 				'response_code' => $response_code,
 				'url'           => $url,
@@ -446,7 +446,7 @@ class WHMCS_Price_API {
 		$cache_key = 'whmcs_domain_all';
 		$cached    = get_transient( $cache_key );
 
-		if ( $cached !== false ) {
+		if ( false !== $cached ) {
 			self::debug_log( 'All domain prices served from cache', array(
 				'cache_key'   => $cache_key,
 				'data_length' => strlen( $cached ),
@@ -481,7 +481,7 @@ class WHMCS_Price_API {
 		}
 
 		$response_code = wp_remote_retrieve_response_code( $response );
-		if ( $response_code !== 200 ) {
+		if ( 200 !== $response_code ) {
 			self::debug_log( 'All domain prices request failed with HTTP error', array(
 				'response_code' => $response_code,
 				'url'           => $url,
@@ -502,5 +502,98 @@ class WHMCS_Price_API {
 		delete_transient( $lock_key ); // Release lock after successful cache write.
 
 		return $data;
+	}
+
+	/**
+	 * Divide a price string by a given divisor, preserving the currency symbol.
+	 *
+	 * Handles common WHMCS price formats:
+	 *   "$9.99"  "€12.50"  "99.00 kr"  "9,99 kr"  "kr 99.00"
+	 *
+	 * Returns an empty string if the price string contains no parseable number,
+	 * or if the value is "NA" / "N/A".
+	 *
+	 * @since  2.6.0
+	 * @param  string $price_str  The raw price string returned by WHMCS.
+	 * @param  float  $divisor    Number to divide by (e.g. 12 for monthly from annual).
+	 * @return string             Divided price string with same currency formatting.
+	 */
+	public static function divide_price( string $price_str, float $divisor ): string {
+		$trimmed = trim( $price_str );
+
+		if ( $divisor <= 1 || empty( $trimmed ) || in_array( strtoupper( $trimmed ), array( 'NA', 'N/A', '-' ), true ) ) {
+			return $price_str;
+		}
+
+		// Match the first number, including optional thousands/decimal separators.
+		// Handles: 959, 9.99, 9,99, 1 499, 1.499, 1,499, 1,499.50, 1.499,50
+		if ( ! preg_match( '/(\d[\d\s.,]*)/', $trimmed, $matches ) ) {
+			return $price_str;
+		}
+
+		$raw        = trim( $matches[1] );
+		$dec_sep    = '.'; // Default output decimal separator — overridden below.
+
+		// Remove space-based thousands separators.
+		$normalized = preg_replace( '/(\d)\s(\d{3})(?!\d)/', '$1$2', $raw );
+
+		// Mixed: comma=thousands + period=decimal, e.g. "1,499.50" (EN format)
+		if ( preg_match( '/^(\d{1,3}(?:,\d{3})+)\.(\d{1,2})$/', $normalized, $m ) ) {
+			$float_str = str_replace( ',', '', $m[1] ) . '.' . $m[2];
+			$dec_sep   = '.';
+
+		// Mixed: period=thousands + comma=decimal, e.g. "1.499,50" (SE/EU format)
+		} elseif ( preg_match( '/^(\d{1,3}(?:\.\d{3})+),(\d{1,2})$/', $normalized, $m ) ) {
+			$float_str = str_replace( '.', '', $m[1] ) . '.' . $m[2];
+			$dec_sep   = ',';
+
+		// Single separator + exactly 3 digits → thousands separator, integer result
+		} elseif ( preg_match( '/^(\d+)([.,])(\d{3})$/', $normalized, $m ) ) {
+			$float_str = $m[1] . $m[3];
+			// Keep same decimal separator as input for consistency.
+			$dec_sep   = $m[2];
+
+		// Single separator + 1–2 digits → decimal separator
+		} elseif ( preg_match( '/^(\d+)([.,])(\d{1,2})$/', $normalized, $m ) ) {
+			$float_str = $m[1] . '.' . $m[3];
+			$dec_sep   = $m[2];
+
+		// Integer only
+		} else {
+			$float_str = preg_replace( '/[.,]/', '', $normalized );
+			$dec_sep   = '.';
+		}
+
+		$divided = (float) $float_str / $divisor;
+
+		// Format output using same decimal separator as the original price.
+		$formatted = number_format( $divided, 2, $dec_sep, '' );
+
+		// Reconstruct: replace the matched number with the divided value.
+		return preg_replace(
+			'/' . preg_quote( $raw, '/' ) . '/',
+			$formatted,
+			$trimmed,
+			1
+		);
+	}
+
+	/**
+	 * Return the number of months in a WHMCS billing cycle.
+	 *
+	 * @since  2.6.0
+	 * @param  string $bc_internal  Internal billing cycle name (e.g. "annually").
+	 * @return int                  Number of months (1–36).
+	 */
+	public static function billing_cycle_months( string $bc_internal ): int {
+		$map = array(
+			'monthly'      => 1,
+			'quarterly'    => 3,
+			'semiannually' => 6,
+			'annually'     => 12,
+			'biennially'   => 24,
+			'triennially'  => 36,
+		);
+		return $map[ $bc_internal ] ?? 1;
 	}
 }

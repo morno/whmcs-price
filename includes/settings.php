@@ -17,6 +17,22 @@ class WHMCSPrice {
 	private array $options = array();
 
 	/**
+	 * Read a boolean-ish query flag from $_GET in a WP-standard way.
+	 *
+	 * @since 2.6.0
+	 * @param string $key The $_GET key to read.
+	 * @return int 0 or a positive integer.
+	 */
+	private function get_query_flag( string $key ): int {
+		if ( ! isset( $_GET[ $key ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return 0;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return absint( wp_unslash( $_GET[ $key ] ) );
+	}
+
+	/**
 	 * GitHub Wiki base URL for documentation links.
 	 *
 	 * @since 2.5.5
@@ -32,12 +48,24 @@ class WHMCSPrice {
 		add_filter( 'plugin_action_links_' . plugin_basename( WHMCS_PRICE_DIR . 'whmcs_price.php' ), array( $this, 'add_settings_link' ) );
 	}
 
+	/**
+	 * Add a Settings link to the plugin list row.
+	 *
+	 * @since 2.5.5
+	 * @param array $links Existing action links.
+	 * @return array Modified action links.
+	 */
 	public function add_settings_link( $links ) {
-		$settings_link = '<a href="' . admin_url( 'options-general.php?page=whmcs_price' ) . '">' . __( 'Settings', 'whmcs-price' ) . '</a>';
+		$settings_link = '<a href="' . esc_url( admin_url( 'options-general.php?page=whmcs_price' ) ) . '">'
 		array_unshift( $links, $settings_link );
 		return $links;
 	}
 
+	/**
+	 * Register the settings page under Settings menu.
+	 *
+	 * @since 2.2.0
+	 */
 	public function whmcspr_plugin_page() {
 		add_options_page(
 			__( 'WHMCS Price Options', 'whmcs-price' ),
@@ -48,18 +76,17 @@ class WHMCSPrice {
 		);
 	}
 
+	/**
+	 * Render the full settings page.
+	 *
+	 * @since 2.2.0
+	 */
 	public function whmcspr_admin_page() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 
-		if ( isset( $_POST['whmcs_clear_cache'] ) ) {
-			check_admin_referer( 'whmcs_clear_cache_action' );
-			$this->clear_whmcs_cache();
-			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Cache cleared successfully!', 'whmcs-price' ) . '</p></div>';
-		}
-
-		if ( isset( $_GET['cache_cleared'] ) && '1' === $_GET['cache_cleared'] ) {
+		if ( 1 === $this->get_query_flag( 'cache_cleared' ) ) {
 			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Cache cleared successfully!', 'whmcs-price' ) . '</p></div>';
 		}
 
@@ -204,12 +231,12 @@ class WHMCSPrice {
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Clear Cache', 'whmcs-price' ); ?></th>
 						<td>
-							<form method="post" action="" style="display:inline;">
-								<?php wp_nonce_field( 'whmcs_clear_cache_action' ); ?>
-								<input type="hidden" name="whmcs_clear_cache" value="1" />
-								<input type="submit" class="button button-secondary"
-									value="<?php esc_attr_e( 'Clear Cache Now', 'whmcs-price' ); ?>" />
-							</form>
+							<a
+								href="<?php echo esc_url( wp_nonce_url( add_query_arg( 'whmcs_clear_cache', '1' ), 'whmcs_clear_cache_admin_bar' ) ); ?>"
+								class="button button-secondary"
+							>
+								<?php esc_html_e( 'Clear Cache Now', 'whmcs-price' ); ?>
+							</a>
 							<p class="description">
 								<?php esc_html_e( 'Force fresh prices to be fetched from WHMCS on the next page load. Also available from the Admin Bar.', 'whmcs-price' ); ?>
 							</p>
@@ -222,7 +249,7 @@ class WHMCSPrice {
 	}
 
 	/**
-	 * Render the Advanced section (Custom User-Agent).
+	 * Render the Advanced section (Custom User-Agent + Beta opt-in).
 	 *
 	 * @since 2.5.5
 	 */
@@ -265,6 +292,7 @@ class WHMCSPrice {
 							</p>
 						</td>
 					</tr>
+
 				</table>
 			</div>
 		</div>
@@ -272,12 +300,17 @@ class WHMCSPrice {
 	}
 
 	/**
-	 * Render the right-hand sidebar with quick reference and docs link.
+	 * Render the right-hand sidebar with quick reference and docs links.
 	 *
 	 * @since 2.5.5
 	 */
 	private function render_sidebar() {
+		$overview = $this->get_cache_overview();
+		$now      = time();
+		$min_eta  = ( null !== $overview['min_timeout'] ) ? ( $overview['min_timeout'] - $now ) : 0;
+		$max_eta  = ( null !== $overview['max_timeout'] ) ? ( $overview['max_timeout'] - $now ) : 0;
 		?>
+
 		<!-- Documentation links -->
 		<div class="postbox" style="margin-bottom:16px;">
 			<div class="postbox-header">
@@ -304,6 +337,36 @@ class WHMCSPrice {
 			</div>
 		</div>
 
+		<!-- Operational Status -->
+		<div class="postbox" style="margin-bottom:16px;">
+			<div class="postbox-header">
+				<h2 class="hndle" style="padding:12px 16px; font-size:14px;">
+					<?php esc_html_e( 'Operational Status', 'whmcs-price' ); ?>
+				</h2>
+			</div>
+			<div class="inside">
+				<p class="description" style="margin-top:0;">
+					<?php esc_html_e( 'Read-only diagnostics based on local transient cache (no outbound WHMCS calls).', 'whmcs-price' ); ?>
+				</p>
+				<p style="margin-top:0;">
+					<strong><?php esc_html_e( 'Cached entries', 'whmcs-price' ); ?>:</strong>
+					<?php echo esc_html( (string) $overview['cache_count'] ); ?>
+				</p>
+				<p>
+					<strong><?php esc_html_e( 'Active locks', 'whmcs-price' ); ?>:</strong>
+					<?php echo esc_html( (string) $overview['lock_count'] ); ?>
+				</p>
+				<p>
+					<strong><?php esc_html_e( 'Nearest expiry', 'whmcs-price' ); ?>:</strong>
+					<?php echo esc_html( $this->format_seconds( $min_eta ) ); ?>
+				</p>
+				<p style="margin-bottom:0;">
+					<strong><?php esc_html_e( 'Farthest expiry', 'whmcs-price' ); ?>:</strong>
+					<?php echo esc_html( $this->format_seconds( $max_eta ) ); ?>
+				</p>
+			</div>
+		</div>
+
 		<!-- Product shortcode quick reference -->
 		<div class="postbox" style="margin-bottom:16px;">
 			<div class="postbox-header">
@@ -316,12 +379,13 @@ class WHMCSPrice {
 				<input
 					type="text"
 					style="width:100%; direction:ltr; cursor:pointer; font-family:monospace; font-size:11px;"
-					value="[whmcs pid=&quot;1&quot; show=&quot;name,price&quot; bc=&quot;1y&quot;]"
+					value="[whmcs pid=&quot;1&quot; show=&quot;name,price&quot; bc=&quot;1y&quot; per=&quot;month&quot;]"
 					onclick="this.select()"
 					readonly
 				/>
 				<p class="description" style="margin-top:8px;"><?php esc_html_e( 'Billing cycles:', 'whmcs-price' ); ?> <code>1m</code> <code>3m</code> <code>6m</code> <code>1y</code> <code>2y</code> <code>3y</code></p>
 				<p class="description"><?php esc_html_e( 'Show columns:', 'whmcs-price' ); ?> <code>name</code> <code>description</code> <code>price</code></p>
+				<p class="description"><?php esc_html_e( 'Per-period breakdown:', 'whmcs-price' ); ?> <code>per="month"</code> <code>per="week"</code> <code>per="day"</code></p>
 				<a href="<?php echo esc_url( self::DOCS_URL . '/Displaying-Prices#product-pricing' ); ?>" target="_blank" rel="noopener noreferrer" style="font-size:12px;">
 					<?php esc_html_e( 'Full reference ↗', 'whmcs-price' ); ?>
 				</a>
@@ -340,12 +404,13 @@ class WHMCSPrice {
 				<input
 					type="text"
 					style="width:100%; direction:ltr; cursor:pointer; font-family:monospace; font-size:11px;"
-					value="[whmcs tld=&quot;com&quot; type=&quot;register&quot; reg=&quot;1y&quot;]"
+					value="[whmcs tld=&quot;com&quot; show=&quot;register,renew&quot; reg=&quot;1&quot; per=&quot;month&quot;]"
 					onclick="this.select()"
 					readonly
 				/>
-				<p class="description" style="margin-top:8px;"><?php esc_html_e( 'Type:', 'whmcs-price' ); ?> <code>register</code> <code>renew</code> <code>transfer</code></p>
-				<p class="description"><?php esc_html_e( 'Period:', 'whmcs-price' ); ?> <code>1y</code> – <code>10y</code></p>
+				<p class="description" style="margin-top:8px;"><?php esc_html_e( 'Show (one or more):', 'whmcs-price' ); ?> <code>register</code> <code>renew</code> <code>transfer</code></p>
+				<p class="description"><?php esc_html_e( 'Period (years):', 'whmcs-price' ); ?> <code>1</code> – <code>10</code></p>
+				<p class="description"><?php esc_html_e( 'Per-period breakdown:', 'whmcs-price' ); ?> <code>per="month"</code> <code>per="week"</code> <code>per="day"</code></p>
 				<p class="description"><?php esc_html_e( 'Leave tld empty to list all TLDs.', 'whmcs-price' ); ?></p>
 				<a href="<?php echo esc_url( self::DOCS_URL . '/Displaying-Prices#domain-pricing' ); ?>" target="_blank" rel="noopener noreferrer" style="font-size:12px;">
 					<?php esc_html_e( 'Full reference ↗', 'whmcs-price' ); ?>
@@ -359,7 +424,13 @@ class WHMCSPrice {
 	// SETTINGS API REGISTRATION
 	// =========================================================
 
+	/**
+	 * Register plugin settings and fields.
+	 *
+	 * @since 2.2.0
+	 */
 	public function whmcspr_init() {
+		// FIX 1: Only one whmcspr_init() — the duplicate nested function is removed.
 		register_setting( 'price_option_group', 'whmcs_price_option', array( $this, 'sanitize' ) );
 	}
 
@@ -367,6 +438,13 @@ class WHMCSPrice {
 	// SANITIZATION
 	// =========================================================
 
+	/**
+	 * Sanitize and validate plugin settings on save.
+	 *
+	 * @since 2.2.0
+	 * @param array $input Raw input from the settings form.
+	 * @return array Sanitized settings array.
+	 */
 	public function sanitize( $input ): array {
 		$new_input = array();
 
@@ -409,6 +487,11 @@ class WHMCSPrice {
 	// CACHE MANAGEMENT
 	// =========================================================
 
+	/**
+	 * Delete all plugin transients from the database.
+	 *
+	 * @since 2.2.0
+	 */
 	public function clear_whmcs_cache() {
 		global $wpdb;
 
@@ -435,6 +518,12 @@ class WHMCSPrice {
 		delete_expired_transients( true );
 	}
 
+	/**
+	 * Add a Clear Cache item to the admin bar.
+	 *
+	 * @since 2.2.1
+	 * @param WP_Admin_Bar $admin_bar Admin bar instance.
+	 */
 	public function add_admin_bar_clear_cache( $admin_bar ) {
 		if ( current_user_can( 'manage_options' ) ) {
 			$admin_bar->add_menu(
@@ -448,8 +537,13 @@ class WHMCSPrice {
 		}
 	}
 
+	/**
+	 * Handle the admin bar clear cache action and redirect.
+	 *
+	 * @since 2.2.1
+	 */
 	public function handle_admin_bar_clear_cache_action() {
-		if ( isset( $_GET['whmcs_clear_cache'] ) && '1' === $_GET['whmcs_clear_cache'] ) {
+		if ( 1 === $this->get_query_flag( 'whmcs_clear_cache' ) ) {
 
 			check_admin_referer( 'whmcs_clear_cache_admin_bar' );
 
@@ -464,5 +558,104 @@ class WHMCSPrice {
 			wp_safe_redirect( $redirect_url );
 			exit;
 		}
+	}
+
+	// =========================================================
+	// CACHE DIAGNOSTICS
+	// =========================================================
+
+	/**
+	 * Return a summary of current transient cache state for the admin UI.
+	 *
+	 * Queries wp_options directly to count cached payloads, active stampede
+	 * locks, and the nearest/farthest expiry timestamps. No outbound WHMCS
+	 * requests are made.
+	 *
+	 * @since 2.6.0
+	 * @return array{cache_count:int, lock_count:int, min_timeout:int|null, max_timeout:int|null}
+	 */
+	private function get_cache_overview(): array {
+		global $wpdb;
+
+		$cache_like   = $wpdb->esc_like( '_transient_whmcs_' ) . '%';
+		$timeout_like = $wpdb->esc_like( '_transient_timeout_whmcs_' ) . '%';
+		$lock_like    = $wpdb->esc_like( '_transient_lock_whmcs_' ) . '%';
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery
+		$cache_count = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM $wpdb->options WHERE option_name LIKE %s",
+				$cache_like
+			)
+		);
+
+		$lock_count = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM $wpdb->options WHERE option_name LIKE %s",
+				$lock_like
+			)
+		);
+
+		$min_timeout = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT MIN(option_value) FROM $wpdb->options WHERE option_name LIKE %s",
+				$timeout_like
+			)
+		);
+
+		$max_timeout = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT MAX(option_value) FROM $wpdb->options WHERE option_name LIKE %s",
+				$timeout_like
+			)
+		);
+		// phpcs:enable
+
+		return array(
+			'cache_count' => $cache_count,
+			'lock_count'  => $lock_count,
+			'min_timeout' => null !== $min_timeout ? (int) $min_timeout : null,
+			'max_timeout' => null !== $max_timeout ? (int) $max_timeout : null,
+		);
+	}
+
+	/**
+	 * Format a number of seconds into a compact human-readable string.
+	 *
+	 * @since 2.6.0
+	 * @param int $seconds Number of seconds remaining.
+	 * @return string Formatted string, e.g. "2 hours 15 minutes".
+	 */
+	private function format_seconds( int $seconds ): string {
+		if ( $seconds <= 0 ) {
+			return __( 'Now', 'whmcs-price' );
+		}
+
+		$days     = intdiv( $seconds, DAY_IN_SECONDS );
+		$seconds -= $days * DAY_IN_SECONDS;
+
+		$hours    = intdiv( $seconds, HOUR_IN_SECONDS );
+		$seconds -= $hours * HOUR_IN_SECONDS;
+
+		$mins = intdiv( $seconds, MINUTE_IN_SECONDS );
+
+		$parts = array();
+
+		if ( $days > 0 ) {
+			/* translators: %d: number of days */
+			$parts[] = sprintf( _n( '%d day', '%d days', $days, 'whmcs-price' ), $days );
+		}
+
+		if ( $hours > 0 ) {
+			/* translators: %d: number of hours */
+			$parts[] = sprintf( _n( '%d hour', '%d hours', $hours, 'whmcs-price' ), $hours );
+		}
+
+		if ( $mins > 0 && 0 === $days ) {
+			/* translators: %d: number of minutes */
+			$parts[] = sprintf( _n( '%d minute', '%d minutes', $mins, 'whmcs-price' ), $mins );
+		}
+
+		return ! empty( $parts ) ? implode( ' ', $parts ) : __( 'Soon', 'whmcs-price' );
 	}
 }

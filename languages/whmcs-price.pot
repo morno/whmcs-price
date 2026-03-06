@@ -1,15 +1,15 @@
-# Copyright (C) 2026 Tobias Sörensson (Morno), MohammadReza Kamali
+# Copyright (C) 2026 Tobias SÃ¶rensson (Morno), MohammadReza Kamali
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Mornolink for WHMCS 2.5.1\n"
+"Project-Id-Version: Mornolink for WHMCS 2.5.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/whmcs-price\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-02-27T05:48:54+00:00\n"
+"POT-Creation-Date: 2026-02-28T08:27:13+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: whmcs-price\n"
@@ -31,7 +31,7 @@ msgstr ""
 
 #. Author of the plugin
 #: whmcs_price.php
-msgid "Tobias Sörensson (Morno), MohammadReza Kamali"
+msgid "Tobias SÃ¶rensson (Morno), MohammadReza Kamali"
 msgstr ""
 
 #. Author URI of the plugin
@@ -73,7 +73,7 @@ msgstr ""
 msgid "WHMCS Product Price: Please enter a Product ID in the block settings."
 msgstr ""
 
-#: blocks/whmcs-price-product/render.php:59
+#: blocks/whmcs-price-product/render.php:62
 #: includes/elementor/widgets/product-price-widget.php:80
 #: includes/elementor/widgets/product-price-widget.php:164
 #: includes/shortcode/shortcode.php:93
@@ -82,7 +82,7 @@ msgstr ""
 msgid "Name"
 msgstr ""
 
-#: blocks/whmcs-price-product/render.php:60
+#: blocks/whmcs-price-product/render.php:63
 #: includes/elementor/widgets/product-price-widget.php:81
 #: includes/elementor/widgets/product-price-widget.php:165
 #: includes/shortcode/shortcode.php:94
@@ -91,7 +91,7 @@ msgstr ""
 msgid "Description"
 msgstr ""
 
-#: blocks/whmcs-price-product/render.php:61
+#: blocks/whmcs-price-product/render.php:64
 #: includes/elementor/widgets/product-price-widget.php:82
 #: includes/elementor/widgets/product-price-widget.php:166
 #: includes/shortcode/shortcode.php:95
@@ -327,199 +327,207 @@ msgid "Please enter Product IDs in the widget settings."
 msgstr ""
 
 #: includes/settings.php:33
-#: includes/settings.php:61
+msgid "Settings"
+msgstr ""
+
+#: includes/settings.php:40
+#: includes/settings.php:68
 msgid "WHMCS Price Options"
 msgstr ""
 
-#: includes/settings.php:34
+#: includes/settings.php:41
 msgid "WHMCS Price Settings"
 msgstr ""
 
-#: includes/settings.php:51
-#: includes/settings.php:55
+#: includes/settings.php:58
+#: includes/settings.php:62
 msgid "Cache cleared successfully!"
 msgstr ""
 
-#: includes/settings.php:71
+#: includes/settings.php:78
 msgid "Maintenance"
 msgstr ""
 
-#: includes/settings.php:75
+#: includes/settings.php:82
 msgid "Clear Cache"
 msgstr ""
 
-#: includes/settings.php:93
+#: includes/settings.php:100
 msgid "WHMCS URL"
 msgstr ""
 
-#: includes/settings.php:101
+#: includes/settings.php:108
 msgid "Product Pricing"
 msgstr ""
 
-#: includes/settings.php:109
+#: includes/settings.php:116
 msgid "Domain Pricing"
 msgstr ""
 
-#: includes/settings.php:117
+#: includes/settings.php:124
 msgid "Cache Duration"
 msgstr ""
 
-#: includes/settings.php:125
+#: includes/settings.php:132
 msgid "Custom User-Agent"
 msgstr ""
 
-#: includes/settings.php:162
+#: includes/settings.php:149
+msgid "WHMCS URL must use HTTPS. HTTP URLs are blocked for security reasons."
+msgstr ""
+
+#: includes/settings.php:179
 msgid "Dynamic way for extracting price from WHMCS for use on the pages of your website!"
 msgstr ""
 
-#: includes/settings.php:163
+#: includes/settings.php:180
 msgid "Please input your WHMCS URL :"
 msgstr ""
 
-#: includes/settings.php:170
+#: includes/settings.php:187
 msgid "Hey! Your domain is not valid!"
 msgstr ""
 
-#: includes/settings.php:177
+#: includes/settings.php:194
 msgid "Warning:"
 msgstr ""
 
-#: includes/settings.php:178
+#: includes/settings.php:195
 msgid "The WHMCS URL must use HTTPS. HTTP URLs are blocked for security reasons."
 msgstr ""
 
-#: includes/settings.php:187
+#: includes/settings.php:204
 msgid "Valid URL Format: https://whmcs.com (Don't use \"/\" at the end of WHMCS URL)"
 msgstr ""
 
-#: includes/settings.php:188
+#: includes/settings.php:205
 msgid "Note: After changing price in WHMCS, if you are using a cache plugin in your WordPress, to update price you must remove the cache for posts and pages."
 msgstr ""
 
-#: includes/settings.php:194
-#: includes/settings.php:221
+#: includes/settings.php:211
+#: includes/settings.php:238
 msgid "How to use shortcode in:"
 msgstr ""
 
-#: includes/settings.php:195
-#: includes/settings.php:222
+#: includes/settings.php:212
+#: includes/settings.php:239
 msgid "Post / Pages:"
 msgstr ""
 
-#: includes/settings.php:200
-#: includes/settings.php:224
+#: includes/settings.php:217
+#: includes/settings.php:241
 msgid "Theme:"
 msgstr ""
 
-#: includes/settings.php:205
-#: includes/settings.php:227
+#: includes/settings.php:222
+#: includes/settings.php:244
 msgid "Documentation:"
 msgstr ""
 
-#: includes/settings.php:206
+#: includes/settings.php:223
 msgid "Change pid value in shortcode with your Product ID."
 msgstr ""
 
-#: includes/settings.php:207
+#: includes/settings.php:224
 msgid "Add show=\"\" to toggle the name, description, price from the data feed of WHMCS"
 msgstr ""
 
-#: includes/settings.php:208
+#: includes/settings.php:225
 msgid "Change bc value in shortcode with your Billing Cycle Product. Billing Cycles are:"
 msgstr ""
 
-#: includes/settings.php:209
+#: includes/settings.php:226
 msgid "Monthly (1 Month): bc=\"1m\""
 msgstr ""
 
-#: includes/settings.php:210
+#: includes/settings.php:227
 msgid "Quarterly (3 Month): bc=\"3m\""
 msgstr ""
 
-#: includes/settings.php:211
+#: includes/settings.php:228
 msgid "Semiannually (6 Month): bc=\"6m\""
 msgstr ""
 
-#: includes/settings.php:212
+#: includes/settings.php:229
 msgid "Annually (1 Year): bc=\"1y\""
 msgstr ""
 
-#: includes/settings.php:213
+#: includes/settings.php:230
 msgid "Biennially (2 Year): bc=\"2y\""
 msgstr ""
 
-#: includes/settings.php:214
+#: includes/settings.php:231
 msgid "Triennially (3 Year): bc=\"3y\""
 msgstr ""
 
-#: includes/settings.php:228
+#: includes/settings.php:245
 msgid "Change tld value in shortcode with your Domain TLD (com, org, net, ...)."
 msgstr ""
 
-#: includes/settings.php:229
+#: includes/settings.php:246
 msgid "Change type value in shortcode with register, renew, transfer."
 msgstr ""
 
-#: includes/settings.php:230
+#: includes/settings.php:247
 msgid "Change reg value in shortcode with your Register Period of TLD. Register Periods are:"
 msgstr ""
 
-#: includes/settings.php:230
+#: includes/settings.php:247
 msgid "Annually (1 Year): reg=\"1y\""
 msgstr ""
 
-#: includes/settings.php:230
+#: includes/settings.php:247
 msgid "Biennially (2 Year): reg=\"2y\""
 msgstr ""
 
-#: includes/settings.php:230
+#: includes/settings.php:247
 msgid "Triennially (3 Year): reg=\"3y\""
 msgstr ""
 
-#: includes/settings.php:231
+#: includes/settings.php:248
 msgid "If left like this [whmcs tld] (without specifying a tld value), it will display all available TLDs from WHMCS."
 msgstr ""
 
-#: includes/settings.php:247
+#: includes/settings.php:264
 msgid "1 hour"
 msgstr ""
 
-#: includes/settings.php:248
+#: includes/settings.php:265
 msgid "2 hours"
 msgstr ""
 
-#: includes/settings.php:249
+#: includes/settings.php:266
 msgid "3 hours"
 msgstr ""
 
-#: includes/settings.php:250
+#: includes/settings.php:267
 msgid "6 hours"
 msgstr ""
 
-#: includes/settings.php:251
+#: includes/settings.php:268
 msgid "12 hours"
 msgstr ""
 
-#: includes/settings.php:252
+#: includes/settings.php:269
 msgid "24 hours"
 msgstr ""
 
-#: includes/settings.php:265
+#: includes/settings.php:282
 msgid "How long prices are cached before fetching fresh data from WHMCS."
 msgstr ""
 
 #. translators: %s: the auto-generated default User-Agent string
-#: includes/settings.php:291
+#: includes/settings.php:308
 #, php-format
 msgid "Override the User-Agent sent to WHMCS. Useful for matching server or firewall allow-rules, or identifying requests in access logs. Leave blank to use the default: %s"
 msgstr ""
 
-#: includes/settings.php:327
-#: includes/settings.php:329
+#: includes/settings.php:344
+#: includes/settings.php:346
 msgid "Clear WHMCS Cache"
 msgstr ""
 
-#: includes/settings.php:341
+#: includes/settings.php:358
 msgid "Unauthorized access."
 msgstr ""
 

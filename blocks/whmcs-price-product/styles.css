@@ -151,6 +151,74 @@
 	color: #1a202c;
 }
 
+/* ==================== Per-Period Price Breakdown ==================== */
+
+/*
+ * .whmcs-price-full  — the main price, e.g. "959Kr/yr"
+ * .whmcs-price-per   — the divided price, e.g. "79.92Kr/mo"
+ *
+ * Both are output by whmcs_price_format_per() in class-whmcs-price-helpers.php.
+ * Uses !important on key properties to override theme styles (e.g. Divi's
+ * -webkit-text-fill-color and font-size inheritance on child spans).
+ */
+
+.whmcs-price-full {
+	display: block;
+}
+
+.whmcs-price-per {
+	display: block;
+	font-size: 14px !important;
+	font-weight: 400 !important;
+	opacity: 0.72;
+	margin-top: 4px;
+	letter-spacing: 0;
+	background: none !important;
+	-webkit-text-fill-color: currentColor !important;
+	color: #555 !important;
+}
+
+/* In table cells, show them inline with a separator */
+.whmcs-product-table .whmcs-price-full,
+.whmcs-domain-table .whmcs-price-full {
+	display: inline;
+}
+
+.whmcs-product-table .whmcs-price-per,
+.whmcs-domain-table .whmcs-price-per {
+	display: inline;
+	margin-left: 4px;
+	font-size: 0.82em !important;
+	opacity: 0.65;
+}
+
+/* Cards: reset gradient clip that bleeds into child spans */
+.whmcs-product-card__price-value .whmcs-price-full {
+	display: block;
+}
+
+.whmcs-product-card__price-value .whmcs-price-per {
+	display: block;
+	font-size: 14px !important;
+	font-weight: 400 !important;
+	color: #718096 !important;
+	-webkit-text-fill-color: #718096 !important;
+	background: none !important;
+	-webkit-background-clip: unset !important;
+	background-clip: unset !important;
+	opacity: 1;
+	margin-top: 4px;
+}
+.whmcs-product-grid-item__value .whmcs-price-full,
+.whmcs-product-grid-item__value .whmcs-price-per {
+	display: block;
+}
+
+.whmcs-product-grid-item__value .whmcs-price-per {
+	font-size: 12px !important;
+	margin-top: 2px;
+}
+
 /* ==================== Mobile Responsiveness ==================== */
 
 @media (max-width: 768px) {

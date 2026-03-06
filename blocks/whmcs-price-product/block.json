@@ -31,6 +31,10 @@
 		"displayStyle": {
 			"type": "string",
 			"default": "table"
+		},
+		"perPeriod": {
+			"type": "string",
+			"default": ""
 		}
 	},
 	"textdomain": "whmcs-price",

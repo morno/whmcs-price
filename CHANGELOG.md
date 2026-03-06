@@ -1,5 +1,100 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
+
+## [2.6.0] - 2026-03-06
+
+### Added
+
+- **Operational Status box in settings sidebar**: Added a new diagnostics postbox on the
+  settings page sidebar that provides a read-only overview of the plugin’s local cache
+  state. It shows the number of cached entries, active lock transients (stampede
+  protection), and the nearest/farthest cache expiry windows. This is based on existing
+  WordPress transients stored in `wp_options` and does **not** trigger any outbound
+  WHMCS request.
+
+- **Per-period price breakdown** (`per="month|week|day"`): All output modules
+  (shortcode, Gutenberg block, Elementor widget) now support an optional
+  `per` / `perPeriod` parameter that displays the full price alongside a
+  per-period breakdown. Example output: `$99.00/yr ($8.25/mo)`.
+  Works with all billing cycles and multi-year domain registrations.
+
+  Shortcode examples:
+  ```
+  [whmcs pid="1" bc="1y" show="name,price" per="month"]
+  [whmcs tld="se" show="register,renew" per="month"]
+  ```
+
+- **`includes/class-whmcs-price-helpers.php`** — New shared helpers file loaded
+  by `whmcs_price.php` before all other modules. Contains rendering and
+  formatting utilities available to shortcodes, blocks, and Elementor widgets
+  without duplication. New output modules can consume these helpers immediately.
+  Currently provides:
+  - `whmcs_price_format_per()` — per-period price formatting
+
+- **`WHMCS_Price_API::divide_price()`** — New static method that divides a raw
+  WHMCS price string by a given divisor while preserving the currency symbol.
+  Handles common WHMCS price formats: `$9.99`, `€12.50`, `99.00 kr`, `9,99 kr`.
+
+- **`WHMCS_Price_API::billing_cycle_months()`** — New static method that returns
+  the number of months in a given WHMCS internal billing cycle string
+  (e.g. `"annually"` → `12`).
+
+- **Domain shortcode multi-type support** (`show="register,renew"`): The `[whmcs]`
+  shortcode now accepts a comma-separated list of transaction types in the `show`
+  parameter, rendering a comparison table. Previously only one type at a time was
+  supported. Fully backwards compatible — existing single-type shortcodes are
+  unaffected.
+
+### Fixed
+
+- **Fatal "link expired" on settings save**: The Performance section rendered a
+  `<form>` element inside the existing settings `<form>`. HTML forbids nested forms —
+  the browser discarded the inner form's data and sent the wrong nonce to `options.php`,
+  causing WordPress to reject every save with "The link you followed has expired".
+  Replaced the inner form with a plain `<a href>` using `wp_nonce_url()`, reusing the
+  existing Admin Bar cache-clear flow.
+
+- **Missing `translators:` comments on `_n()` calls**: Added required
+  `/* translators: %d: number of X */` comments above all three `_n()` calls in
+  `format_seconds()` to satisfy `WordPress.WP.I18n.MissingTranslatorsComment`.
+
+- **`readme.txt` stable tag mismatch**: `Stable tag` was set to `2.5.3` while the
+  plugin header declared `2.6.0`. Updated to `2.6.0` to match.
+
+- **WPCS: missing spaces in `defined()` calls**: `defined('ABSPATH')` corrected to
+  `defined( 'ABSPATH' )` in `class-whmcs-api.php` and `shortcode.php`.
+
+- **WPCS: non-Yoda comparisons in `class-whmcs-api.php`**: `$cached !== false` →
+  `false !== $cached` and `$response_code !== 200` → `200 !== $response_code` across
+  all three API methods.
+
+- **WPCS: short array syntax in `shortcode.php`**: `$billing_cycles = [...]` and
+  `$header_labels = [...]` converted to `array()` syntax per WordPress Coding Standards.
+
+- **WPCS: missing `esc_url()` on `admin_url()` in `settings.php`**: The Settings link
+  in the plugin list row passed `admin_url()` output directly into an HTML attribute
+  without escaping.
+
+### Changed
+
+- **Hardened handling of admin query flags**: Query flags used for cache-related UI
+  flow and admin bar actions (e.g. `cache_cleared`, `whmcs_clear_cache`) are now read
+  using WordPress-standard sanitization (`wp_unslash()` + `absint()`). This improves
+  defensive robustness and aligns more closely with WordPress Coding Standards without
+  changing behavior.
+
+- **`whmcs_price_format_per()` moved to helpers file**: Previously defined inline
+  in `shortcode.php`. Now lives in `class-whmcs-price-helpers.php` and is
+  available globally to all modules. No functional change.
+
+- **TLD sanitization now lowercases input**: `strtolower()` added to TLD
+  sanitization in the domain shortcode so `.SE` and `.se` produce the same cache
+  key and consistent output.
+
+- **Domain `reg` parameter now validates range 1–10**: Previously any numeric
+  value was accepted. Values outside 1–10 now fall back to `1`.
+
 ## [2.5.5] - 2026-02-28
 
 ### Security
