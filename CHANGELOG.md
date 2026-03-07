@@ -81,7 +81,10 @@ All notable changes to this project will be documented in this file.
   AAAA record points to a private or reserved IP address. The previous hostname-only
   checks could be bypassed via DNS rebinding or CNAME chains pointing to internal
   infrastructure. Only applies to non-IP hostnames; direct IP inputs are still
-  validated by the existing `FILTER_FLAG_NO_PRIV_RANGE` check.
+  validated by the existing `FILTER_FLAG_NO_PRIV_RANGE` check. A `function_exists()`
+  guard skips the check silently on environments where `dns_get_record()` is
+  unavailable. The type argument uses bitwise OR (`DNS_A | DNS_AAAA`) and the call
+  is silenced with `@` + guarded with `is_array()` to handle error returns safely.
 
 - **Strict output escaping in product table**: In `shortcode.php`, the product
   table now uses `esc_html( wp_strip_all_tags() )` for `name` and `description`
@@ -116,9 +119,10 @@ All notable changes to this project will be documented in this file.
 - **WPCS: short array syntax in `shortcode.php`**: `$billing_cycles = [...]` and
   `$header_labels = [...]` converted to `array()` syntax per WordPress Coding Standards.
 
-- **WPCS: missing `esc_url()` on `admin_url()` in `settings.php`**: The Settings link
-  in the plugin list row passed `admin_url()` output directly into an HTML attribute
-  without escaping.
+- **WPCS: missing `esc_url()` and `esc_html__()` in `settings.php`**: The Settings
+  link in the plugin list row passed `admin_url()` output directly into an HTML
+  attribute without escaping, and used `__()` instead of `esc_html__()` for the link
+  text. Both are now correctly escaped.
 
 ### Changed
 

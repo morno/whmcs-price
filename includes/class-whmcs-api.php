@@ -84,9 +84,11 @@ class WHMCS_Price_API {
         // SSRF: resolve hostname and reject if any DNS record points to a private/reserved IP.
         // Hostname-only checks can be bypassed via DNS rebinding or CNAME chains.
         // Only performed for non-IP hostnames (IPs were already validated above).
-        if ( ! filter_var( $host, FILTER_VALIDATE_IP ) ) {
-            $resolved = dns_get_record( $host, DNS_A + DNS_AAAA );
-            if ( ! empty( $resolved ) ) {
+        // Skipped silently if dns_get_record() is unavailable in the current PHP environment.
+        if ( ! filter_var( $host, FILTER_VALIDATE_IP ) && function_exists( 'dns_get_record' ) ) {
+            // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+            $resolved = @dns_get_record( $host, DNS_A | DNS_AAAA );
+            if ( is_array( $resolved ) && ! empty( $resolved ) ) {
                 foreach ( $resolved as $record ) {
                     $ip = $record['ip'] ?? $record['ipv6'] ?? '';
                     if ( $ip && filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) === false ) {

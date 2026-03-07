@@ -56,7 +56,7 @@ class WHMCSPrice {
 	 * @return array Modified action links.
 	 */
 	public function add_settings_link( $links ) {
-		$settings_link = '<a href="' . esc_url( admin_url( 'options-general.php?page=whmcs_price' ) ) . '">'
+	$settings_link = '<a href="' . esc_url( admin_url( 'options-general.php?page=whmcs_price' ) ) . '">' . esc_html__( 'Settings', 'whmcs-price' ) . '</a>';
 		array_unshift( $links, $settings_link );
 		return $links;
 	}
