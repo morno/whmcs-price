@@ -36,9 +36,24 @@ $whmcs_wrapper_class = 'whmcs-domain-display whmcs-domain-display--' . esc_attr(
 		<?php
 		// No TLD = show all TLDs from WHMCS domainpricing.php
 		$whmcs_all_prices = WHMCS_Price_API::get_all_domain_prices();
+		$whmcs_allowed_html = array(
+			'table'  => array( 'class' => true, 'id' => true ),
+			'thead'  => array(),
+			'tbody'  => array(),
+			'tfoot'  => array(),
+			'tr'     => array( 'class' => true ),
+			'th'     => array( 'scope' => true, 'class' => true ),
+			'td'     => array( 'class' => true ),
+			'strong' => array(),
+			'small'  => array(),
+			'span'   => array( 'class' => true ),
+			'p'      => array( 'class' => true ),
+			'ul'     => array( 'class' => true ),
+			'li'     => array( 'class' => true ),
+		);
 		?>
 		<div class="whmcs-domain-all">
-			<?php echo wp_kses_post( $whmcs_all_prices ); ?>
+			<?php echo wp_kses( $whmcs_all_prices, $whmcs_allowed_html ); ?>
 		</div>
 
 	<?php elseif ( $whmcs_show_all ) : ?>

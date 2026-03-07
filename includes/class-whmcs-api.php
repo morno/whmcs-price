@@ -161,8 +161,12 @@ class WHMCS_Price_API {
         }
 
         return array(
-            'user-agent' => $user_agent,
-            'timeout'    => 15,
+            'user-agent'          => $user_agent,
+            'timeout'             => 15,
+            'redirection'         => 0,
+            'reject_unsafe_urls'  => true,
+            'sslverify'           => true,
+            'limit_response_size' => 1024 * 1024, // 1 MB max
         );
     }
 
@@ -178,9 +182,19 @@ class WHMCS_Price_API {
 	 * @return string The cleaned text string.
 	 */
 	private static function clean_response($body) {
-        $body = preg_replace('/document\.write\(\'/', '', $body);
-        $body = preg_replace('/\'\);/', '', $body);
-        return trim($body);
+        if ( ! is_string( $body ) || '' === $body ) {
+            return 'NA';
+        }
+
+        $body = trim( $body );
+
+        // Handle WHMCS JS-wrapped responses: document.write('...content...'); 
+        // Uses a non-greedy match and the /s flag to handle multi-line content.
+        if ( preg_match( "/^document\.write\('(.*)'\);$/s", $body, $matches ) ) {
+            $body = $matches[1];
+        }
+
+        return trim( wp_kses_no_null( $body ) );
     }
 
 	/**
@@ -231,7 +245,7 @@ class WHMCS_Price_API {
 		$cache_key = 'whmcs_product_' . md5( $pid . '_' . $billing_cycle . '_' . $attribute );
 		$cached    = get_transient( $cache_key );
 
-		if ( false !== $cached ) {
+		if ( $cached !== false ) {
 			self::debug_log( 'Product data served from cache', array(
 				'cache_key' => $cache_key,
 				'value'     => $cached,
@@ -277,7 +291,7 @@ class WHMCS_Price_API {
 		}
 
 		$response_code = wp_remote_retrieve_response_code( $response );
-		if ( 200 !== $response_code ) {
+		if ( $response_code !== 200 ) {
 			self::debug_log( 'Product data request failed with HTTP error', array(
 				'response_code' => $response_code,
 				'url'           => $url,
@@ -354,7 +368,7 @@ class WHMCS_Price_API {
 		$cache_key = 'whmcs_domain_' . md5( $tld . '_' . $type . '_' . $reg_period );
 		$cached    = get_transient( $cache_key );
 
-		if ( false !== $cached ) {
+		if ( $cached !== false ) {
 			self::debug_log( 'Domain price served from cache', array(
 				'cache_key' => $cache_key,
 				'value'     => $cached,
@@ -401,7 +415,7 @@ class WHMCS_Price_API {
 		}
 
 		$response_code = wp_remote_retrieve_response_code( $response );
-		if ( 200 !== $response_code ) {
+		if ( $response_code !== 200 ) {
 			self::debug_log( 'Domain price request failed with HTTP error', array(
 				'response_code' => $response_code,
 				'url'           => $url,
@@ -446,7 +460,7 @@ class WHMCS_Price_API {
 		$cache_key = 'whmcs_domain_all';
 		$cached    = get_transient( $cache_key );
 
-		if ( false !== $cached ) {
+		if ( $cached !== false ) {
 			self::debug_log( 'All domain prices served from cache', array(
 				'cache_key'   => $cache_key,
 				'data_length' => strlen( $cached ),
@@ -481,7 +495,7 @@ class WHMCS_Price_API {
 		}
 
 		$response_code = wp_remote_retrieve_response_code( $response );
-		if ( 200 !== $response_code ) {
+		if ( $response_code !== 200 ) {
 			self::debug_log( 'All domain prices request failed with HTTP error', array(
 				'response_code' => $response_code,
 				'url'           => $url,

@@ -165,8 +165,23 @@ class WHMCS_Price_Elementor_Domain_Widget extends \Elementor\Widget_Base {
 
 		if ( empty( $whmcs_tld ) ) {
 			// Show all TLDs
-			$whmcs_all_prices = WHMCS_Price_API::get_all_domain_prices();
-			echo '<div class="whmcs-domain-all">' . wp_kses_post( $whmcs_all_prices ) . '</div>';
+			$whmcs_all_prices   = WHMCS_Price_API::get_all_domain_prices();
+			$whmcs_allowed_html = array(
+				'table'  => array( 'class' => true, 'id' => true ),
+				'thead'  => array(),
+				'tbody'  => array(),
+				'tfoot'  => array(),
+				'tr'     => array( 'class' => true ),
+				'th'     => array( 'scope' => true, 'class' => true ),
+				'td'     => array( 'class' => true ),
+				'strong' => array(),
+				'small'  => array(),
+				'span'   => array( 'class' => true ),
+				'p'      => array( 'class' => true ),
+				'ul'     => array( 'class' => true ),
+				'li'     => array( 'class' => true ),
+			);
+			echo '<div class="whmcs-domain-all">' . wp_kses( $whmcs_all_prices, $whmcs_allowed_html ) . '</div>';
 
 		} elseif ( $whmcs_show_all ) {
 			// Show all three transaction types

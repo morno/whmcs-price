@@ -2,8 +2,6 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.6.0] - 2026-03-06
-
 ### Added
 
 - **Operational Status box in settings sidebar**: Added a new diagnostics postbox on the
@@ -46,12 +44,42 @@ All notable changes to this project will be documented in this file.
   supported. Fully backwards compatible — existing single-type shortcodes are
   unaffected.
 
+### Security
+
+- **Tightened remote HTML allowlist**: All three output paths that render the
+  WHMCS all-domains feed (`shortcode.php`, `blocks/whmcs-price-domain/render.php`,
+  `includes/elementor/widgets/domain-price-widget.php`) now use a strict
+  `wp_kses()` allowlist limited to table and list elements (`table`, `thead`,
+  `tbody`, `tfoot`, `tr`, `th`, `td`, `ul`, `li`, `p`, `strong`, `small`,
+  `span`). Previously `wp_kses_post()` was used, which permits a much broader
+  set of tags including `<a>`, `<img>`, and `<iframe>`. This reduces the blast
+  radius if the configured WHMCS endpoint were ever compromised or misconfigured.
+
+- **Hardened HTTP request arguments**: `get_request_args()` in `class-whmcs-api.php`
+  now passes four additional arguments to `wp_remote_get()`:
+  - `redirection => 0` — redirects are never followed, preventing an attacker
+    from redirecting the plugin to an internal endpoint after initial validation.
+  - `reject_unsafe_urls => true` — enables WordPress’s own built-in SSRF filter
+    on top of the existing manual host checks.
+  - `sslverify => true` — enforces valid TLS certificate verification (explicit,
+    not relying on the WordPress default which can be overridden by filters).
+  - `limit_response_size => 1048576` — caps the response at 1 MB to prevent a
+    runaway WHMCS feed from exhausting PHP memory.
+
+- **Hardened `clean_response()` parser**: Replaced two chained `preg_replace()`
+  calls that naively stripped `document.write(\'` and `\');` from anywhere in the
+  string with a single anchored regex (`/^document\.write\(\'(.*)\'\);$/s`). The
+  new pattern only unwraps the JS wrapper when it spans the entire response,
+  rejecting malformed or unexpected payloads instead of silently passing them
+  through. `wp_kses_no_null()` is now applied to the result to strip null bytes.
+  Empty or non-string responses return `'NA'` immediately.
+
 ### Fixed
 
-- **Fatal "link expired" on settings save**: The Performance section rendered a
+- **Fatal “link expired” on settings save**: The Performance section rendered a
   `<form>` element inside the existing settings `<form>`. HTML forbids nested forms —
-  the browser discarded the inner form's data and sent the wrong nonce to `options.php`,
-  causing WordPress to reject every save with "The link you followed has expired".
+  the browser discarded the inner form’s data and sent the wrong nonce to `options.php`,
+  causing WordPress to reject every save with “The link you followed has expired”.
   Replaced the inner form with a plain `<a href>` using `wp_nonce_url()`, reusing the
   existing Admin Bar cache-clear flow.
 

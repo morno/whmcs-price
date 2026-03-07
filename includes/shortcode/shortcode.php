@@ -60,10 +60,10 @@ function whmcs_price_shortcode_handler( $atts ) {
      */
     if (!empty($atts['pid']) && !empty($atts['bc'])) {
         // Map short cycle codes to WHMCS internal billing cycle names
-        $billing_cycles = array(
+        $billing_cycles = [
             '1m' => 'monthly', '3m' => 'quarterly', '6m' => 'semiannually',
             '1y' => 'annually', '2y' => 'biennially', '3y' => 'triennially',
-        );
+        ];
 
         // Allowlist: only permit known billing cycle codes.
         $bc_r = $billing_cycles[ $atts['bc'] ] ?? '';
@@ -90,11 +90,11 @@ function whmcs_price_shortcode_handler( $atts ) {
          * Translatable labels for table headers.
          * These strings are prepared for Poedit/Translation.
          */
-        $header_labels = array(
+        $header_labels = [
             'name'        => __('Name', 'whmcs-price'),
             'description' => __('Description', 'whmcs-price'),
             'price'       => __('Price', 'whmcs-price'),
-        );
+        ];
 
         // Create a unique ID for the table based on PIDs to satisfy browser requirements
         $table_id = 'whmcs-table-' . md5($atts['pid'] . $atts['bc']);
@@ -219,10 +219,24 @@ function whmcs_price_shortcode_handler( $atts ) {
     }
 
     // Fallback: no TLD => list all TLD prices.
-    // Note: get_all_domain_prices() returns raw HTML from WHMCS (domainpricing.php).
-    // wp_kses_post() is used intentionally here to allow table/list markup from a
-    // trusted admin-configured source, while still stripping scripts and unsafe attributes.
-    return wp_kses_post( WHMCS_Price_API::get_all_domain_prices() );
+    // A strict allowlist is used instead of wp_kses_post() to limit exposure
+    // if the remote WHMCS endpoint is ever compromised or misconfigured.
+    $allowed_html = array(
+        'table'  => array( 'class' => true, 'id' => true ),
+        'thead'  => array(),
+        'tbody'  => array(),
+        'tfoot'  => array(),
+        'tr'     => array( 'class' => true ),
+        'th'     => array( 'scope' => true, 'class' => true ),
+        'td'     => array( 'class' => true ),
+        'strong' => array(),
+        'small'  => array(),
+        'span'   => array( 'class' => true ),
+        'p'      => array( 'class' => true ),
+        'ul'     => array( 'class' => true ),
+        'li'     => array( 'class' => true ),
+    );
+    return wp_kses( WHMCS_Price_API::get_all_domain_prices(), $allowed_html );
 }
 /**
  * Register the [whmcs] shortcode on WordPress initialization.
