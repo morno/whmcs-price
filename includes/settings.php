@@ -450,7 +450,7 @@ class WHMCSPrice {
 
 		if ( ! empty( $input['whmcs_url'] ) ) {
 			$url = esc_url_raw( trim( $input['whmcs_url'] ) );
-
+			
 			if ( ! str_starts_with( strtolower( $url ), 'https://' ) ) {
 				add_settings_error(
 					'whmcs_price_option',
