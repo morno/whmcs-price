@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.6.0] - 2026-03-07
+
 ### Added
 
 - **Operational Status box in settings sidebar**: Added a new diagnostics postbox on the
@@ -73,6 +75,20 @@ All notable changes to this project will be documented in this file.
   rejecting malformed or unexpected payloads instead of silently passing them
   through. `wp_kses_no_null()` is now applied to the result to strip null bytes.
   Empty or non-string responses return `'NA'` immediately.
+
+- **DNS-resolution SSRF check**: `get_url()` in `class-whmcs-api.php` now resolves
+  the configured hostname via `dns_get_record()` and rejects the URL if any A or
+  AAAA record points to a private or reserved IP address. The previous hostname-only
+  checks could be bypassed via DNS rebinding or CNAME chains pointing to internal
+  infrastructure. Only applies to non-IP hostnames; direct IP inputs are still
+  validated by the existing `FILTER_FLAG_NO_PRIV_RANGE` check.
+
+- **Strict output escaping in product table**: In `shortcode.php`, the product
+  table now uses `esc_html( wp_strip_all_tags() )` for `name` and `description`
+  columns. Previously all three columns used `wp_kses()` with a `<span>` allowlist,
+  meaning remote WHMCS data could influence HTML structure even in plain-text fields.
+  Only the `price` column retains `wp_kses()` since WHMCS may wrap currency values
+  in `<span>` elements for styling.
 
 ### Fixed
 

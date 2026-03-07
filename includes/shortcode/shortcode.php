@@ -60,10 +60,10 @@ function whmcs_price_shortcode_handler( $atts ) {
      */
     if (!empty($atts['pid']) && !empty($atts['bc'])) {
         // Map short cycle codes to WHMCS internal billing cycle names
-        $billing_cycles = [
+        $billing_cycles = array(
             '1m' => 'monthly', '3m' => 'quarterly', '6m' => 'semiannually',
             '1y' => 'annually', '2y' => 'biennially', '3y' => 'triennially',
-        ];
+        );
 
         // Allowlist: only permit known billing cycle codes.
         $bc_r = $billing_cycles[ $atts['bc'] ] ?? '';
@@ -90,11 +90,11 @@ function whmcs_price_shortcode_handler( $atts ) {
          * Translatable labels for table headers.
          * These strings are prepared for Poedit/Translation.
          */
-        $header_labels = [
+        $header_labels = array(
             'name'        => __('Name', 'whmcs-price'),
             'description' => __('Description', 'whmcs-price'),
             'price'       => __('Price', 'whmcs-price'),
-        ];
+        );
 
         // Create a unique ID for the table based on PIDs to satisfy browser requirements
         $table_id = 'whmcs-table-' . md5($atts['pid'] . $atts['bc']);
@@ -118,7 +118,13 @@ function whmcs_price_shortcode_handler( $atts ) {
                     $val = whmcs_price_format_per( $val, $bc_r, (int) preg_replace( '/[^0-9]/', '', $atts['reg'] ) ?: 1, $atts['per'] );
                 }
 
-                $output .= "<td>" . wp_kses( $val, array( 'span' => array( 'class' => array() ) ) ) . "</td>";
+                // Only the price field may contain HTML (e.g. <span> for currency styling).
+                // Name and description are always plain text — strip tags and escape.
+                if ( 'price' === $attr ) {
+                    $output .= '<td>' . wp_kses( $val, array( 'span' => array( 'class' => true ) ) ) . '</td>';
+                } else {
+                    $output .= '<td>' . esc_html( wp_strip_all_tags( $val ) ) . '</td>';
+                }
             }
             $output .= "</tr>";
         }
