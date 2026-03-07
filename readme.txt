@@ -143,6 +143,15 @@ This is the shortcode to extract domain registration, renewal, or transfer price
   meaning remote WHMCS data could influence HTML structure even in plain-text fields.
   Only the `price` column retains `wp_kses()` since WHMCS may wrap currency values
   in `<span>` elements for styling.
+* Security: **Block credentials and non-standard ports in WHMCS URL**: `get_url()` in
+  `class-whmcs-api.php` now rejects URLs that contain embedded credentials
+  (`https://user:pass@host`) or a port other than 443. Neither serves a legitimate
+  purpose for a WHMCS feed URL and both widen the SSRF attack surface unnecessarily.
+* Security: **Debug log no longer records raw response data**: All `debug_log()` calls that
+  previously logged the fetched value (`'value' => $data`) or the first 100
+  characters of the all-domains feed now log only the data length
+  (`'length' => strlen( $data )`). This prevents response content from leaking
+  into debug logs on shared or multi-tenant environments.
 * Fix: **Fatal “link expired” on settings save**: The Performance section rendered a
   `<form>` element inside the existing settings `<form>`. HTML forbids nested forms —
   the browser discarded the inner form’s data and sent the wrong nonce to `options.php`,
