@@ -93,6 +93,14 @@ All notable changes to this project will be documented in this file.
   Only the `price` column retains `wp_kses()` since WHMCS may wrap currency values
   in `<span>` elements for styling.
 
+- **Consistent output escaping across all product display styles**: The table, cards,
+  and grid views in `blocks/whmcs-price-product/render.php` and
+  `includes/elementor/widgets/product-price-widget.php` now all apply the same model:
+  `wp_kses()` only for `price`, and `esc_html( wp_strip_all_tags() )` for `name` and
+  `description`. Previously the table view in both files used `wp_kses()` for all
+  columns regardless of field type, and the grid view did the same. This closes the
+  inconsistency and ensures the trust boundary is uniform across all rendering paths.
+
 - **Block credentials and non-standard ports in WHMCS URL**: `get_url()` in
   `class-whmcs-api.php` now rejects URLs that contain embedded credentials
   (`https://user:pass@host`) or a port other than 443. Neither serves a legitimate
@@ -153,6 +161,17 @@ All notable changes to this project will be documented in this file.
 
 - **Domain `reg` parameter now validates range 1–10**: Previously any numeric
   value was accepted. Values outside 1–10 now fall back to `1`.
+
+- **`clean_response()` renamed to `unwrap_response_body()`**: The function name
+  previously implied sanitization, which it does not perform — it only unwraps
+  WHMCS JS-feed responses. The new name accurately describes what the method does.
+  No functional change.
+
+- **`<code>` tag now renders correctly in settings description**: The Custom
+  User-Agent field description used `printf( esc_html__(...), '<code>...</code>' )`
+  which caused the `<code>` tag to render as literal text. Replaced with
+  `echo wp_kses( sprintf( __(...), '<code>...</code>' ), array( 'code' => array() ) )`
+  so the default User-Agent string is correctly displayed in a code element.
 
 ## [2.5.5] - 2026-02-28
 

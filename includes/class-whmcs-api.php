@@ -211,7 +211,7 @@ class WHMCS_Price_API {
 	 * @param  string $body The raw response body from the API request.
 	 * @return string The cleaned text string.
 	 */
-	private static function clean_response($body) {
+	private static function unwrap_response_body($body) {
         if ( ! is_string( $body ) || '' === $body ) {
             return 'NA';
         }
@@ -330,7 +330,7 @@ class WHMCS_Price_API {
 			return 'NA';
 		}
 
-		$data = self::clean_response( wp_remote_retrieve_body( $response ) );
+		$data = self::unwrap_response_body( wp_remote_retrieve_body( $response ) );
 
 		self::debug_log( 'Product data fetched successfully', array(
 			'cache_key' => $cache_key,
@@ -454,7 +454,7 @@ class WHMCS_Price_API {
 			return 'NA';
 		}
 
-		$data = self::clean_response( wp_remote_retrieve_body( $response ) );
+		$data = self::unwrap_response_body( wp_remote_retrieve_body( $response ) );
 
 		self::debug_log( 'Domain price fetched successfully', array(
 			'cache_key' => $cache_key,
@@ -534,7 +534,7 @@ class WHMCS_Price_API {
 			return 'NA';
 		}
 
-		$data = self::clean_response( wp_remote_retrieve_body( $response ) );
+		$data = self::unwrap_response_body( wp_remote_retrieve_body( $response ) );
 
 		self::debug_log( 'All domain prices fetched successfully', array(
 			'cache_key'       => $cache_key,

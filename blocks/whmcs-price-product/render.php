@@ -85,12 +85,17 @@ $whmcs_wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_att
 					<tr>
 						<?php foreach ( $whmcs_show as $whmcs_attr ) : ?>
 							<?php
-							$whmcs_value = WHMCS_Price_API::get_product_data( intval( $whmcs_single_pid ), $whmcs_bc_mapped, sanitize_text_field( $whmcs_attr ) );
-							if ( 'price' === strtolower( trim( $whmcs_attr ) ) && ! empty( $whmcs_per_period ) ) {
+							$whmcs_value      = WHMCS_Price_API::get_product_data( intval( $whmcs_single_pid ), $whmcs_bc_mapped, sanitize_text_field( $whmcs_attr ) );
+							$whmcs_attr_clean = strtolower( trim( $whmcs_attr ) );
+							if ( 'price' === $whmcs_attr_clean && ! empty( $whmcs_per_period ) ) {
 								$whmcs_value = whmcs_price_format_per( $whmcs_value, $whmcs_bc_mapped, 1, $whmcs_per_period );
 							}
 							?>
-							<td><?php echo wp_kses( $whmcs_value, array( 'span' => array( 'class' => array() ) ) ); ?></td>
+							<td><?php if ( 'price' === $whmcs_attr_clean ) {
+								echo wp_kses( $whmcs_value, array( 'span' => array( 'class' => true ) ) );
+							} else {
+								echo esc_html( wp_strip_all_tags( $whmcs_value ) );
+							} ?></td>
 						<?php endforeach; ?>
 					</tr>
 				<?php endforeach; ?>
@@ -140,7 +145,11 @@ $whmcs_wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_att
 						?>
 						<div class="whmcs-product-grid-item__field">
 							<span class="whmcs-product-grid-item__label"><?php echo esc_html( $whmcs_label ); ?></span>
-							<span class="whmcs-product-grid-item__value"><?php echo wp_kses( $whmcs_value, array( 'span' => array( 'class' => array() ) ) ); ?></span>
+							<span class="whmcs-product-grid-item__value"><?php if ( 'price' === $whmcs_attr_clean ) {
+								echo wp_kses( $whmcs_value, array( 'span' => array( 'class' => true ) ) );
+							} else {
+								echo esc_html( wp_strip_all_tags( $whmcs_value ) );
+							} ?></span>
 						</div>
 					<?php endforeach; ?>
 				</div>

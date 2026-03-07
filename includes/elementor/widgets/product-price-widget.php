@@ -215,11 +215,16 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 			foreach ( $whmcs_pids as $whmcs_single_pid ) {
 				echo '<tr>';
 				foreach ( $whmcs_show as $whmcs_attr ) {
-					$val = WHMCS_Price_API::get_product_data( intval( $whmcs_single_pid ), $whmcs_bc_mapped, sanitize_text_field( $whmcs_attr ) );
-					if ( 'price' === strtolower( trim( $whmcs_attr ) ) && ! empty( $whmcs_per_period ) ) {
+					$val              = WHMCS_Price_API::get_product_data( intval( $whmcs_single_pid ), $whmcs_bc_mapped, sanitize_text_field( $whmcs_attr ) );
+					$whmcs_attr_clean = strtolower( trim( $whmcs_attr ) );
+					if ( 'price' === $whmcs_attr_clean && ! empty( $whmcs_per_period ) ) {
 						$val = whmcs_price_format_per( $val, $whmcs_bc_mapped, 1, $whmcs_per_period );
 					}
-					echo '<td>' . wp_kses( $val, array( 'span' => array( 'class' => array() ) ) ) . '</td>';
+					if ( 'price' === $whmcs_attr_clean ) {
+						echo '<td>' . wp_kses( $val, array( 'span' => array( 'class' => true ) ) ) . '</td>';
+					} else {
+						echo '<td>' . esc_html( wp_strip_all_tags( $val ) ) . '</td>';
+					}
 				}
 				echo '</tr>';
 			}
@@ -260,7 +265,11 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 					}
 					echo '<div class="whmcs-product-grid-item__field">';
 					echo '<span class="whmcs-product-grid-item__label">' . esc_html( $whmcs_label ) . '</span>';
-					echo '<span class="whmcs-product-grid-item__value">' . wp_kses( $whmcs_value, array( 'span' => array( 'class' => array() ) ) ) . '</span>';
+					if ( 'price' === $whmcs_attr_clean ) {
+						echo '<span class="whmcs-product-grid-item__value">' . wp_kses( $whmcs_value, array( 'span' => array( 'class' => true ) ) ) . '</span>';
+					} else {
+						echo '<span class="whmcs-product-grid-item__value">' . esc_html( wp_strip_all_tags( $whmcs_value ) ) . '</span>';
+					}
 					echo '</div>';
 				}
 				echo '</div>';

@@ -283,10 +283,13 @@ class WHMCSPrice {
 							/>
 							<p class="description">
 								<?php
-								printf(
-									/* translators: %s: the auto-generated default User-Agent string */
-									esc_html__( 'Override the User-Agent sent to WHMCS. Useful for firewall allow-rules. Leave blank to use the default: %s', 'whmcs-price' ),
-									'<code>' . esc_html( $default_ua ) . '</code>'
+								echo wp_kses(
+									sprintf(
+										/* translators: %s: the auto-generated default User-Agent string */
+										__( 'Override the User-Agent sent to WHMCS. Useful for firewall allow-rules. Leave blank to use the default: %s', 'whmcs-price' ),
+										'<code>' . esc_html( $default_ua ) . '</code>'
+									),
+									array( 'code' => array() )
 								);
 								?>
 							</p>
