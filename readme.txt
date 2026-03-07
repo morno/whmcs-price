@@ -69,6 +69,112 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 
 == Changelog ==
 
+= 2.6.0 =
+* Added: **Operational Status box in settings sidebar**: Added a new diagnostics postbox on the
+  settings page sidebar that provides a read-only overview of the plugin’s local cache
+  state. It shows the number of cached entries, active lock transients (stampede
+  protection), and the nearest/farthest cache expiry windows. This is based on existing
+  WordPress transients stored in `wp_options` and does **not** trigger any outbound
+  WHMCS request.
+* Added: **Per-period price breakdown** (`per="month|week|day"`): All output modules
+  (shortcode, Gutenberg block, Elementor widget) now support an optional
+  `per` / `perPeriod` parameter that displays the full price alongside a
+  per-period breakdown. Example output: `$99.00/yr ($8.25/mo)`.
+  Works with all billing cycles and multi-year domain registrations.
+  Shortcode examples:
+  ```
+  [whmcs pid="1" bc="1y" show="name,price" per="month"]
+  [whmcs tld="se" show="register,renew" per="month"]
+  ```
+* Added: **`includes/class-whmcs-price-helpers.php`** — New shared helpers file loaded
+  by `whmcs_price.php` before all other modules. Contains rendering and
+  formatting utilities available to shortcodes, blocks, and Elementor widgets
+  without duplication. New output modules can consume these helpers immediately.
+  Currently provides:
+* Added: `whmcs_price_format_per()` — per-period price formatting
+* Added: **`WHMCS_Price_API::divide_price()`** — New static method that divides a raw
+  WHMCS price string by a given divisor while preserving the currency symbol.
+  Handles common WHMCS price formats: `$9.99`, `€12.50`, `99.00 kr`, `9,99 kr`.
+* Added: **`WHMCS_Price_API::billing_cycle_months()`** — New static method that returns
+  the number of months in a given WHMCS internal billing cycle string
+  (e.g. `"annually"` → `12`).
+* Added: **Domain shortcode multi-type support** (`show="register,renew"`): The `[whmcs]`
+  shortcode now accepts a comma-separated list of transaction types in the `show`
+  parameter, rendering a comparison table. Previously only one type at a time was
+  supported. Fully backwards compatible — existing single-type shortcodes are
+  unaffected.
+* Security: **Tightened remote HTML allowlist**: All three output paths that render the
+  WHMCS all-domains feed (`shortcode.php`, `blocks/whmcs-price-domain/render.php`,
+  `includes/elementor/widgets/domain-price-widget.php`) now use a strict
+  `wp_kses()` allowlist limited to table and list elements (`table`, `thead`,
+  `tbody`, `tfoot`, `tr`, `th`, `td`, `ul`, `li`, `p`, `strong`, `small`,
+  `span`). Previously `wp_kses_post()` was used, which permits a much broader
+  set of tags including `<a>`, `<img>`, and `<iframe>`. This reduces the blast
+  radius if the configured WHMCS endpoint were ever compromised or misconfigured.
+* Security: **Hardened HTTP request arguments**: `get_request_args()` in `class-whmcs-api.php`
+  now passes four additional arguments to `wp_remote_get()`:
+* Security: `redirection => 0` — redirects are never followed, preventing an attacker
+    from redirecting the plugin to an internal endpoint after initial validation.
+* Security: `reject_unsafe_urls => true` — enables WordPress’s own built-in SSRF filter
+    on top of the existing manual host checks.
+* Security: `sslverify => true` — enforces valid TLS certificate verification (explicit,
+    not relying on the WordPress default which can be overridden by filters).
+* Security: `limit_response_size => 1048576` — caps the response at 1 MB to prevent a
+    runaway WHMCS feed from exhausting PHP memory.
+* Security: **Hardened `clean_response()` parser**: Replaced two chained `preg_replace()`
+  calls that naively stripped `document.write(\'` and `\');` from anywhere in the
+  string with a single anchored regex (`/^document\.write\(\'(.*)\'\);$/s`). The
+  new pattern only unwraps the JS wrapper when it spans the entire response,
+  rejecting malformed or unexpected payloads instead of silently passing them
+  through. `wp_kses_no_null()` is now applied to the result to strip null bytes.
+  Empty or non-string responses return `'NA'` immediately.
+* Security: **DNS-resolution SSRF check**: `get_url()` in `class-whmcs-api.php` now resolves
+  the configured hostname via `dns_get_record()` and rejects the URL if any A or
+  AAAA record points to a private or reserved IP address. The previous hostname-only
+  checks could be bypassed via DNS rebinding or CNAME chains pointing to internal
+  infrastructure. Only applies to non-IP hostnames; direct IP inputs are still
+  validated by the existing `FILTER_FLAG_NO_PRIV_RANGE` check.
+* Security: **Strict output escaping in product table**: In `shortcode.php`, the product
+  table now uses `esc_html( wp_strip_all_tags() )` for `name` and `description`
+  columns. Previously all three columns used `wp_kses()` with a `<span>` allowlist,
+  meaning remote WHMCS data could influence HTML structure even in plain-text fields.
+  Only the `price` column retains `wp_kses()` since WHMCS may wrap currency values
+  in `<span>` elements for styling.
+* Fix: **Fatal “link expired” on settings save**: The Performance section rendered a
+  `<form>` element inside the existing settings `<form>`. HTML forbids nested forms —
+  the browser discarded the inner form’s data and sent the wrong nonce to `options.php`,
+  causing WordPress to reject every save with “The link you followed has expired”.
+  Replaced the inner form with a plain `<a href>` using `wp_nonce_url()`, reusing the
+  existing Admin Bar cache-clear flow.
+* Fix: **Missing `translators:` comments on `_n()` calls**: Added required
+  `/* translators: %d: number of X */` comments above all three `_n()` calls in
+  `format_seconds()` to satisfy `WordPress.WP.I18n.MissingTranslatorsComment`.
+* Fix: **`readme.txt` stable tag mismatch**: `Stable tag` was set to `2.5.3` while the
+  plugin header declared `2.6.0`. Updated to `2.6.0` to match.
+* Fix: **WPCS: missing spaces in `defined()` calls**: `defined('ABSPATH')` corrected to
+  `defined( 'ABSPATH' )` in `class-whmcs-api.php` and `shortcode.php`.
+* Fix: **WPCS: non-Yoda comparisons in `class-whmcs-api.php`**: `$cached !== false` →
+  `false !== $cached` and `$response_code !== 200` → `200 !== $response_code` across
+  all three API methods.
+* Fix: **WPCS: short array syntax in `shortcode.php`**: `$billing_cycles = [...]` and
+  `$header_labels = [...]` converted to `array()` syntax per WordPress Coding Standards.
+* Fix: **WPCS: missing `esc_url()` on `admin_url()` in `settings.php`**: The Settings link
+  in the plugin list row passed `admin_url()` output directly into an HTML attribute
+  without escaping.
+* Changed: **Hardened handling of admin query flags**: Query flags used for cache-related UI
+  flow and admin bar actions (e.g. `cache_cleared`, `whmcs_clear_cache`) are now read
+  using WordPress-standard sanitization (`wp_unslash()` + `absint()`). This improves
+  defensive robustness and aligns more closely with WordPress Coding Standards without
+  changing behavior.
+* Changed: **`whmcs_price_format_per()` moved to helpers file**: Previously defined inline
+  in `shortcode.php`. Now lives in `class-whmcs-price-helpers.php` and is
+  available globally to all modules. No functional change.
+* Changed: **TLD sanitization now lowercases input**: `strtolower()` added to TLD
+  sanitization in the domain shortcode so `.SE` and `.se` produce the same cache
+  key and consistent output.
+* Changed: **Domain `reg` parameter now validates range 1–10**: Previously any numeric
+  value was accepted. Values outside 1–10 now fall back to `1`.
+
 = 2.5.5 =
 * Security: **HTTP URL blocked at save**: The `sanitize()` method in `settings.php` now actively
   rejects WHMCS URLs that do not use HTTPS at the point of saving. Previously the URL
