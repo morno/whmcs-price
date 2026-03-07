@@ -46,6 +46,34 @@ All notable changes to this project will be documented in this file.
   supported. Fully backwards compatible — existing single-type shortcodes are
   unaffected.
 
+- **Setup Fee support** (`show="setupfee"`): All output modules (shortcode, Gutenberg
+  block, Elementor widget) now support displaying the WHMCS one-time setup fee as an
+  explicit column or field. Setup fee is fetched separately from `productpricing.php`
+  and is only shown when explicitly requested — it is never displayed automatically
+  alongside the price.
+
+  Shortcode example:
+  ```
+  [whmcs pid="1" bc="1y" show="name,price,setupfee"]
+  ```
+
+  In Gutenberg, tick **Setup Fee** in the Display Columns panel. In Elementor, select
+  **Setup Fee** from the Display Columns list. In the cards view, the setup fee label
+  and value are rendered above the description regardless of the order selected.
+
+- **`WHMCS_Price_API::get_product_setup_fee()`** — New public static method that fetches
+  the setup fee for a given product ID and billing cycle from `productpricing.php`. The
+  full pricing feed is cached per PID so all billing cycles share a single HTTP request.
+  Returns the formatted setup fee string (e.g. `100 kr`) or an empty string if the fee
+  is zero or unavailable.
+
+- **`whmcs_price_strip_setup_fee()`** — New helper function in
+  `class-whmcs-price-helpers.php` that strips the embedded setup fee suffix WHMCS
+  sometimes appends to the `productsinfo.php` price response (e.g. `"999 kr + 100 kr"`
+  → `"999 kr"`). Applied to all price fields before rendering across shortcode, block,
+  and Elementor to prevent the fee from appearing twice or in the wrong place.
+
+
 ### Security
 
 - **Tightened remote HTML allowlist**: All three output paths that render the
@@ -93,14 +121,6 @@ All notable changes to this project will be documented in this file.
   Only the `price` column retains `wp_kses()` since WHMCS may wrap currency values
   in `<span>` elements for styling.
 
-- **Consistent output escaping across all product display styles**: The table, cards,
-  and grid views in `blocks/whmcs-price-product/render.php` and
-  `includes/elementor/widgets/product-price-widget.php` now all apply the same model:
-  `wp_kses()` only for `price`, and `esc_html( wp_strip_all_tags() )` for `name` and
-  `description`. Previously the table view in both files used `wp_kses()` for all
-  columns regardless of field type, and the grid view did the same. This closes the
-  inconsistency and ensures the trust boundary is uniform across all rendering paths.
-
 - **Block credentials and non-standard ports in WHMCS URL**: `get_url()` in
   `class-whmcs-api.php` now rejects URLs that contain embedded credentials
   (`https://user:pass@host`) or a port other than 443. Neither serves a legitimate
@@ -111,6 +131,30 @@ All notable changes to this project will be documented in this file.
   characters of the all-domains feed now log only the data length
   (`'length' => strlen( $data )`). This prevents response content from leaking
   into debug logs on shared or multi-tenant environments.
+
+- **Consistent output escaping across all product display styles**: The table, cards,
+  and grid views in `blocks/whmcs-price-product/render.php` and
+  `includes/elementor/widgets/product-price-widget.php` now all apply the same model:
+  `wp_kses()` only for `price`, and `esc_html( wp_strip_all_tags() )` for `name` and
+  `description`. Previously the table view in both files used `wp_kses()` for all
+  columns regardless of field type, and the grid view did the same. This closes the
+  inconsistency and ensures the trust boundary is uniform across all rendering paths.
+
+- **`setupfee` added to Elementor column allowlist**: The server-side `$allowed_columns`
+  array in `product-price-widget.php` now includes `setupfee`. Previously the allowlist
+  only permitted `name`, `description`, and `price`, causing `setupfee` to be silently
+  filtered out and the widget to render nothing on pages where it was selected.
+
+- **`setupfee` added to Elementor header label map**: `$whmcs_header_labels` in
+  `product-price-widget.php` now includes a translatable `Setup Fee` entry. Previously
+  the label fell back to `ucfirst('setupfee')` in table and grid views.
+
+- **Explicit display style and column allowlists in block render.php**: `displayStyle`
+  is now validated against `array( 'table', 'cards', 'grid' )` and falls back to
+  `'table'` if an unknown value is passed. The `show` array is filtered against
+  `array( 'name', 'description', 'price', 'setupfee' )` early in the render file,
+  matching the same defensive pattern already used in the Elementor widget.
+
 
 ### Fixed
 
@@ -172,7 +216,6 @@ All notable changes to this project will be documented in this file.
   which caused the `<code>` tag to render as literal text. Replaced with
   `echo wp_kses( sprintf( __(...), '<code>...</code>' ), array( 'code' => array() ) )`
   so the default User-Agent string is correctly displayed in a code element.
-
 ## [2.5.5] - 2026-02-28
 
 ### Security

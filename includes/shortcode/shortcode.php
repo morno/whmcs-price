@@ -76,7 +76,7 @@ function whmcs_price_shortcode_handler( $atts ) {
         $pids = array_filter( $pids, fn($p) => $p > 0 );
 
         // Allowlist: only permit known column names.
-        $allowed_attrs = array( 'name', 'description', 'price' );
+        $allowed_attrs = array( 'name', 'description', 'price', 'setupfee' );
         $show = array_filter(
             array_map( 'trim', explode( ',', $atts['show'] ) ),
             fn( $a ) => in_array( $a, $allowed_attrs, true )
@@ -94,6 +94,7 @@ function whmcs_price_shortcode_handler( $atts ) {
             'name'        => __('Name', 'whmcs-price'),
             'description' => __('Description', 'whmcs-price'),
             'price'       => __('Price', 'whmcs-price'),
+            'setupfee'    => __('Setup Fee', 'whmcs-price'),
         );
 
         // Create a unique ID for the table based on PIDs to satisfy browser requirements
@@ -111,7 +112,20 @@ function whmcs_price_shortcode_handler( $atts ) {
         foreach ($pids as $pid) {
             $output .= "<tr>";
             foreach ($show as $attr) {
+                // setupfee is fetched from productpricing.php, not productsinfo.php.
+                if ( 'setupfee' === $attr ) {
+                    $val = WHMCS_Price_API::get_product_setup_fee( intval( $pid ), $bc_r );
+                    $output .= '<td>' . esc_html( wp_strip_all_tags( $val ) ) . '</td>';
+                    continue;
+                }
+
                 $val = WHMCS_Price_API::get_product_data(intval($pid), $bc_r, sanitize_text_field($attr));
+
+                // Always strip embedded setup fee suffix from price string.
+                // WHMCS may include " + AMOUNT" in the productsinfo.php price response.
+                if ( 'price' === $attr ) {
+                    $val = whmcs_price_strip_setup_fee( $val );
+                }
 
                 // If per-period is requested and this column is 'price', append divided price.
                 if ( 'price' === $attr && ! empty( $atts['per'] ) ) {

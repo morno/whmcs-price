@@ -80,6 +80,7 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 					'name'        => __( 'Name', 'whmcs-price' ),
 					'description' => __( 'Description', 'whmcs-price' ),
 					'price'       => __( 'Price', 'whmcs-price' ),
+					'setupfee'    => __( 'Setup Fee', 'whmcs-price' ),
 				),
 			)
 		);
@@ -196,7 +197,7 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 		}
 
 		// Allowlist show columns
-		$allowed_columns = array( 'name', 'description', 'price' );
+		$allowed_columns = array( 'name', 'description', 'price', 'setupfee' );
 		$whmcs_show = array_filter(
     		$whmcs_show,
     		fn( $col ) => in_array( $col, $allowed_columns, true )
@@ -217,8 +218,15 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 				foreach ( $whmcs_show as $whmcs_attr ) {
 					$val              = WHMCS_Price_API::get_product_data( intval( $whmcs_single_pid ), $whmcs_bc_mapped, sanitize_text_field( $whmcs_attr ) );
 					$whmcs_attr_clean = strtolower( trim( $whmcs_attr ) );
+					if ( 'price' === $whmcs_attr_clean ) {
+						$val = whmcs_price_strip_setup_fee( $val );
+					}
 					if ( 'price' === $whmcs_attr_clean && ! empty( $whmcs_per_period ) ) {
 						$val = whmcs_price_format_per( $val, $whmcs_bc_mapped, 1, $whmcs_per_period );
+					}
+					if ( 'setupfee' === $whmcs_attr_clean ) {
+						echo '<td>' . esc_html( WHMCS_Price_API::get_product_setup_fee( intval( $whmcs_single_pid ), $whmcs_bc_mapped ) ) . '</td>';
+						continue;
 					}
 					if ( 'price' === $whmcs_attr_clean ) {
 						echo '<td>' . wp_kses( $val, array( 'span' => array( 'class' => true ) ) ) . '</td>';
@@ -231,16 +239,30 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 			echo '</tbody></table>';
 
 		} elseif ( 'cards' === $whmcs_display_style ) {
+			// Reorder: setupfee always renders before description for consistent card layout.
+			$whmcs_show_cards = $whmcs_show;
+			$sf_pos   = array_search( 'setupfee', $whmcs_show_cards, true );
+			$desc_pos = array_search( 'description', $whmcs_show_cards, true );
+			if ( false !== $sf_pos && false !== $desc_pos && $sf_pos > $desc_pos ) {
+				unset( $whmcs_show_cards[ $sf_pos ] );
+				array_splice( $whmcs_show_cards, $desc_pos, 0, array( 'setupfee' ) );
+			}
 			echo '<div class="whmcs-product-cards">';
 			foreach ( $whmcs_pids as $whmcs_single_pid ) {
 				echo '<div class="whmcs-product-card">';
-				foreach ( $whmcs_show as $whmcs_attr ) {
+				foreach ( $whmcs_show_cards as $whmcs_attr ) {
 					$whmcs_value      = WHMCS_Price_API::get_product_data( intval( $whmcs_single_pid ), $whmcs_bc_mapped, sanitize_text_field( $whmcs_attr ) );
 					$whmcs_attr_clean = strtolower( trim( $whmcs_attr ) );
+					if ( 'price' === $whmcs_attr_clean ) {
+						$whmcs_value = whmcs_price_strip_setup_fee( $whmcs_value );
+					}
 					if ( 'price' === $whmcs_attr_clean && ! empty( $whmcs_per_period ) ) {
 						$whmcs_value = whmcs_price_format_per( $whmcs_value, $whmcs_bc_mapped, 1, $whmcs_per_period );
 					}
-					if ( 'price' === $whmcs_attr_clean ) {
+					if ( 'setupfee' === $whmcs_attr_clean ) {
+						echo '<span class="whmcs-product-card__setupfee-label">' . esc_html__( 'Setup Fee', 'whmcs-price' ) . ':</span>';
+						echo '<span class="whmcs-product-card__setupfee-value">' . esc_html( WHMCS_Price_API::get_product_setup_fee( intval( $whmcs_single_pid ), $whmcs_bc_mapped ) ) . '</span>';
+					} elseif ( 'price' === $whmcs_attr_clean ) {
 						echo '<span class="whmcs-product-card__price-value">' . wp_kses( $whmcs_value, array( 'span' => array( 'class' => array() ) ) ) . '</span>';
 					} elseif ( 'name' === $whmcs_attr_clean ) {
 						echo '<h3 class="whmcs-product-card__title">' . esc_html( $whmcs_value ) . '</h3>';
@@ -260,12 +282,17 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 					$whmcs_value      = WHMCS_Price_API::get_product_data( intval( $whmcs_single_pid ), $whmcs_bc_mapped, sanitize_text_field( $whmcs_attr ) );
 					$whmcs_attr_clean = strtolower( trim( $whmcs_attr ) );
 					$whmcs_label      = $whmcs_header_labels[ $whmcs_attr_clean ] ?? ucfirst( $whmcs_attr );
+					if ( 'price' === $whmcs_attr_clean ) {
+						$whmcs_value = whmcs_price_strip_setup_fee( $whmcs_value );
+					}
 					if ( 'price' === $whmcs_attr_clean && ! empty( $whmcs_per_period ) ) {
 						$whmcs_value = whmcs_price_format_per( $whmcs_value, $whmcs_bc_mapped, 1, $whmcs_per_period );
 					}
 					echo '<div class="whmcs-product-grid-item__field">';
 					echo '<span class="whmcs-product-grid-item__label">' . esc_html( $whmcs_label ) . '</span>';
-					if ( 'price' === $whmcs_attr_clean ) {
+					if ( 'setupfee' === $whmcs_attr_clean ) {
+						echo '<span class="whmcs-product-grid-item__value">' . esc_html( WHMCS_Price_API::get_product_setup_fee( intval( $whmcs_single_pid ), $whmcs_bc_mapped ) ) . '</span>';
+					} elseif ( 'price' === $whmcs_attr_clean ) {
 						echo '<span class="whmcs-product-grid-item__value">' . wp_kses( $whmcs_value, array( 'span' => array( 'class' => true ) ) ) . '</span>';
 					} else {
 						echo '<span class="whmcs-product-grid-item__value">' . esc_html( wp_strip_all_tags( $whmcs_value ) ) . '</span>';

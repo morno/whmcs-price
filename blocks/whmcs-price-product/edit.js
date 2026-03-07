@@ -39,6 +39,7 @@ const SHOW_OPTIONS = [
 	{ label: __( 'Name', 'whmcs-price' ),        value: 'name' },
 	{ label: __( 'Description', 'whmcs-price' ), value: 'description' },
 	{ label: __( 'Price', 'whmcs-price' ),       value: 'price' },
+	{ label: __( 'Setup Fee', 'whmcs-price' ),   value: 'setupfee' },
 ];
 
 /**

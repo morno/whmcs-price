@@ -623,6 +623,174 @@ class WHMCS_Price_API {
 	}
 
 	/**
+	 * Fetch the setup fee for a product and billing cycle from WHMCS.
+	 *
+	 * Fetches productpricing.php, unwraps the JS response, and extracts the
+	 * setup fee for the requested billing cycle. The full pricing feed is
+	 * cached per PID so all billing cycles share a single HTTP request.
+	 *
+	 * Returns the formatted setup fee string (e.g. "$10.00") or an empty
+	 * string if the fee is zero, absent, or the feed is unavailable.
+	 *
+	 * @since  2.6.0
+	 * @access public
+	 * @param  int    $pid           The Product ID in WHMCS.
+	 * @param  string $billing_cycle The billing cycle (e.g., annually).
+	 * @return string                Formatted setup fee string, or '' if none / zero.
+	 */
+	public static function get_product_setup_fee( int $pid, string $billing_cycle ): string {
+		$allowed_billing_cycles = array( 'monthly', 'quarterly', 'semiannually', 'annually', 'biennially', 'triennially' );
+		if ( ! in_array( $billing_cycle, $allowed_billing_cycles, true ) ) {
+			return '';
+		}
+
+		$whmcs_url = self::get_url();
+		if ( empty( $whmcs_url ) ) {
+			return '';
+		}
+
+		// Cache the full pricing feed per PID — one HTTP request serves all billing cycles.
+		$cache_key = 'whmcs_pricefeed_' . md5( (string) $pid );
+		$cached    = get_transient( $cache_key );
+
+		if ( false === $cached ) {
+			$lock_key = 'lock_' . $cache_key;
+			if ( ! self::acquire_lock( $lock_key ) ) {
+				self::debug_log( 'Product pricing feed request skipped: lock already acquired', array(
+					'lock_key' => $lock_key,
+				) );
+				return '';
+			}
+
+			$url = add_query_arg(
+				array( 'pid' => $pid ),
+				$whmcs_url . '/feeds/productpricing.php'
+			);
+
+			self::debug_log( 'Fetching product pricing feed from WHMCS', array(
+				'url' => $url,
+				'pid' => $pid,
+			) );
+
+			$response = wp_remote_get( $url, self::get_request_args() );
+
+			if ( is_wp_error( $response ) ) {
+				self::debug_log( 'Product pricing feed request error', array(
+					'error' => $response->get_error_message(),
+				) );
+				delete_transient( $lock_key );
+				return '';
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+			if ( 200 !== $response_code ) {
+				self::debug_log( 'Product pricing feed HTTP error', array(
+					'response_code' => $response_code,
+				) );
+				delete_transient( $lock_key );
+				return '';
+			}
+
+			$cached = self::unwrap_response_body( wp_remote_retrieve_body( $response ) );
+
+			self::debug_log( 'Product pricing feed fetched successfully', array(
+				'cache_key' => $cache_key,
+				'length'    => strlen( $cached ),
+			) );
+
+			set_transient( $cache_key, $cached, self::get_cache_expiry() );
+			delete_transient( $lock_key );
+		} else {
+			self::debug_log( 'Product pricing feed served from cache', array(
+				'cache_key' => $cache_key,
+				'length'    => strlen( $cached ),
+			) );
+		}
+
+		if ( 'NA' === $cached || empty( $cached ) ) {
+			return '';
+		}
+
+		return self::extract_setup_fee_from_html( $cached, $billing_cycle );
+	}
+
+	/**
+	 * Extract the setup fee for a billing cycle from a productpricing.php response.
+	 *
+	 * WHMCS only outputs setup fee text when the fee is non-zero. The separator
+	 * ' + ' is hardcoded in WHMCS PHP (not translated), making it a reliable anchor.
+	 *
+	 * @since  2.6.0
+	 * @access private
+	 * @param  string $html          Unwrapped HTML from productpricing.php.
+	 * @param  string $billing_cycle WHMCS billing cycle name (e.g. 'annually').
+	 * @return string                Setup fee string (e.g. '$10.00'), or '' if zero/absent.
+	 */
+	private static function extract_setup_fee_from_html( string $html, string $billing_cycle ): string {
+		// For recurring products: parse the <option> for this billing cycle.
+		if ( preg_match(
+			'/<option[^>]+value=["\']' . preg_quote( $billing_cycle, '/' ) . '["\'][^>]*>(.*?)<\/option>/si',
+			$html,
+			$matches
+		) ) {
+			return self::parse_setup_fee_from_text( wp_strip_all_tags( $matches[1] ) );
+		}
+
+		// Fallback for onetime products: no <select>, just raw text content.
+		return self::parse_setup_fee_from_text( wp_strip_all_tags( $html ) );
+	}
+
+	/**
+	 * Parse a setup fee currency string from a plain-text price segment.
+	 *
+	 * Looks for WHMCS's hardcoded ' + ' separator and extracts the currency
+	 * amount that follows. Handles common WHMCS currency formats: prefix
+	 * symbol ("$10.00"), suffix symbol ("10.00 kr"), comma decimal ("10,00 kr").
+	 *
+	 * @since  2.6.0
+	 * @access private
+	 * @param  string $text  E.g. "12 months - $8.25/mo + $10.00 Setup Fee".
+	 * @return string        Currency string (e.g. "$10.00"), or '' if not found.
+	 */
+	private static function parse_setup_fee_from_text( string $text ): string {
+		if ( ! str_contains( $text, ' + ' ) ) {
+			return '';
+		}
+
+		$parts    = explode( ' + ', $text, 2 );
+		$fee_part = trim( $parts[1] );
+
+		// Match a currency amount at the start of $fee_part.
+		// Two patterns to handle:
+		//   Prefix symbol:  "$10.00"  "€10.00"  "£10.00"  "kr 10.00"  "SEK 10.00"
+		//   Suffix symbol:  "10.00 kr"  "10,00 kr"  "10.00 SEK"  "10.00"
+		// Numbers: digits with optional thousands (space/dot/comma) and decimal separator.
+		if ( preg_match(
+			'/^((?:[\$€£¥₹]|kr|SEK|NOK|DKK|CHF|USD|EUR|GBP)\s*)?(\d[\d.,]*)\s*((?:[\$€£¥₹]|kr|SEK|NOK|DKK|CHF|USD|EUR|GBP))?/ui',
+			$fee_part,
+			$m
+		) ) {
+			$prefix = trim( $m[1] ?? '' );
+			$number = trim( $m[2] ?? '' );
+			$suffix = trim( $m[3] ?? '' );
+
+			if ( empty( $number ) ) {
+				return '';
+			}
+
+			if ( ! empty( $prefix ) ) {
+				return $prefix . ' ' . $number;
+			}
+			if ( ! empty( $suffix ) ) {
+				return $number . ' ' . $suffix;
+			}
+			return $number;
+		}
+
+		return '';
+	}
+
+	/**
 	 * Return the number of months in a WHMCS billing cycle.
 	 *
 	 * @since  2.6.0
