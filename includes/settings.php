@@ -504,7 +504,7 @@ class WHMCSPrice {
 			// phpcs:disable WordPress.DB.DirectDatabaseQuery
 			$transient_keys = $wpdb->get_col(
 				$wpdb->prepare(
-					"SELECT REPLACE(option_name, '_transient_', '') FROM $wpdb->options WHERE option_name LIKE %s",
+					"SELECT REPLACE(option_name, '_transient_', '') FROM {$wpdb->options} WHERE option_name LIKE %s",
 					$like
 				)
 			);
@@ -584,28 +584,28 @@ class WHMCSPrice {
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery
 		$cache_count = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM $wpdb->options WHERE option_name LIKE %s",
+				"SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s",
 				$cache_like
 			)
 		);
 
 		$lock_count = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM $wpdb->options WHERE option_name LIKE %s",
+				"SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s",
 				$lock_like
 			)
 		);
 
 		$min_timeout = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT MIN(option_value) FROM $wpdb->options WHERE option_name LIKE %s",
+				"SELECT MIN(option_value) FROM {$wpdb->options} WHERE option_name LIKE %s",
 				$timeout_like
 			)
 		);
 
 		$max_timeout = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT MAX(option_value) FROM $wpdb->options WHERE option_name LIKE %s",
+				"SELECT MAX(option_value) FROM {$wpdb->options} WHERE option_name LIKE %s",
 				$timeout_like
 			)
 		);

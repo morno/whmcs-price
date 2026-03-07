@@ -40,6 +40,19 @@ class WHMCS_Price_API {
         $parsed = wp_parse_url( $url );
         $host   = strtolower( $parsed['host'] ?? '' );
 
+        // Block URLs with embedded credentials (https://user:pass@host).
+        // These serve no legitimate purpose for a WHMCS feed URL and
+        // could be used to obscure the real destination.
+        if ( isset( $parsed['user'] ) || isset( $parsed['pass'] ) ) {
+            return '';
+        }
+
+        // Block non-standard ports. WHMCS feeds should always be on 443.
+        // Allowing arbitrary ports widens the SSRF attack surface.
+        if ( isset( $parsed['port'] ) && 443 !== (int) $parsed['port'] ) {
+            return '';
+        }
+
         // Block private/internal IP ranges and localhost (SSRF protection)
         $blocked_hosts = array( 'localhost', 'localhost.localdomain' );
         if ( in_array( $host, $blocked_hosts, true ) ) {
@@ -265,7 +278,7 @@ class WHMCS_Price_API {
 		if ( $cached !== false ) {
 			self::debug_log( 'Product data served from cache', array(
 				'cache_key' => $cache_key,
-				'value'     => $cached,
+				'length'    => strlen( $cached ),
 			) );
 			return $cached;
 		}
@@ -321,7 +334,7 @@ class WHMCS_Price_API {
 
 		self::debug_log( 'Product data fetched successfully', array(
 			'cache_key' => $cache_key,
-			'value'     => $data,
+			'length'    => strlen( $data ),
 		) );
 
 		set_transient( $cache_key, $data, self::get_cache_expiry() );
@@ -388,7 +401,7 @@ class WHMCS_Price_API {
 		if ( $cached !== false ) {
 			self::debug_log( 'Domain price served from cache', array(
 				'cache_key' => $cache_key,
-				'value'     => $cached,
+				'length'    => strlen( $cached ),
 			) );
 			return $cached;
 		}
@@ -445,7 +458,7 @@ class WHMCS_Price_API {
 
 		self::debug_log( 'Domain price fetched successfully', array(
 			'cache_key' => $cache_key,
-			'value'     => $data,
+			'length'    => strlen( $data ),
 		) );
 
 		set_transient( $cache_key, $data, self::get_cache_expiry() );
@@ -526,7 +539,7 @@ class WHMCS_Price_API {
 		self::debug_log( 'All domain prices fetched successfully', array(
 			'cache_key'       => $cache_key,
 			'data_length'     => strlen( $data ),
-			'first_100_chars' => substr( $data, 0, 100 ),
+			'length'          => strlen( $data ),
 		) );
 
 		set_transient( $cache_key, $data, self::get_cache_expiry() );

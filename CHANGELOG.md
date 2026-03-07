@@ -93,6 +93,17 @@ All notable changes to this project will be documented in this file.
   Only the `price` column retains `wp_kses()` since WHMCS may wrap currency values
   in `<span>` elements for styling.
 
+- **Block credentials and non-standard ports in WHMCS URL**: `get_url()` in
+  `class-whmcs-api.php` now rejects URLs that contain embedded credentials
+  (`https://user:pass@host`) or a port other than 443. Neither serves a legitimate
+  purpose for a WHMCS feed URL and both widen the SSRF attack surface unnecessarily.
+
+- **Debug log no longer records raw response data**: All `debug_log()` calls that
+  previously logged the fetched value (`'value' => $data`) or the first 100
+  characters of the all-domains feed now log only the data length
+  (`'length' => strlen( $data )`). This prevents response content from leaking
+  into debug logs on shared or multi-tenant environments.
+
 ### Fixed
 
 - **Fatal “link expired” on settings save**: The Performance section rendered a
