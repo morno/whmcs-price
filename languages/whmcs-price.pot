@@ -1,15 +1,15 @@
-# Copyright (C) 2026 Tobias SÃ¶rensson (Morno), MohammadReza Kamali
+# Copyright (C) 2026 Tobias Sörensson (Morno), MohammadReza Kamali
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Mornolink for WHMCS 2.5.2\n"
+"Project-Id-Version: Mornolink for WHMCS 2.6.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/whmcs-price\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-02-28T08:27:13+00:00\n"
+"POT-Creation-Date: 2026-03-07T07:59:42+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: whmcs-price\n"
@@ -31,7 +31,7 @@ msgstr ""
 
 #. Author of the plugin
 #: whmcs_price.php
-msgid "Tobias SÃ¶rensson (Morno), MohammadReza Kamali"
+msgid "Tobias Sörensson (Morno), MohammadReza Kamali"
 msgstr ""
 
 #. Author URI of the plugin
@@ -39,65 +39,105 @@ msgstr ""
 msgid "https://github.com/morno"
 msgstr ""
 
-#: blocks/whmcs-price-domain/render.php:47
-#: blocks/whmcs-price-domain/render.php:99
+#: blocks/whmcs-price-domain/render.php:62
+#: blocks/whmcs-price-domain/render.php:114
 #: includes/elementor/widgets/domain-price-widget.php:96
-#: includes/elementor/widgets/domain-price-widget.php:174
-#: includes/elementor/widgets/domain-price-widget.php:215
+#: includes/elementor/widgets/domain-price-widget.php:189
+#: includes/elementor/widgets/domain-price-widget.php:230
 #: blocks/build/whmcs-price-domain.js:1
 #: blocks/whmcs-price-domain/edit.js:27
 msgid "Register"
 msgstr ""
 
-#: blocks/whmcs-price-domain/render.php:48
-#: blocks/whmcs-price-domain/render.php:100
+#: blocks/whmcs-price-domain/render.php:63
+#: blocks/whmcs-price-domain/render.php:115
 #: includes/elementor/widgets/domain-price-widget.php:97
-#: includes/elementor/widgets/domain-price-widget.php:175
-#: includes/elementor/widgets/domain-price-widget.php:216
+#: includes/elementor/widgets/domain-price-widget.php:190
+#: includes/elementor/widgets/domain-price-widget.php:231
 #: blocks/build/whmcs-price-domain.js:1
 #: blocks/whmcs-price-domain/edit.js:28
 msgid "Renew"
 msgstr ""
 
-#: blocks/whmcs-price-domain/render.php:49
-#: blocks/whmcs-price-domain/render.php:101
+#: blocks/whmcs-price-domain/render.php:64
+#: blocks/whmcs-price-domain/render.php:116
 #: includes/elementor/widgets/domain-price-widget.php:98
-#: includes/elementor/widgets/domain-price-widget.php:176
-#: includes/elementor/widgets/domain-price-widget.php:217
+#: includes/elementor/widgets/domain-price-widget.php:191
+#: includes/elementor/widgets/domain-price-widget.php:232
+#: includes/shortcode/shortcode.php:184
 #: blocks/build/whmcs-price-domain.js:1
 #: blocks/whmcs-price-domain/edit.js:29
 msgid "Transfer"
 msgstr ""
 
-#: blocks/whmcs-price-product/render.php:39
+#: blocks/whmcs-price-product/render.php:40
 msgid "WHMCS Product Price: Please enter a Product ID in the block settings."
 msgstr ""
 
-#: blocks/whmcs-price-product/render.php:62
+#: blocks/whmcs-price-product/render.php:63
 #: includes/elementor/widgets/product-price-widget.php:80
-#: includes/elementor/widgets/product-price-widget.php:164
-#: includes/shortcode/shortcode.php:93
+#: includes/elementor/widgets/product-price-widget.php:185
+#: includes/shortcode/shortcode.php:94
 #: blocks/build/whmcs-price-product.js:1
 #: blocks/whmcs-price-product/edit.js:39
 msgid "Name"
 msgstr ""
 
-#: blocks/whmcs-price-product/render.php:63
+#: blocks/whmcs-price-product/render.php:64
 #: includes/elementor/widgets/product-price-widget.php:81
-#: includes/elementor/widgets/product-price-widget.php:165
-#: includes/shortcode/shortcode.php:94
+#: includes/elementor/widgets/product-price-widget.php:186
+#: includes/shortcode/shortcode.php:95
 #: blocks/build/whmcs-price-product.js:1
 #: blocks/whmcs-price-product/edit.js:40
 msgid "Description"
 msgstr ""
 
-#: blocks/whmcs-price-product/render.php:64
+#: blocks/whmcs-price-product/render.php:65
 #: includes/elementor/widgets/product-price-widget.php:82
-#: includes/elementor/widgets/product-price-widget.php:166
-#: includes/shortcode/shortcode.php:95
+#: includes/elementor/widgets/product-price-widget.php:187
+#: includes/shortcode/shortcode.php:96
 #: blocks/build/whmcs-price-product.js:1
 #: blocks/whmcs-price-product/edit.js:41
 msgid "Price"
+msgstr ""
+
+#: includes/class-whmcs-price-helpers.php:61
+#: includes/class-whmcs-price-helpers.php:78
+msgid "/mo"
+msgstr ""
+
+#: includes/class-whmcs-price-helpers.php:62
+msgid "/qtr"
+msgstr ""
+
+#: includes/class-whmcs-price-helpers.php:63
+msgid "/6mo"
+msgstr ""
+
+#: includes/class-whmcs-price-helpers.php:64
+msgid "/yr"
+msgstr ""
+
+#: includes/class-whmcs-price-helpers.php:65
+msgid "/2yr"
+msgstr ""
+
+#: includes/class-whmcs-price-helpers.php:66
+msgid "/3yr"
+msgstr ""
+
+#. translators: %d: number of years
+#: includes/class-whmcs-price-helpers.php:72
+#, php-format
+msgid "/%dyr"
+msgstr ""
+
+#: includes/class-whmcs-price-helpers.php:79
+msgid "/wk"
+msgstr ""
+
+#: includes/class-whmcs-price-helpers.php:80
+msgid "/day"
 msgstr ""
 
 #: includes/elementor/class-whmcs-elementor.php:42
@@ -117,6 +157,7 @@ msgid "Domain Settings"
 msgstr ""
 
 #: includes/elementor/widgets/domain-price-widget.php:47
+#: includes/shortcode/shortcode.php:210
 #: blocks/build/whmcs-price-domain.js:1
 #: blocks/whmcs-price-domain/edit.js:78
 msgid "TLD"
@@ -219,7 +260,7 @@ msgstr ""
 #: blocks/build/whmcs-price-domain.js:1
 #: blocks/build/whmcs-price-product.js:1
 #: blocks/whmcs-price-domain/edit.js:110
-#: blocks/whmcs-price-product/edit.js:119
+#: blocks/whmcs-price-product/edit.js:129
 msgid "Display Style"
 msgstr ""
 
@@ -246,15 +287,15 @@ msgstr ""
 
 #: includes/elementor/widgets/product-price-widget.php:19
 #: blocks/build/whmcs-price-product.js:1
-#: blocks/build/whmcs-price-product.js:2
-#: blocks/whmcs-price-product/edit.js:136
-#: blocks/whmcs-price-product/edit.js:150
+#: blocks/build/whmcs-price-product.js:3
+#: blocks/whmcs-price-product/edit.js:153
+#: blocks/whmcs-price-product/edit.js:167
 msgid "WHMCS Product Price"
 msgstr ""
 
 #: includes/elementor/widgets/product-price-widget.php:39
 #: blocks/build/whmcs-price-product.js:1
-#: blocks/whmcs-price-product/edit.js:85
+#: blocks/whmcs-price-product/edit.js:95
 msgid "Product Settings"
 msgstr ""
 
@@ -268,7 +309,7 @@ msgstr ""
 
 #: includes/elementor/widgets/product-price-widget.php:58
 #: blocks/build/whmcs-price-product.js:1
-#: blocks/whmcs-price-product/edit.js:95
+#: blocks/whmcs-price-product/edit.js:105
 msgid "Billing Cycle"
 msgstr ""
 
@@ -298,7 +339,7 @@ msgstr ""
 
 #: includes/elementor/widgets/product-price-widget.php:75
 #: blocks/build/whmcs-price-product.js:1
-#: blocks/whmcs-price-product/edit.js:103
+#: blocks/whmcs-price-product/edit.js:113
 msgid "Display Columns"
 msgstr ""
 
@@ -322,213 +363,317 @@ msgstr ""
 msgid "Pricing Grid"
 msgstr ""
 
+#: includes/elementor/widgets/product-price-widget.php:115
+#: blocks/build/whmcs-price-product.js:1
+#: blocks/whmcs-price-product/edit.js:139
+msgid "Per-Period Breakdown"
+msgstr ""
+
+#: includes/elementor/widgets/product-price-widget.php:119
+#: blocks/build/whmcs-price-product.js:1
+#: blocks/whmcs-price-product/edit.js:57
+msgid "Disabled"
+msgstr ""
+
+#: includes/elementor/widgets/product-price-widget.php:120
+#: blocks/build/whmcs-price-product.js:1
+#: blocks/whmcs-price-product/edit.js:58
+msgid "Per month — e.g. $99/yr ($8.25/mo)"
+msgstr ""
+
 #: includes/elementor/widgets/product-price-widget.php:121
+#: blocks/build/whmcs-price-product.js:1
+#: blocks/whmcs-price-product/edit.js:59
+msgid "Per week — e.g. $99/yr ($1.90/wk)"
+msgstr ""
+
+#: includes/elementor/widgets/product-price-widget.php:122
+#: blocks/build/whmcs-price-product.js:1
+#: blocks/whmcs-price-product/edit.js:60
+msgid "Per day — e.g. $99/yr ($0.27/day)"
+msgstr ""
+
+#: includes/elementor/widgets/product-price-widget.php:124
+#: blocks/build/whmcs-price-product.js:1
+#: blocks/whmcs-price-product/edit.js:140
+msgid "Show the price divided by period alongside the full price."
+msgstr ""
+
+#: includes/elementor/widgets/product-price-widget.php:137
 msgid "Please enter Product IDs in the widget settings."
 msgstr ""
 
-#: includes/settings.php:33
+#: includes/settings.php:59
 msgid "Settings"
 msgstr ""
 
-#: includes/settings.php:40
-#: includes/settings.php:68
+#: includes/settings.php:71
 msgid "WHMCS Price Options"
 msgstr ""
 
-#: includes/settings.php:41
+#: includes/settings.php:72
+#: includes/settings.php:98
 msgid "WHMCS Price Settings"
 msgstr ""
 
-#: includes/settings.php:58
-#: includes/settings.php:62
+#: includes/settings.php:90
 msgid "Cache cleared successfully!"
 msgstr ""
 
-#: includes/settings.php:78
-msgid "Maintenance"
-msgstr ""
-
-#: includes/settings.php:82
-msgid "Clear Cache"
-msgstr ""
-
-#: includes/settings.php:100
-msgid "WHMCS URL"
-msgstr ""
-
-#: includes/settings.php:108
-msgid "Product Pricing"
+#: includes/settings.php:101
+msgid "Documentation ↗"
 msgstr ""
 
 #: includes/settings.php:116
-msgid "Domain Pricing"
+msgid "Save Changes"
 msgstr ""
 
-#: includes/settings.php:124
-msgid "Cache Duration"
+#: includes/settings.php:146
+msgid "Connection"
 msgstr ""
 
-#: includes/settings.php:132
-msgid "Custom User-Agent"
+#: includes/settings.php:153
+msgid "WHMCS URL"
 msgstr ""
 
-#: includes/settings.php:149
-msgid "WHMCS URL must use HTTPS. HTTP URLs are blocked for security reasons."
+#: includes/settings.php:158
+msgid "The saved URL does not appear to be valid."
 msgstr ""
 
-#: includes/settings.php:179
-msgid "Dynamic way for extracting price from WHMCS for use on the pages of your website!"
-msgstr ""
-
-#: includes/settings.php:180
-msgid "Please input your WHMCS URL :"
-msgstr ""
-
-#: includes/settings.php:187
-msgid "Hey! Your domain is not valid!"
-msgstr ""
-
-#: includes/settings.php:194
+#: includes/settings.php:164
 msgid "Warning:"
 msgstr ""
 
-#: includes/settings.php:195
+#: includes/settings.php:165
 msgid "The WHMCS URL must use HTTPS. HTTP URLs are blocked for security reasons."
 msgstr ""
 
-#: includes/settings.php:204
-msgid "Valid URL Format: https://whmcs.com (Don't use \"/\" at the end of WHMCS URL)"
+#: includes/settings.php:179
+msgid "Base URL of your WHMCS installation. Must use HTTPS. No trailing slash."
 msgstr ""
 
-#: includes/settings.php:205
-msgid "Note: After changing price in WHMCS, if you are using a cache plugin in your WordPress, to update price you must remove the cache for posts and pages."
-msgstr ""
-
-#: includes/settings.php:211
-#: includes/settings.php:238
-msgid "How to use shortcode in:"
-msgstr ""
-
-#: includes/settings.php:212
-#: includes/settings.php:239
-msgid "Post / Pages:"
-msgstr ""
-
-#: includes/settings.php:217
-#: includes/settings.php:241
-msgid "Theme:"
-msgstr ""
-
-#: includes/settings.php:222
-#: includes/settings.php:244
-msgid "Documentation:"
-msgstr ""
-
-#: includes/settings.php:223
-msgid "Change pid value in shortcode with your Product ID."
-msgstr ""
-
-#: includes/settings.php:224
-msgid "Add show=\"\" to toggle the name, description, price from the data feed of WHMCS"
-msgstr ""
-
-#: includes/settings.php:225
-msgid "Change bc value in shortcode with your Billing Cycle Product. Billing Cycles are:"
-msgstr ""
-
-#: includes/settings.php:226
-msgid "Monthly (1 Month): bc=\"1m\""
-msgstr ""
-
-#: includes/settings.php:227
-msgid "Quarterly (3 Month): bc=\"3m\""
-msgstr ""
-
-#: includes/settings.php:228
-msgid "Semiannually (6 Month): bc=\"6m\""
-msgstr ""
-
-#: includes/settings.php:229
-msgid "Annually (1 Year): bc=\"1y\""
-msgstr ""
-
-#: includes/settings.php:230
-msgid "Biennially (2 Year): bc=\"2y\""
-msgstr ""
-
-#: includes/settings.php:231
-msgid "Triennially (3 Year): bc=\"3y\""
-msgstr ""
-
-#: includes/settings.php:245
-msgid "Change tld value in shortcode with your Domain TLD (com, org, net, ...)."
-msgstr ""
-
-#: includes/settings.php:246
-msgid "Change type value in shortcode with register, renew, transfer."
-msgstr ""
-
-#: includes/settings.php:247
-msgid "Change reg value in shortcode with your Register Period of TLD. Register Periods are:"
-msgstr ""
-
-#: includes/settings.php:247
-msgid "Annually (1 Year): reg=\"1y\""
-msgstr ""
-
-#: includes/settings.php:247
-msgid "Biennially (2 Year): reg=\"2y\""
-msgstr ""
-
-#: includes/settings.php:247
-msgid "Triennially (3 Year): reg=\"3y\""
-msgstr ""
-
-#: includes/settings.php:248
-msgid "If left like this [whmcs tld] (without specifying a tld value), it will display all available TLDs from WHMCS."
-msgstr ""
-
-#: includes/settings.php:264
+#: includes/settings.php:198
 msgid "1 hour"
 msgstr ""
 
-#: includes/settings.php:265
+#: includes/settings.php:199
 msgid "2 hours"
 msgstr ""
 
-#: includes/settings.php:266
+#: includes/settings.php:200
 msgid "3 hours"
 msgstr ""
 
-#: includes/settings.php:267
+#: includes/settings.php:201
 msgid "6 hours"
 msgstr ""
 
-#: includes/settings.php:268
+#: includes/settings.php:202
 msgid "12 hours"
 msgstr ""
 
-#: includes/settings.php:269
+#: includes/settings.php:203
 msgid "24 hours"
 msgstr ""
 
-#: includes/settings.php:282
+#: includes/settings.php:209
+msgid "Performance"
+msgstr ""
+
+#: includes/settings.php:216
+msgid "Cache Duration"
+msgstr ""
+
+#: includes/settings.php:227
 msgid "How long prices are cached before fetching fresh data from WHMCS."
 msgstr ""
 
+#: includes/settings.php:232
+msgid "Clear Cache"
+msgstr ""
+
+#: includes/settings.php:238
+msgid "Clear Cache Now"
+msgstr ""
+
+#: includes/settings.php:241
+msgid "Force fresh prices to be fetched from WHMCS on the next page load. Also available from the Admin Bar."
+msgstr ""
+
+#: includes/settings.php:265
+msgid "Advanced"
+msgstr ""
+
+#: includes/settings.php:272
+msgid "Custom User-Agent"
+msgstr ""
+
 #. translators: %s: the auto-generated default User-Agent string
-#: includes/settings.php:308
+#: includes/settings.php:288
 #, php-format
-msgid "Override the User-Agent sent to WHMCS. Useful for matching server or firewall allow-rules, or identifying requests in access logs. Leave blank to use the default: %s"
+msgid "Override the User-Agent sent to WHMCS. Useful for firewall allow-rules. Leave blank to use the default: %s"
+msgstr ""
+
+#: includes/settings.php:318
+msgid "Documentation"
+msgstr ""
+
+#: includes/settings.php:323
+msgid "Full documentation is available on the GitHub Wiki:"
+msgstr ""
+
+#: includes/settings.php:326
+msgid "Getting Started"
+msgstr ""
+
+#: includes/settings.php:327
+msgid "Shortcodes & Blocks"
+msgstr ""
+
+#: includes/settings.php:328
+msgid "Caching"
+msgstr ""
+
+#: includes/settings.php:329
+msgid "Troubleshooting"
+msgstr ""
+
+#: includes/settings.php:330
+msgid "Security"
+msgstr ""
+
+#: includes/settings.php:334
+msgid "🐛 Report an Issue"
 msgstr ""
 
 #: includes/settings.php:344
-#: includes/settings.php:346
+msgid "Operational Status"
+msgstr ""
+
+#: includes/settings.php:349
+msgid "Read-only diagnostics based on local transient cache (no outbound WHMCS calls)."
+msgstr ""
+
+#: includes/settings.php:352
+msgid "Cached entries"
+msgstr ""
+
+#: includes/settings.php:356
+msgid "Active locks"
+msgstr ""
+
+#: includes/settings.php:360
+msgid "Nearest expiry"
+msgstr ""
+
+#: includes/settings.php:364
+msgid "Farthest expiry"
+msgstr ""
+
+#: includes/settings.php:374
+msgid "Product Pricing"
+msgstr ""
+
+#: includes/settings.php:378
+#: includes/settings.php:403
+msgid "Copy shortcode — click to select:"
+msgstr ""
+
+#: includes/settings.php:386
+msgid "Billing cycles:"
+msgstr ""
+
+#: includes/settings.php:387
+msgid "Show columns:"
+msgstr ""
+
+#: includes/settings.php:388
+#: includes/settings.php:413
+msgid "Per-period breakdown:"
+msgstr ""
+
+#: includes/settings.php:390
+#: includes/settings.php:416
+msgid "Full reference ↗"
+msgstr ""
+
+#: includes/settings.php:399
+msgid "Domain Pricing"
+msgstr ""
+
+#: includes/settings.php:411
+msgid "Show (one or more):"
+msgstr ""
+
+#: includes/settings.php:412
+msgid "Period (years):"
+msgstr ""
+
+#: includes/settings.php:414
+msgid "Leave tld empty to list all TLDs."
+msgstr ""
+
+#: includes/settings.php:458
+msgid "WHMCS URL must use HTTPS. HTTP URLs are blocked for security reasons."
+msgstr ""
+
+#: includes/settings.php:532
+#: includes/settings.php:534
 msgid "Clear WHMCS Cache"
 msgstr ""
 
-#: includes/settings.php:358
+#: includes/settings.php:551
 msgid "Unauthorized access."
+msgstr ""
+
+#: includes/settings.php:631
+msgid "Now"
+msgstr ""
+
+#. translators: %d: number of days
+#: includes/settings.php:646
+#, php-format
+msgid "%d day"
+msgid_plural "%d days"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %d: number of hours
+#: includes/settings.php:651
+#, php-format
+msgid "%d hour"
+msgid_plural "%d hours"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %d: number of minutes
+#: includes/settings.php:656
+#, php-format
+msgid "%d minute"
+msgid_plural "%d minutes"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/settings.php:659
+msgid "Soon"
+msgstr ""
+
+#: includes/shortcode/shortcode.php:182
+msgid "Registration"
+msgstr ""
+
+#: includes/shortcode/shortcode.php:183
+msgid "Renewal"
+msgstr ""
+
+#: includes/shortcode/shortcode.php:202
+msgid "1 year"
+msgstr ""
+
+#. translators: %d: number of years
+#: includes/shortcode/shortcode.php:204
+#, php-format
+msgid "%d years"
 msgstr ""
 
 #: blocks/build/whmcs-price-domain.js:1
@@ -606,34 +751,41 @@ msgid "Triennially (3y)"
 msgstr ""
 
 #: blocks/build/whmcs-price-product.js:1
-#: blocks/whmcs-price-product/edit.js:89
+#: blocks/whmcs-price-product/edit.js:99
 msgid "Product ID(s)"
 msgstr ""
 
 #: blocks/build/whmcs-price-product.js:1
-#: blocks/whmcs-price-product/edit.js:90
+#: blocks/whmcs-price-product/edit.js:100
 msgid "Comma-separated WHMCS Product IDs, e.g. 1,2,3"
 msgstr ""
 
 #: blocks/build/whmcs-price-product.js:1
-#: blocks/whmcs-price-product/edit.js:123
+#: blocks/whmcs-price-product/edit.js:133
 msgid "Choose how to display products"
 msgstr ""
 
 #. translators: 1: product ID(s), 2: billing cycle, 3: display style
 #: blocks/build/whmcs-price-product.js:2
-#: blocks/whmcs-price-product/edit.js:155
+#: blocks/whmcs-price-product/edit.js:172
 #, js-format
 msgid "PID: %1$s — Cycle: %2$s — Style: %3$s"
 msgstr ""
 
-#: blocks/build/whmcs-price-product.js:2
-#: blocks/whmcs-price-product/edit.js:137
+#. translators: %s: per-period unit (month/week/day)
+#: blocks/build/whmcs-price-product.js:3
+#: blocks/whmcs-price-product/edit.js:180
+#, js-format
+msgid "Per %s"
+msgstr ""
+
+#: blocks/build/whmcs-price-product.js:3
+#: blocks/whmcs-price-product/edit.js:154
 msgid "Configure this block using the settings panel. Click the block, then open the Settings panel (⚙) in the top-right corner of the editor."
 msgstr ""
 
-#: blocks/build/whmcs-price-product.js:2
-#: blocks/whmcs-price-product/edit.js:143
+#: blocks/build/whmcs-price-product.js:3
+#: blocks/whmcs-price-product/edit.js:160
 msgid "👆 Click this block → then click ⚙ Settings in the top-right corner"
 msgstr ""
 
