@@ -45,7 +45,6 @@ Product pricing: `[whmcs pid="1" bc="1y" show="name,price,setupfee" per="month"]
 
 Domain pricing: `[whmcs tld="com" show="register,renew"]`
 
-
 == Installation ==
 1. Upload `whmcs_price` folder to the `/wp-content/plugins/` directory
 2. Activate the plugin through the 'Plugins' menu in WordPress
