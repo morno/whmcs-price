@@ -11,56 +11,40 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Dynamic way for extracting product & domain price from WHMCS.
 
 == Description ==
-A high-performance WordPress integration for WHMCS. Display real-time prices for your hosting products and domains anywhere on your site using simple shortcodes.
+A modernized, secure, and lightweight WordPress plugin to display real-time pricing for products and domains from your WHMCS instance — via shortcodes, native Gutenberg blocks, or Elementor widgets.
 
-* **Secure Data Handling:** Uses official WHMCS data feeds.
-* **Performance Optimized:** Built-in caching using the WordPress Transients API.
-* **Developer Friendly:** Fully localized and translation-ready.
+* **Product pricing:** Display name, description, price, and setup fee for any WHMCS product.
+* **Domain pricing:** Display registration, renewal, and transfer prices for any TLD, including a full all-domains comparison table.
+* **Setup fee support:** Show one-time setup fees as a separate column alongside recurring prices.
+* **Per-period breakdown:** Automatically display e.g. `999 Kr/yr (83 Kr/mo)` for any billing cycle.
+* **Three display styles:** Table, Cards, and Pricing Grid — available in all three editors.
+* **Native Gutenberg blocks:** WHMCS Product Price and WHMCS Domain Price blocks with live server-side rendering.
+* **Elementor widgets:** Dedicated widgets with visual controls under the WHMCS Price category.
+* **Performance:** Built-in transient caching with Admin Bar cache-clear and stampede protection.
+* **Security:** Hardened HTTP fetching with SSRF protection, strict output escaping, and allowlist validation.
+* **Translation-ready:** Swedish (sv_SE) included. POT template available for contributors.
+
+Full documentation: https://github.com/morno/whmcs-price/wiki
 
 == 100% FREE And Open Source ! ==
-
-**WHMCS Price**
-Dynamic way for extracting product & domain price from WHMCS for use on the pages of your website!
-
-Plugin features:
-* Extract product price.
-* Extract domain price.
-* Use this plugin to Show price in posts and pages.
-* Use this plugin to Show price in theme.
 
 == Source Code ==
 
 The full source code for this plugin is available on GitHub:
 https://github.com/morno/whmcs-price
 
-== Product Pricing ==
-This is the shortcode to extract product name, description, or price:
+== Usage & Documentation ==
 
-`[whmcs pid="1" show="name,description,price" bc="1m"]`
+Full documentation including shortcode references, block and Elementor widget guides, setup fee, per-period breakdown, and caching is available in the GitHub Wiki:
 
-1. **pid**: Change the value with your Product ID from WHMCS.
-2. **show**: Choose what to display (name, description, price). You can use one or all, comma-separated.
-3. **bc**: Change the value with your Product Billing Cycle:
-    * Monthly (1 Month) : `bc="1m"`
-    * Quarterly (3 Month) : `bc="3m"`
-    * Semiannually (6 Month) : `bc="6m"`
-    * Annually (1 Year) : `bc="1y"`
-    * Biennially (2 Year) : `bc="2y"`
-    * Triennially (3 Year) : `bc="3y"`
+https://github.com/morno/whmcs-price/wiki
 
-== Domain Pricing ==
-This is the shortcode to extract domain registration, renewal, or transfer prices:
+Quick examples:
 
-`[whmcs tld="com" type="register" reg="1y"]`
+Product pricing: `[whmcs pid="1" bc="1y" show="name,price,setupfee" per="month"]`
 
-1. **tld**: Change the value with your Domain TLD (com, org, net, etc.).
-2. **type**: Choose between `register`, `renew`, or `transfer`.
-3. **reg**: Change the value with the Registration Period:
-    * Annually (1 Year) : `reg="1y"`
-    * Biennially (2 Year) : `reg="2y"`
-    * Triennially (3 Year) : `reg="3y"`
-    * ... (up to 10 years: `reg="10y"`)
-4. If left like this `[whmcs tld]` it will call without any Domain TLD and will take all the TLDs that are in WHMCS.
+Domain pricing: `[whmcs tld="com" show="register,renew"]`
+
 
 == Installation ==
 1. Upload `whmcs_price` folder to the `/wp-content/plugins/` directory
