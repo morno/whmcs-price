@@ -62,17 +62,6 @@ Still fully supported for use in the classic editor, theme files, and page build
 
 ---
 
-### Shortcodes
-Still fully supported for use in classic editor, theme files, and page builders without native widgets. See the [Usage & Shortcodes](#-usage--shortcodes) section below.
-
-## 🌍 Localization
-This plugin is translation-ready. If you want to contribute a translation:
-1. Use the `languages/whmcs-price.pot` file as a template.
-2. Create your `.po` and `.mo` files (e.g., `whmcs-price-sv_SE.po`).
-3. Submit a Pull Request!
-
----
-
 ## 🛠 Installation
 
 1.  Download the repository as a ZIP or clone it into `/wp-content/plugins/`.
@@ -102,3 +91,4 @@ This fork was created to resolve critical issues in the original plugin which ha
 
 ## License
 This plugin is licensed under the GPLv2 or later.
+
