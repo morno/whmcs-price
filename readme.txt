@@ -504,6 +504,15 @@ Domain pricing: `[whmcs tld="com" show="register,renew"]`
 * Switched from direct SQL/Legacy API to WHMCS JS Feeds (HTTP).
 * Added WordPress Transients API for caching.
 
+= 1.3 =
+* Fix Bug
+= 1.2 =
+* Fix Bug
+= 1.1 =
+* Fix Interference Bug
+= 1.0 =
+* First Version
+
 == Screenshots ==
 1. /assets/screenshot-1.jpg
 2. /assets/screenshot-2.jpg
