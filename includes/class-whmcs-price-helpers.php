@@ -16,6 +16,26 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
+ * Strip an embedded setup fee suffix from a WHMCS price string.
+ *
+ * WHMCS's productsinfo.php?get=price may return prices with the setup fee
+ * already appended, e.g. "999 kr/yr + 100 kr" or "$99.00 + $10.00 Setup Fee".
+ * This function removes the " + ..." suffix so the price field contains only
+ * the recurring price. Use WHMCS_Price_API::get_product_setup_fee() to fetch
+ * the setup fee separately when needed.
+ *
+ * @since  2.6.0
+ * @param  string $price  Raw price string from productsinfo.php.
+ * @return string         Price string with setup fee suffix removed.
+ */
+function whmcs_price_strip_setup_fee( string $price ): string {
+	if ( str_contains( $price, ' + ' ) ) {
+		return trim( explode( ' + ', $price, 2 )[0] );
+	}
+	return $price;
+}
+
+/**
  * Format a price string with an optional per-period breakdown.
  *
  * Takes the raw WHMCS price string, computes the per-period value and
@@ -38,25 +58,6 @@ defined( 'ABSPATH' ) || exit;
  * @param  string $per         Desired per-period unit: month | week | day.
  * @return string              Combined price string, or original price if per is empty/invalid.
  */
-/**
- * Strip an embedded setup fee suffix from a WHMCS price string.
- *
- * WHMCS's productsinfo.php?get=price may return prices with the setup fee
- * already appended, e.g. "999 kr/yr + 100 kr" or "$99.00 + $10.00 Setup Fee".
- * This function removes the " + ..." suffix so the price field contains only
- * the recurring price. Use WHMCS_Price_API::get_product_setup_fee() to fetch
- * the setup fee separately when needed.
- *
- * @since  2.6.0
- * @param  string $price  Raw price string from productsinfo.php.
- * @return string         Price string with setup fee suffix removed.
- */
-function whmcs_price_strip_setup_fee( string $price ): string {
-	if ( str_contains( $price, ' + ' ) ) {
-		return trim( explode( ' + ', $price, 2 )[0] );
-	}
-	return $price;
-}
 function whmcs_price_format_per( string $price, string $bc_internal, int $reg_years, string $per ): string {
 	$allowed_per = array( 'month', 'week', 'day' );
 	$per         = strtolower( trim( $per ) );
