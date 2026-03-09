@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-03-07T19:05:40+00:00\n"
+"POT-Creation-Date: 2026-03-09T06:22:41+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: whmcs-price\n"
@@ -111,42 +111,42 @@ msgstr ""
 msgid "Setup Fee"
 msgstr ""
 
-#: includes/class-whmcs-price-helpers.php:80
-#: includes/class-whmcs-price-helpers.php:97
+#: includes/class-whmcs-price-helpers.php:81
+#: includes/class-whmcs-price-helpers.php:98
 msgid "/mo"
 msgstr ""
 
-#: includes/class-whmcs-price-helpers.php:81
+#: includes/class-whmcs-price-helpers.php:82
 msgid "/qtr"
 msgstr ""
 
-#: includes/class-whmcs-price-helpers.php:82
+#: includes/class-whmcs-price-helpers.php:83
 msgid "/6mo"
 msgstr ""
 
-#: includes/class-whmcs-price-helpers.php:83
+#: includes/class-whmcs-price-helpers.php:84
 msgid "/yr"
 msgstr ""
 
-#: includes/class-whmcs-price-helpers.php:84
+#: includes/class-whmcs-price-helpers.php:85
 msgid "/2yr"
 msgstr ""
 
-#: includes/class-whmcs-price-helpers.php:85
+#: includes/class-whmcs-price-helpers.php:86
 msgid "/3yr"
 msgstr ""
 
 #. translators: %d: number of years
-#: includes/class-whmcs-price-helpers.php:91
+#: includes/class-whmcs-price-helpers.php:92
 #, php-format
 msgid "/%dyr"
 msgstr ""
 
-#: includes/class-whmcs-price-helpers.php:98
+#: includes/class-whmcs-price-helpers.php:99
 msgid "/wk"
 msgstr ""
 
-#: includes/class-whmcs-price-helpers.php:99
+#: includes/class-whmcs-price-helpers.php:100
 msgid "/day"
 msgstr ""
 
