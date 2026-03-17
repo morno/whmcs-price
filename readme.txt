@@ -1,7 +1,7 @@
-=== Mornolink for WHMCS ===
+﻿=== Mornolink for WHMCS ===
 Contributors: morno, kamalireal
 Tags: whmcs, price, hosting, domain, billing
-Requires at least: 6.0
+Requires at least: 6.4
 Tested up to: 6.9
 Requires PHP: 8.1
 Stable tag: 2.6.0
@@ -50,6 +50,7 @@ Domain pricing: `[whmcs tld="com" show="register,renew"]`
 2. Activate the plugin through the 'Plugins' menu in WordPress
 3. Go to Settings > WHMCS Price Options and save WHMCS URL.
 
+
 == Changelog ==
 
 = 2.6.0 =
@@ -86,28 +87,6 @@ Domain pricing: `[whmcs tld="com" show="register,renew"]`
   parameter, rendering a comparison table. Previously only one type at a time was
   supported. Fully backwards compatible — existing single-type shortcodes are
   unaffected.
-* Added: **Setup Fee support** (`show="setupfee"`): All output modules (shortcode, Gutenberg
-  block, Elementor widget) now support displaying the WHMCS one-time setup fee as an
-  explicit column or field. Setup fee is fetched separately from `productpricing.php`
-  and is only shown when explicitly requested — it is never displayed automatically
-  alongside the price.
-  Shortcode example:
-  ```
-  [whmcs pid="1" bc="1y" show="name,price,setupfee"]
-  ```
-  In Gutenberg, tick **Setup Fee** in the Display Columns panel. In Elementor, select
-  **Setup Fee** from the Display Columns list. In the cards view, the setup fee label
-  and value are rendered above the description regardless of the order selected.
-* Added: **`WHMCS_Price_API::get_product_setup_fee()`** — New public static method that fetches
-  the setup fee for a given product ID and billing cycle from `productpricing.php`. The
-  full pricing feed is cached per PID so all billing cycles share a single HTTP request.
-  Returns the formatted setup fee string (e.g. `100 kr`) or an empty string if the fee
-  is zero or unavailable.
-* Added: **`whmcs_price_strip_setup_fee()`** — New helper function in
-  `class-whmcs-price-helpers.php` that strips the embedded setup fee suffix WHMCS
-  sometimes appends to the `productsinfo.php` price response (e.g. `"999 kr + 100 kr"`
-  → `"999 kr"`). Applied to all price fields before rendering across shortcode, block,
-  and Elementor to prevent the fee from appearing twice or in the wrong place.
 * Security: **Tightened remote HTML allowlist**: All three output paths that render the
   WHMCS all-domains feed (`shortcode.php`, `blocks/whmcs-price-domain/render.php`,
   `includes/elementor/widgets/domain-price-widget.php`) now use a strict
@@ -138,44 +117,13 @@ Domain pricing: `[whmcs tld="com" show="register,renew"]`
   AAAA record points to a private or reserved IP address. The previous hostname-only
   checks could be bypassed via DNS rebinding or CNAME chains pointing to internal
   infrastructure. Only applies to non-IP hostnames; direct IP inputs are still
-  validated by the existing `FILTER_FLAG_NO_PRIV_RANGE` check. A `function_exists()`
-  guard skips the check silently on environments where `dns_get_record()` is
-  unavailable. The type argument uses bitwise OR (`DNS_A | DNS_AAAA`) and the call
-  is silenced with `@` + guarded with `is_array()` to handle error returns safely.
+  validated by the existing `FILTER_FLAG_NO_PRIV_RANGE` check.
 * Security: **Strict output escaping in product table**: In `shortcode.php`, the product
   table now uses `esc_html( wp_strip_all_tags() )` for `name` and `description`
   columns. Previously all three columns used `wp_kses()` with a `<span>` allowlist,
   meaning remote WHMCS data could influence HTML structure even in plain-text fields.
   Only the `price` column retains `wp_kses()` since WHMCS may wrap currency values
   in `<span>` elements for styling.
-* Security: **Block credentials and non-standard ports in WHMCS URL**: `get_url()` in
-  `class-whmcs-api.php` now rejects URLs that contain embedded credentials
-  (`https://user:pass@host`) or a port other than 443. Neither serves a legitimate
-  purpose for a WHMCS feed URL and both widen the SSRF attack surface unnecessarily.
-* Security: **Debug log no longer records raw response data**: All `debug_log()` calls that
-  previously logged the fetched value (`'value' => $data`) or the first 100
-  characters of the all-domains feed now log only the data length
-  (`'length' => strlen( $data )`). This prevents response content from leaking
-  into debug logs on shared or multi-tenant environments.
-* Security: **Consistent output escaping across all product display styles**: The table, cards,
-  and grid views in `blocks/whmcs-price-product/render.php` and
-  `includes/elementor/widgets/product-price-widget.php` now all apply the same model:
-  `wp_kses()` only for `price`, and `esc_html( wp_strip_all_tags() )` for `name` and
-  `description`. Previously the table view in both files used `wp_kses()` for all
-  columns regardless of field type, and the grid view did the same. This closes the
-  inconsistency and ensures the trust boundary is uniform across all rendering paths.
-* Security: **`setupfee` added to Elementor column allowlist**: The server-side `$allowed_columns`
-  array in `product-price-widget.php` now includes `setupfee`. Previously the allowlist
-  only permitted `name`, `description`, and `price`, causing `setupfee` to be silently
-  filtered out and the widget to render nothing on pages where it was selected.
-* Security: **`setupfee` added to Elementor header label map**: `$whmcs_header_labels` in
-  `product-price-widget.php` now includes a translatable `Setup Fee` entry. Previously
-  the label fell back to `ucfirst('setupfee')` in table and grid views.
-* Security: **Explicit display style and column allowlists in block render.php**: `displayStyle`
-  is now validated against `array( 'table', 'cards', 'grid' )` and falls back to
-  `'table'` if an unknown value is passed. The `show` array is filtered against
-  `array( 'name', 'description', 'price', 'setupfee' )` early in the render file,
-  matching the same defensive pattern already used in the Elementor widget.
 * Fix: **Fatal “link expired” on settings save**: The Performance section rendered a
   `<form>` element inside the existing settings `<form>`. HTML forbids nested forms —
   the browser discarded the inner form’s data and sent the wrong nonce to `options.php`,
@@ -194,10 +142,9 @@ Domain pricing: `[whmcs tld="com" show="register,renew"]`
   all three API methods.
 * Fix: **WPCS: short array syntax in `shortcode.php`**: `$billing_cycles = [...]` and
   `$header_labels = [...]` converted to `array()` syntax per WordPress Coding Standards.
-* Fix: **WPCS: missing `esc_url()` and `esc_html__()` in `settings.php`**: The Settings
-  link in the plugin list row passed `admin_url()` output directly into an HTML
-  attribute without escaping, and used `__()` instead of `esc_html__()` for the link
-  text. Both are now correctly escaped.
+* Fix: **WPCS: missing `esc_url()` on `admin_url()` in `settings.php`**: The Settings link
+  in the plugin list row passed `admin_url()` output directly into an HTML attribute
+  without escaping.
 * Changed: **Hardened handling of admin query flags**: Query flags used for cache-related UI
   flow and admin bar actions (e.g. `cache_cleared`, `whmcs_clear_cache`) are now read
   using WordPress-standard sanitization (`wp_unslash()` + `absint()`). This improves
@@ -211,15 +158,6 @@ Domain pricing: `[whmcs tld="com" show="register,renew"]`
   key and consistent output.
 * Changed: **Domain `reg` parameter now validates range 1–10**: Previously any numeric
   value was accepted. Values outside 1–10 now fall back to `1`.
-* Changed: **`clean_response()` renamed to `unwrap_response_body()`**: The function name
-  previously implied sanitization, which it does not perform — it only unwraps
-  WHMCS JS-feed responses. The new name accurately describes what the method does.
-  No functional change.
-* Changed: **`<code>` tag now renders correctly in settings description**: The Custom
-  User-Agent field description used `printf( esc_html__(...), '<code>...</code>' )`
-  which caused the `<code>` tag to render as literal text. Replaced with
-  `echo wp_kses( sprintf( __(...), '<code>...</code>' ), array( 'code' => array() ) )`
-  so the default User-Agent string is correctly displayed in a code element.
 
 = 2.5.5 =
 * Security: **HTTP URL blocked at save**: The `sanitize()` method in `settings.php` now actively
@@ -504,18 +442,8 @@ Domain pricing: `[whmcs tld="com" show="register,renew"]`
 * Switched from direct SQL/Legacy API to WHMCS JS Feeds (HTTP).
 * Added WordPress Transients API for caching.
 
-= 1.3 =
-* Fix Bug
-= 1.2 =
-* Fix Bug
-= 1.1 =
-* Fix Interference Bug
-= 1.0 =
-* First Version
-
 == Screenshots ==
 1. /assets/screenshot-1.jpg
 2. /assets/screenshot-2.jpg
 3. /assets/screenshot-2.jpg
 4. /assets/screenshot-3.jpg
-

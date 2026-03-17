@@ -121,6 +121,11 @@ function whmcs_price_shortcode_handler( $atts ) {
 
                 $val = WHMCS_Price_API::get_product_data(intval($pid), $bc_r, sanitize_text_field($attr));
 
+                if ( 'NA' === $val ) {
+                    $output .= '<td>' . whmcs_price_unavailable_html() . '</td>';
+                    continue;
+                }
+
                 // Always strip embedded setup fee suffix from price string.
                 // WHMCS may include " + AMOUNT" in the productsinfo.php price response.
                 if ( 'price' === $attr ) {
@@ -203,6 +208,10 @@ function whmcs_price_shortcode_handler( $atts ) {
             $type      = $show_types[0];
             $price     = WHMCS_Price_API::get_domain_price( $tld, $type, $reg_period );
 
+            if ( 'NA' === $price ) {
+                return "<div class='whmcs-price'>" . whmcs_price_unavailable_html() . '</div>';
+            }
+
             if ( ! empty( $atts['per'] ) ) {
                 $price = whmcs_price_format_per( $price, 'annually', (int) $reg_period, $atts['per'] );
             }
@@ -229,18 +238,20 @@ function whmcs_price_shortcode_handler( $atts ) {
         $output .= '<td><strong>.' . esc_html( $tld ) . '</strong><br><small>' . esc_html( $period_label ) . '</small></td>';
         foreach ( $show_types as $type ) {
             $price = WHMCS_Price_API::get_domain_price( $tld, $type, $reg_period );
-            if ( ! empty( $atts['per'] ) ) {
-                $price = whmcs_price_format_per( $price, 'annually', (int) $reg_period, $atts['per'] );
+            if ( 'NA' === $price ) {
+                $output .= '<td>' . whmcs_price_unavailable_html() . '</td>';
+            } else {
+                if ( ! empty( $atts['per'] ) ) {
+                    $price = whmcs_price_format_per( $price, 'annually', (int) $reg_period, $atts['per'] );
+                }
+                $output .= '<td>' . wp_kses( $price, array( 'span' => array( 'class' => array() ) ) ) . '</td>';
             }
-            $output .= '<td>' . wp_kses( $price, array( 'span' => array( 'class' => array() ) ) ) . '</td>';
         }
         $output .= '</tr></tbody></table>';
         return $output;
     }
 
     // Fallback: no TLD => list all TLD prices.
-    // A strict allowlist is used instead of wp_kses_post() to limit exposure
-    // if the remote WHMCS endpoint is ever compromised or misconfigured.
     $allowed_html = array(
         'table'  => array( 'class' => true, 'id' => true ),
         'thead'  => array(),
@@ -256,7 +267,11 @@ function whmcs_price_shortcode_handler( $atts ) {
         'ul'     => array( 'class' => true ),
         'li'     => array( 'class' => true ),
     );
-    return wp_kses( WHMCS_Price_API::get_all_domain_prices(), $allowed_html );
+    $all_prices = WHMCS_Price_API::get_all_domain_prices();
+    if ( 'NA' === $all_prices ) {
+        return whmcs_price_unavailable_html();
+    }
+    return wp_kses( $all_prices, $allowed_html );
 }
 /**
  * Register the [whmcs] shortcode on WordPress initialization.

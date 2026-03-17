@@ -16,11 +16,8 @@
 
 defined( 'ABSPATH' ) || exit;
 
-// Skip external WHMCS API calls during Gutenberg saves and autosaves.
-// When saving, WordPress runs the_content via REST which would trigger
-// live WHMCS HTTP requests — making every save slow.
-// The frontend page load renders the real data from cache instead.
-if ( ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) ) {
+// Skip during autosave — no need to fetch live prices for a draft save.
+if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
 	echo '<!-- whmcs-price block -->';
 	return;
 }
@@ -57,6 +54,19 @@ $whmcs_pids = array_filter(
     array_map( 'intval', explode( ',', $whmcs_pid ) ),
     fn( $p ) => $p > 0
 );
+
+// Allowlist: only permit known display styles.
+$whmcs_allowed_styles = array( 'table', 'cards', 'grid' );
+if ( ! in_array( $whmcs_display_style, $whmcs_allowed_styles, true ) ) {
+	$whmcs_display_style = 'table';
+}
+
+// Allowlist: only permit known column values in the show array.
+$whmcs_allowed_columns = array( 'name', 'description', 'price', 'setupfee' );
+$whmcs_show = array_values( array_filter(
+	$whmcs_show,
+	fn( $col ) => in_array( $col, $whmcs_allowed_columns, true )
+) );
 
 // Translatable column header labels.
 $whmcs_header_labels = array(
@@ -97,6 +107,8 @@ $whmcs_wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_att
 							?>
 							<td><?php if ( 'setupfee' === $whmcs_attr_clean ) {
 								echo esc_html( WHMCS_Price_API::get_product_setup_fee( intval( $whmcs_single_pid ), $whmcs_bc_mapped ) );
+							} elseif ( 'NA' === $whmcs_value ) {
+								echo whmcs_price_unavailable_html(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 							} elseif ( 'price' === $whmcs_attr_clean ) {
 								echo wp_kses( $whmcs_value, array( 'span' => array( 'class' => true ) ) );
 							} else {
@@ -138,6 +150,8 @@ $whmcs_wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_att
 							<?php if ( 'setupfee' === $whmcs_attr_clean ) : ?>
 								<span class="whmcs-product-card__setupfee-label"><?php echo esc_html__( 'Setup Fee', 'whmcs-price' ); ?>:</span>
 								<span class="whmcs-product-card__setupfee-value"><?php echo esc_html( WHMCS_Price_API::get_product_setup_fee( intval( $whmcs_single_pid ), $whmcs_bc_mapped ) ); ?></span>
+							<?php elseif ( 'NA' === $whmcs_value ) : ?>
+								<?php echo whmcs_price_unavailable_html(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 							<?php elseif ( 'price' === $whmcs_attr_clean ) : ?>
 								<span class="whmcs-product-card__price-value"><?php echo wp_kses( $whmcs_value, array( 'span' => array( 'class' => array() ) ) ); ?></span>
 							<?php elseif ( 'name' === $whmcs_attr_clean ) : ?>
@@ -172,6 +186,8 @@ $whmcs_wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_att
 							<span class="whmcs-product-grid-item__label"><?php echo esc_html( $whmcs_label ); ?></span>
 							<span class="whmcs-product-grid-item__value"><?php if ( 'setupfee' === $whmcs_attr_clean ) {
 								echo esc_html( WHMCS_Price_API::get_product_setup_fee( intval( $whmcs_single_pid ), $whmcs_bc_mapped ) );
+							} elseif ( 'NA' === $whmcs_value ) {
+								echo whmcs_price_unavailable_html(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 							} elseif ( 'price' === $whmcs_attr_clean ) {
 								echo wp_kses( $whmcs_value, array( 'span' => array( 'class' => true ) ) );
 							} else {

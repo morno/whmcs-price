@@ -186,6 +186,7 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 			'name'        => __( 'Name', 'whmcs-price' ),
 			'description' => __( 'Description', 'whmcs-price' ),
 			'price'       => __( 'Price', 'whmcs-price' ),
+			'setupfee'    => __( 'Setup Fee', 'whmcs-price' ),
 		);
 
 		$whmcs_wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_attr( $whmcs_display_style );
@@ -228,7 +229,9 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 						echo '<td>' . esc_html( WHMCS_Price_API::get_product_setup_fee( intval( $whmcs_single_pid ), $whmcs_bc_mapped ) ) . '</td>';
 						continue;
 					}
-					if ( 'price' === $whmcs_attr_clean ) {
+					if ( 'NA' === $val ) {
+						echo '<td>' . whmcs_price_unavailable_html() . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					} elseif ( 'price' === $whmcs_attr_clean ) {
 						echo '<td>' . wp_kses( $val, array( 'span' => array( 'class' => true ) ) ) . '</td>';
 					} else {
 						echo '<td>' . esc_html( wp_strip_all_tags( $val ) ) . '</td>';
@@ -262,6 +265,8 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 					if ( 'setupfee' === $whmcs_attr_clean ) {
 						echo '<span class="whmcs-product-card__setupfee-label">' . esc_html__( 'Setup Fee', 'whmcs-price' ) . ':</span>';
 						echo '<span class="whmcs-product-card__setupfee-value">' . esc_html( WHMCS_Price_API::get_product_setup_fee( intval( $whmcs_single_pid ), $whmcs_bc_mapped ) ) . '</span>';
+					} elseif ( 'NA' === $whmcs_value ) {
+						echo whmcs_price_unavailable_html(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 					} elseif ( 'price' === $whmcs_attr_clean ) {
 						echo '<span class="whmcs-product-card__price-value">' . wp_kses( $whmcs_value, array( 'span' => array( 'class' => array() ) ) ) . '</span>';
 					} elseif ( 'name' === $whmcs_attr_clean ) {
@@ -292,6 +297,8 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 					echo '<span class="whmcs-product-grid-item__label">' . esc_html( $whmcs_label ) . '</span>';
 					if ( 'setupfee' === $whmcs_attr_clean ) {
 						echo '<span class="whmcs-product-grid-item__value">' . esc_html( WHMCS_Price_API::get_product_setup_fee( intval( $whmcs_single_pid ), $whmcs_bc_mapped ) ) . '</span>';
+					} elseif ( 'NA' === $whmcs_value ) {
+						echo '<span class="whmcs-product-grid-item__value">' . whmcs_price_unavailable_html() . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 					} elseif ( 'price' === $whmcs_attr_clean ) {
 						echo '<span class="whmcs-product-grid-item__value">' . wp_kses( $whmcs_value, array( 'span' => array( 'class' => true ) ) ) . '</span>';
 					} else {

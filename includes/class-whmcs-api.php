@@ -190,7 +190,9 @@ class WHMCS_Price_API {
             $user_agent     = "WordPress ({$site_url}) whmcs-price/{$plugin_version}";
         }
 
-        return array(
+        $bypass_cdn = isset( $options['bypass_cdn_cache'] ) ? (bool) $options['bypass_cdn_cache'] : false;
+
+        $args = array(
             'user-agent'          => $user_agent,
             'timeout'             => 15,
             'redirection'         => 0,
@@ -198,6 +200,19 @@ class WHMCS_Price_API {
             'sslverify'           => true,
             'limit_response_size' => 1024 * 1024, // 1 MB max
         );
+
+        // When enabled, tell Cloudflare and other CDNs/reverse proxies in front of
+        // the WHMCS server to bypass their cache and fetch fresh data from origin.
+        // Without this, a CDN could serve stale prices even after updating in WHMCS.
+        // Enabled by default. Can be turned off in Settings → Connection.
+        if ( $bypass_cdn ) {
+            $args['headers'] = array(
+                'Cache-Control' => 'no-cache',
+                'Pragma'        => 'no-cache',
+            );
+        }
+
+        return $args;
     }
 
 	/**
@@ -317,6 +332,7 @@ class WHMCS_Price_API {
 				'url'   => $url,
 			) );
 			delete_transient( $lock_key ); // Release lock on failure.
+			whmcs_price_notify_outage( $response->get_error_message() );
 			return 'NA';
 		}
 
@@ -327,6 +343,8 @@ class WHMCS_Price_API {
 				'url'           => $url,
 			) );
 			delete_transient( $lock_key ); // Release lock on HTTP error.
+			/* translators: %d: HTTP response code */
+			whmcs_price_notify_outage( sprintf( __( 'HTTP %d', 'whmcs-price' ), $response_code ) );
 			return 'NA';
 		}
 
@@ -339,6 +357,7 @@ class WHMCS_Price_API {
 
 		set_transient( $cache_key, $data, self::get_cache_expiry() );
 		delete_transient( $lock_key ); // Release lock after successful cache write.
+		whmcs_price_clear_outage();
 
 		return $data;
 	}
@@ -441,6 +460,7 @@ class WHMCS_Price_API {
 				'url'   => $url,
 			) );
 			delete_transient( $lock_key ); // Release lock on failure.
+			whmcs_price_notify_outage( $response->get_error_message() );
 			return 'NA';
 		}
 
@@ -451,6 +471,8 @@ class WHMCS_Price_API {
 				'url'           => $url,
 			) );
 			delete_transient( $lock_key ); // Release lock on HTTP error.
+			/* translators: %d: HTTP response code */
+			whmcs_price_notify_outage( sprintf( __( 'HTTP %d', 'whmcs-price' ), $response_code ) );
 			return 'NA';
 		}
 
@@ -463,6 +485,7 @@ class WHMCS_Price_API {
 
 		set_transient( $cache_key, $data, self::get_cache_expiry() );
 		delete_transient( $lock_key ); // Release lock after successful cache write.
+		whmcs_price_clear_outage();
 
 		return $data;
 	}
@@ -521,6 +544,7 @@ class WHMCS_Price_API {
 				'url'   => $url,
 			) );
 			delete_transient( $lock_key ); // Release lock on failure.
+			whmcs_price_notify_outage( $response->get_error_message() );
 			return 'NA';
 		}
 
@@ -531,6 +555,8 @@ class WHMCS_Price_API {
 				'url'           => $url,
 			) );
 			delete_transient( $lock_key ); // Release lock on HTTP error.
+			/* translators: %d: HTTP response code */
+			whmcs_price_notify_outage( sprintf( __( 'HTTP %d', 'whmcs-price' ), $response_code ) );
 			return 'NA';
 		}
 
@@ -544,6 +570,7 @@ class WHMCS_Price_API {
 
 		set_transient( $cache_key, $data, self::get_cache_expiry() );
 		delete_transient( $lock_key ); // Release lock after successful cache write.
+		whmcs_price_clear_outage();
 
 		return $data;
 	}
@@ -679,6 +706,7 @@ class WHMCS_Price_API {
 					'error' => $response->get_error_message(),
 				) );
 				delete_transient( $lock_key );
+				whmcs_price_notify_outage( $response->get_error_message() );
 				return '';
 			}
 
@@ -688,6 +716,8 @@ class WHMCS_Price_API {
 					'response_code' => $response_code,
 				) );
 				delete_transient( $lock_key );
+				/* translators: %d: HTTP response code */
+				whmcs_price_notify_outage( sprintf( __( 'HTTP %d', 'whmcs-price' ), $response_code ) );
 				return '';
 			}
 
@@ -700,6 +730,7 @@ class WHMCS_Price_API {
 
 			set_transient( $cache_key, $cached, self::get_cache_expiry() );
 			delete_transient( $lock_key );
+			whmcs_price_clear_outage();
 		} else {
 			self::debug_log( 'Product pricing feed served from cache', array(
 				'cache_key' => $cache_key,

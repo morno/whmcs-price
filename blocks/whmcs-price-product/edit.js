@@ -1,12 +1,12 @@
 /**
  * WHMCS Product Price Block — Edit Component
  *
- * Renders the block editor UI with InspectorControls for configuration.
- * Includes display style selector for different visual presentations.
+ * Uses ServerSideRender to show a live preview of the actual rendered output
+ * directly in the block editor — same data path as the frontend.
  *
  * @package    WHMCS_Price
  * @subpackage Blocks
- * @since      2.3.0
+ * @since      2.7.0
  */
 
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
@@ -15,26 +15,22 @@ import {
 	TextControl,
 	SelectControl,
 	CheckboxControl,
-	Placeholder,
 	RadioControl,
+	Placeholder,
+	Spinner,
 } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
+import ServerSideRender from '@wordpress/server-side-render';
 
-/**
- * Billing cycle options — mirrors the map in both shortcode.php and render.php.
- */
 const BILLING_CYCLE_OPTIONS = [
-	{ label: __( 'Monthly (1m)', 'whmcs-price' ),      value: '1m' },
-	{ label: __( 'Quarterly (3m)', 'whmcs-price' ),    value: '3m' },
+	{ label: __( 'Monthly (1m)', 'whmcs-price' ),       value: '1m' },
+	{ label: __( 'Quarterly (3m)', 'whmcs-price' ),     value: '3m' },
 	{ label: __( 'Semi-Annually (6m)', 'whmcs-price' ), value: '6m' },
-	{ label: __( 'Annually (1y)', 'whmcs-price' ),     value: '1y' },
-	{ label: __( 'Biennially (2y)', 'whmcs-price' ),   value: '2y' },
-	{ label: __( 'Triennially (3y)', 'whmcs-price' ),  value: '3y' },
+	{ label: __( 'Annually (1y)', 'whmcs-price' ),      value: '1y' },
+	{ label: __( 'Biennially (2y)', 'whmcs-price' ),    value: '2y' },
+	{ label: __( 'Triennially (3y)', 'whmcs-price' ),   value: '3y' },
 ];
 
-/**
- * Available columns that can be toggled on/off.
- */
 const SHOW_OPTIONS = [
 	{ label: __( 'Name', 'whmcs-price' ),        value: 'name' },
 	{ label: __( 'Description', 'whmcs-price' ), value: 'description' },
@@ -42,43 +38,23 @@ const SHOW_OPTIONS = [
 	{ label: __( 'Setup Fee', 'whmcs-price' ),   value: 'setupfee' },
 ];
 
-/**
- * Display style options for visual presentation.
- */
 const DISPLAY_STYLE_OPTIONS = [
 	{ label: __( 'Table (Classic)', 'whmcs-price' ), value: 'table' },
 	{ label: __( 'Cards', 'whmcs-price' ),           value: 'cards' },
 	{ label: __( 'Pricing Grid', 'whmcs-price' ),    value: 'grid' },
 ];
 
-/**
- * Per-period breakdown options.
- */
 const PER_PERIOD_OPTIONS = [
-	{ label: __( 'Disabled', 'whmcs-price' ),                              value: '' },
-	{ label: __( 'Per month — e.g. $99/yr ($8.25/mo)', 'whmcs-price' ),   value: 'month' },
-	{ label: __( 'Per week — e.g. $99/yr ($1.90/wk)', 'whmcs-price' ),    value: 'week' },
-	{ label: __( 'Per day — e.g. $99/yr ($0.27/day)', 'whmcs-price' ),    value: 'day' },
+	{ label: __( 'Disabled', 'whmcs-price' ),                            value: '' },
+	{ label: __( 'Per month — e.g. $99/yr ($8.25/mo)', 'whmcs-price' ), value: 'month' },
+	{ label: __( 'Per week — e.g. $99/yr ($1.90/wk)', 'whmcs-price' ),  value: 'week' },
+	{ label: __( 'Per day — e.g. $99/yr ($0.27/day)', 'whmcs-price' ),  value: 'day' },
 ];
 
-/**
- * Edit component — renders the block in the editor.
- *
- * @param {Object}   props               Block props.
- * @param {Object}   props.attributes    Current block attributes.
- * @param {Function} props.setAttributes Attribute setter.
- * @return {JSX.Element} The editor UI.
- */
 export default function Edit( { attributes, setAttributes } ) {
 	const { pid, billingCycle, show, displayStyle, perPeriod } = attributes;
 	const blockProps = useBlockProps();
 
-	/**
-	 * Toggle a column value in the `show` array attribute.
-	 *
-	 * @param {string}  value   Column key (name, description, price).
-	 * @param {boolean} checked Whether the checkbox is checked.
-	 */
 	function handleShowToggle( value, checked ) {
 		const updated = checked
 			? [ ...show, value ]
@@ -90,12 +66,8 @@ export default function Edit( { attributes, setAttributes } ) {
 
 	return (
 		<>
-			{ /* Sidebar controls */ }
 			<InspectorControls>
-				<PanelBody
-					title={ __( 'Product Settings', 'whmcs-price' ) }
-					initialOpen={ true }
-				>
+				<PanelBody title={ __( 'Product Settings', 'whmcs-price' ) } initialOpen={ true }>
 					<TextControl
 						label={ __( 'Product ID(s)', 'whmcs-price' ) }
 						help={ __( 'Comma-separated WHMCS Product IDs, e.g. 1,2,3', 'whmcs-price' ) }
@@ -110,26 +82,18 @@ export default function Edit( { attributes, setAttributes } ) {
 					/>
 				</PanelBody>
 
-				<PanelBody
-					title={ __( 'Display Columns', 'whmcs-price' ) }
-					initialOpen={ true }
-				>
+				<PanelBody title={ __( 'Display Columns', 'whmcs-price' ) } initialOpen={ true }>
 					{ SHOW_OPTIONS.map( ( option ) => (
 						<CheckboxControl
 							key={ option.value }
 							label={ option.label }
 							checked={ show.includes( option.value ) }
-							onChange={ ( checked ) =>
-								handleShowToggle( option.value, checked )
-							}
+							onChange={ ( checked ) => handleShowToggle( option.value, checked ) }
 						/>
 					) ) }
 				</PanelBody>
 
-				<PanelBody
-					title={ __( 'Display Style', 'whmcs-price' ) }
-					initialOpen={ false }
-				>
+				<PanelBody title={ __( 'Display Style', 'whmcs-price' ) } initialOpen={ false }>
 					<RadioControl
 						label={ __( 'Choose how to display products', 'whmcs-price' ) }
 						selected={ displayStyle }
@@ -146,44 +110,24 @@ export default function Edit( { attributes, setAttributes } ) {
 				</PanelBody>
 			</InspectorControls>
 
-			{ /* Canvas preview */ }
 			<div { ...blockProps }>
 				{ ! hasConfig ? (
 					<Placeholder
 						icon="tag"
 						label={ __( 'WHMCS Product Price', 'whmcs-price' ) }
-						instructions={ __(
-							'Configure this block using the settings panel. Click the block, then open the Settings panel (⚙) in the top-right corner of the editor.',
-							'whmcs-price'
-						) }
-					>
-						<div className="whmcs-block-setup-hint">
-							{ __( '👆 Click this block → then click ⚙ Settings in the top-right corner', 'whmcs-price' ) }
-						</div>
-					</Placeholder>
+						instructions={ __( 'Enter a Product ID in the settings panel to show a live price preview.', 'whmcs-price' ) }
+					/>
 				) : (
-					<div className="whmcs-block-editor-preview">
-						<span className="whmcs-block-editor-preview__icon">🏷️</span>
-						<span className="whmcs-block-editor-preview__label">
-							{ __( 'WHMCS Product Price', 'whmcs-price' ) }
-						</span>
-						<span className="whmcs-block-editor-preview__meta">
-							{ sprintf(
-								/* translators: 1: product ID(s), 2: billing cycle, 3: display style */
-								__( 'PID: %1$s — Cycle: %2$s — Style: %3$s', 'whmcs-price' ),
-								pid,
-								billingCycle,
-								displayStyle
-							) }
-							{ perPeriod && (
-								<span> — { sprintf(
-									/* translators: %s: per-period unit (month/week/day) */
-									__( 'Per %s', 'whmcs-price' ),
-									perPeriod
-								) }</span>
-							) }
-						</span>
-					</div>
+					<ServerSideRender
+						block="whmcs-price/product"
+						attributes={ attributes }
+						LoadingResponsePlaceholder={ () => (
+							<div style={ { padding: '16px', display: 'flex', alignItems: 'center', gap: '8px' } }>
+								<Spinner />
+								{ __( 'Loading WHMCS prices…', 'whmcs-price' ) }
+							</div>
+						) }
+					/>
 				) }
 			</div>
 		</>

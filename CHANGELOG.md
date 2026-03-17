@@ -2,6 +2,116 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.7.0] - 2026-03-17
+
+### Added
+
+- **Third-party page cache flushing**: `whmcs_price_flush_page_cache()` in
+  `includes/class-whmcs-price-helpers.php` is now called automatically at the end
+  of `clear_whmcs_cache()` in `settings.php`. When an admin clears the WHMCS price
+  cache, supported page cache plugins are flushed in the same operation so visitors
+  immediately receive fresh prices without waiting for their page cache to expire.
+
+  Covers 18 integrations across two patterns:
+
+  **Action-hook based** (safe to fire regardless of whether the plugin is active):
+  - LiteSpeed Cache — `litespeed_purge_all`
+  - Hummingbird — `wphb_clear_page_cache`
+  - Breeze (Cloudways) — `breeze_clear_all_cache`
+  - NitroPack — `nitropack_integration_purge_all`
+  - Swift Performance — `swift_performance_after_clear_all_cache`
+  - Cache Enabler (KeyCDN) — `cache_enabler_clear_complete_cache`
+  - Cachify — `cachify_flush_cache`
+  - Pantheon — `pantheon_cache_flush`
+  - FlyingPress — `flying_press_purge_all`
+
+  **Function/class based** (guarded with `function_exists` / `class_exists` +
+  `method_exists` before calling):
+  - WP Rocket — `rocket_clean_domain()`
+  - WP Fastest Cache — `wpfc_clear_all_cache()`
+  - W3 Total Cache — `w3tc_flush_all()`
+  - WP Super Cache — `wp_cache_clear_cache()`
+  - SG Optimizer (SiteGround) — `sg_cachepress_purge_cache()`
+  - Autoptimize — `autoptimizeCache::clearall()`
+  - Comet Cache — `comet_cache::clear()`
+  - WP Engine (MU plugin) — `WpeCommon::purge_memcached()` + `purge_varnish_cache()`
+  - Kinsta (MU plugin) — `kinsta_cache_purge_all_cache()`
+
+  `do_action('whmcs_price_after_flush_page_cache')` fires at the end for custom
+  integrations not covered above. `wp_cache_flush()` is intentionally excluded as it
+  flushes the shared object cache (Redis/Memcached) which could affect other plugins
+  or sites. Cloudflare is excluded as their WordPress plugin exposes no stable PHP API.
+
+- **Outage e-mail notifications**: The plugin now sends an admin e-mail when WHMCS
+  pricing data becomes unreachable. A transient-based circuit-breaker ensures at most
+  one notification is sent per outage window (6 hours). When WHMCS recovers and the
+  next request succeeds, the circuit-breaker resets so a subsequent outage will trigger
+  a fresh alert.
+
+  New helpers in `includes/class-whmcs-price-helpers.php`:
+  - `whmcs_price_notify_outage( string $error_context )` — sends the notification and
+    sets the circuit-breaker transient. Called on every `WP_Error` or non-200 HTTP
+    response across all four API methods in `class-whmcs-api.php`.
+  - `whmcs_price_clear_outage()` — deletes the circuit-breaker transient. Called on
+    every successful WHMCS response so future outages trigger a new notification.
+
+- **Notifications settings section**: A new **Notifications** tab has been
+  added to the settings page between the Performance and Advanced tabs. Controls:
+  - **Outage Alerts** checkbox — enable or disable e-mail notifications (on by default).
+  - **Alert Address** — e-mail address to notify; defaults to the site admin address.
+  - An inline warning banner is shown in the tab when an outage is currently active
+    (circuit-breaker transient is set), giving admins immediate visibility in the
+    WordPress dashboard without needing to check the front end.
+
+- **`whmcs_price_unavailable_html()`**: New helper in
+  `includes/class-whmcs-price-helpers.php` that returns a styled, translatable
+  `<span class="whmcs-price-unavailable">` element. Used by all render paths when
+  WHMCS returns `'NA'` for a data field.
+
+- **Redesigned settings page UI**: The settings page has been rebuilt following
+  standard WordPress admin conventions (same pattern as WooCommerce, Yoast, etc.):
+  - **Tabbed navigation** — Connection, Performance, Notifications and Advanced are
+    separated into tabs using WordPress's native `nav-tab-wrapper` styling. The active
+    tab is saved per user and restored on next visit.
+  - **Sidebar cards** — Operational Status, Product Pricing reference and Domain
+    Pricing reference are displayed as sidebar panels using WordPress's native `.card`
+    class, placed to the right of the main form.
+  - The previous postbox-based layout with custom drag-and-drop and column controls
+    has been removed in favour of this simpler, more familiar approach.
+
+### Changed
+
+- **Configurable CDN/proxy cache bypass**: A new **Bypass CDN Cache** checkbox
+  in Settings → Connection controls whether `Cache-Control: no-cache` and
+  `Pragma: no-cache` are sent with every outgoing request to WHMCS. Disabled by
+  default — most WHMCS installations are not affected since Cloudflare does not
+  cache dynamic PHP responses unless explicitly configured to do so. Enable if your
+  WHMCS server sits behind a CDN or reverse proxy that is set up to cache PHP feeds,
+  to ensure price updates are visible immediately regardless of the CDN cache TTL.
+
+- **Frontend renders a friendly message instead of `'NA'`**: All three output paths
+  (shortcode, Gutenberg block, Elementor widget) across all display styles (Table,
+  Cards, Grid) now render `whmcs_price_unavailable_html()` in place of the raw `'NA'`
+  string that WHMCS_Price_API returns on failure. The `<span>` element can be styled
+  via `.whmcs-price-unavailable` in theme CSS.
+
+- **Gutenberg blocks now show a live price preview in the editor**: Both the Product
+  Price and Domain Price blocks use `ServerSideRender` (`@wordpress/server-side-render`)
+  to render the actual server-side output directly in the block editor canvas — the same
+  data path as the frontend, served from the transient cache. The `REST_REQUEST` guard
+  that previously blocked all editor previews has been removed; only `DOING_AUTOSAVE`
+  is now skipped. All existing input validation and allowlists in `render.php` remain
+  unchanged.
+
+- **`Requires at least` raised to 6.4**: The minimum WordPress version has been updated
+  from 6.0 to 6.4, which is the baseline for `apiVersion: 3` blocks and `ServerSideRender`
+  stability. `Tested up to` is now 7.0.
+
+- **`uninstall.php` cleans up user meta**: The uninstall routine now also removes all
+  per-user preferences stored by the plugin (`whmcs_price_active_tab`,
+  `whmcs_price_settings_mode`, and WordPress's own screen meta for the settings page)
+  so no orphaned rows remain in `wp_usermeta` after deletion.
+
 ## [2.6.0] - 2026-03-07
 
 ### Added
@@ -216,6 +326,7 @@ All notable changes to this project will be documented in this file.
   which caused the `<code>` tag to render as literal text. Replaced with
   `echo wp_kses( sprintf( __(...), '<code>...</code>' ), array( 'code' => array() ) )`
   so the default User-Agent string is correctly displayed in a code element.
+
 ## [2.5.5] - 2026-02-28
 
 ### Security

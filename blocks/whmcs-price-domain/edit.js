@@ -1,12 +1,12 @@
 /**
  * WHMCS Domain Price Block — Edit Component
  *
- * Renders the block editor UI with InspectorControls for configuration.
- * Supports empty TLD (shows all available TLDs from WHMCS) and display styles.
+ * Uses ServerSideRender to show a live preview of the actual rendered output
+ * directly in the block editor — same data path as the frontend.
  *
  * @package    WHMCS_Price
  * @subpackage Blocks
- * @since      2.3.0
+ * @since      2.7.0
  */
 
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
@@ -16,22 +16,17 @@ import {
 	SelectControl,
 	ToggleControl,
 	RadioControl,
+	Spinner,
 } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
+import ServerSideRender from '@wordpress/server-side-render';
 
-/**
- * Transaction type options — mirrors the shortcode's `type` attribute.
- * Only shown when showAll is false.
- */
 const TRANSACTION_TYPE_OPTIONS = [
 	{ label: __( 'Register', 'whmcs-price' ),  value: 'register' },
 	{ label: __( 'Renew', 'whmcs-price' ),     value: 'renew' },
 	{ label: __( 'Transfer', 'whmcs-price' ),  value: 'transfer' },
 ];
 
-/**
- * Registration period options — mirrors the shortcode's `reg` attribute (1y–10y).
- */
 const REG_PERIOD_OPTIONS = [
 	{ label: __( '1 Year', 'whmcs-price' ),   value: '1y' },
 	{ label: __( '2 Years', 'whmcs-price' ),  value: '2y' },
@@ -45,35 +40,20 @@ const REG_PERIOD_OPTIONS = [
 	{ label: __( '10 Years', 'whmcs-price' ), value: '10y' },
 ];
 
-/**
- * Display style options for visual presentation.
- */
 const DISPLAY_STYLE_OPTIONS = [
 	{ label: __( 'Table (Classic)', 'whmcs-price' ), value: 'table' },
 	{ label: __( 'Badge', 'whmcs-price' ),           value: 'badge' },
 	{ label: __( 'Inline', 'whmcs-price' ),          value: 'inline' },
 ];
 
-/**
- * Edit component — renders the block in the editor.
- *
- * @param {Object}   props               Block props.
- * @param {Object}   props.attributes    Current block attributes.
- * @param {Function} props.setAttributes Attribute setter.
- * @return {JSX.Element} The editor UI.
- */
 export default function Edit( { attributes, setAttributes } ) {
 	const { tld, transactionType, regPeriod, showAll, displayStyle } = attributes;
 	const blockProps = useBlockProps();
 
 	return (
 		<>
-			{ /* Sidebar controls */ }
 			<InspectorControls>
-				<PanelBody
-					title={ __( 'Domain Settings', 'whmcs-price' ) }
-					initialOpen={ true }
-				>
+				<PanelBody title={ __( 'Domain Settings', 'whmcs-price' ) } initialOpen={ true }>
 					<TextControl
 						label={ __( 'TLD', 'whmcs-price' ) }
 						help={ __( 'Domain extension without dot, e.g. com, net, se. Leave empty to show all available TLDs.', 'whmcs-price' ) }
@@ -95,7 +75,6 @@ export default function Edit( { attributes, setAttributes } ) {
 						checked={ showAll }
 						onChange={ ( val ) => setAttributes( { showAll: val } ) }
 					/>
-					{ /* Only show type selector when not showing all */ }
 					{ ! showAll && (
 						<SelectControl
 							label={ __( 'Transaction Type', 'whmcs-price' ) }
@@ -106,10 +85,7 @@ export default function Edit( { attributes, setAttributes } ) {
 					) }
 				</PanelBody>
 
-				<PanelBody
-					title={ __( 'Display Style', 'whmcs-price' ) }
-					initialOpen={ false }
-				>
+				<PanelBody title={ __( 'Display Style', 'whmcs-price' ) } initialOpen={ false }>
 					<RadioControl
 						label={ __( 'Choose how to display pricing', 'whmcs-price' ) }
 						selected={ displayStyle }
@@ -119,35 +95,17 @@ export default function Edit( { attributes, setAttributes } ) {
 				</PanelBody>
 			</InspectorControls>
 
-			{ /* Canvas preview */ }
 			<div { ...blockProps }>
-				<div className="whmcs-block-editor-preview">
-					<span className="whmcs-block-editor-preview__icon">🌐</span>
-					<span className="whmcs-block-editor-preview__label">
-						{ __( 'WHMCS Domain Price', 'whmcs-price' ) }
-					</span>
-					<span className="whmcs-block-editor-preview__meta">
-						{ tld.trim() === ''
-							? __( 'All TLDs — configure in ⚙ Settings', 'whmcs-price' )
-							: showAll
-								? sprintf(
-									/* translators: 1: TLD, 2: registration period, 3: display style */
-									__( '.%1$s — Register/Renew/Transfer — %2$s — Style: %3$s', 'whmcs-price' ),
-									tld,
-									regPeriod,
-									displayStyle
-								)
-								: sprintf(
-									/* translators: 1: TLD, 2: transaction type, 3: registration period, 4: display style */
-									__( '.%1$s — %2$s — %3$s — Style: %4$s', 'whmcs-price' ),
-									tld,
-									transactionType,
-									regPeriod,
-									displayStyle
-								)
-						}
-					</span>
-				</div>
+				<ServerSideRender
+					block="whmcs-price/domain"
+					attributes={ attributes }
+					LoadingResponsePlaceholder={ () => (
+						<div style={ { padding: '16px', display: 'flex', alignItems: 'center', gap: '8px' } }>
+							<Spinner />
+							{ __( 'Loading WHMCS prices…', 'whmcs-price' ) }
+						</div>
+					) }
+				/>
 			</div>
 		</>
 	);

@@ -16,6 +16,205 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
+ * Flush third-party page caches after clearing WHMCS transients.
+ *
+ * Called automatically at the end of clear_whmcs_cache() in settings.php.
+ * Covers the most common WordPress page cache plugins via their documented
+ * integration points — action hooks and guarded function/class calls.
+ *
+ * Does nothing on sites without a supported cache plugin installed.
+ * Fires do_action('whmcs_price_after_flush_page_cache') at the end so
+ * site owners can hook in their own cache-clear logic if needed.
+ *
+ * Intentionally excluded:
+ *   - wp_cache_flush() — flushes shared object cache (Redis/Memcached),
+ *     too aggressive and could affect other plugins or sites.
+ *   - Cloudflare — no stable PHP API exposed by their WordPress plugin.
+ *
+ * @since  2.7.0
+ * @return void
+ */
+function whmcs_price_flush_page_cache(): void {
+
+	// --- Action-hook based (safe to fire even if plugin is not active) ---
+
+	// LiteSpeed Cache.
+	do_action( 'litespeed_purge_all' );
+
+	// Hummingbird.
+	do_action( 'wphb_clear_page_cache' );
+
+	// Breeze (Cloudways).
+	do_action( 'breeze_clear_all_cache' );
+
+	// NitroPack.
+	do_action( 'nitropack_integration_purge_all' );
+
+	// Swift Performance.
+	do_action( 'swift_performance_after_clear_all_cache' );
+
+	// Cache Enabler (KeyCDN).
+	do_action( 'cache_enabler_clear_complete_cache' );
+
+	// Cachify.
+	do_action( 'cachify_flush_cache' );
+
+	// Pantheon (managed hosting).
+	do_action( 'pantheon_cache_flush' );
+
+	// FlyingPress.
+	do_action( 'flying_press_purge_all' );
+
+	// --- Function/class based (guarded before calling) ---
+
+	// WP Rocket.
+	if ( function_exists( 'rocket_clean_domain' ) ) {
+		rocket_clean_domain();
+	}
+
+	// WP Fastest Cache.
+	if ( function_exists( 'wpfc_clear_all_cache' ) ) {
+		wpfc_clear_all_cache();
+	}
+
+	// W3 Total Cache.
+	if ( function_exists( 'w3tc_flush_all' ) ) {
+		w3tc_flush_all();
+	}
+
+	// WP Super Cache.
+	if ( function_exists( 'wp_cache_clear_cache' ) ) {
+		wp_cache_clear_cache();
+	}
+
+	// SG Optimizer (SiteGround).
+	if ( function_exists( 'sg_cachepress_purge_cache' ) ) {
+		sg_cachepress_purge_cache();
+	}
+
+	// Autoptimize.
+	if ( class_exists( 'autoptimizeCache' ) && method_exists( 'autoptimizeCache', 'clearall' ) ) {
+		autoptimizeCache::clearall();
+	}
+
+	// Comet Cache.
+	if ( class_exists( 'comet_cache' ) && method_exists( 'comet_cache', 'clear' ) ) {
+		comet_cache::clear();
+	}
+
+	// WP Engine (MU plugin).
+	if ( class_exists( 'WpeCommon' ) ) {
+		if ( method_exists( 'WpeCommon', 'purge_memcached' ) ) {
+			WpeCommon::purge_memcached();
+		}
+		if ( method_exists( 'WpeCommon', 'purge_varnish_cache' ) ) {
+			WpeCommon::purge_varnish_cache();
+		}
+	}
+
+	// Kinsta (MU plugin).
+	if ( function_exists( 'kinsta_cache_purge_all_cache' ) ) {
+		kinsta_cache_purge_all_cache();
+	}
+
+	// Extensibility hook for custom integrations.
+	do_action( 'whmcs_price_after_flush_page_cache' );
+}
+
+/**
+ * Return a styled "pricing unavailable" HTML snippet.
+ *
+ * Used by all render paths (shortcode, block, Elementor) when WHMCS
+ * returns 'NA' for a price or product data field.
+ *
+ * Wrapped in a <span> so it can be placed inside a <td>, card, or inline
+ * context without breaking layout. The class allows theme/site CSS targeting.
+ *
+ * @since  2.7.0
+ * @return string Safe HTML string — already escaped, safe to echo directly.
+ */
+function whmcs_price_unavailable_html(): string {
+	return '<span class="whmcs-price-unavailable">'
+		. esc_html__( 'Pricing unavailable — please check back shortly.', 'whmcs-price' )
+		. '</span>';
+}
+
+/**
+ * Send a one-time admin notification when WHMCS becomes unreachable.
+ *
+ * Uses a transient as a circuit-breaker so at most one e-mail is sent
+ * per outage window (default 6 hours). The transient is cleared by
+ * whmcs_price_clear_outage() on the next successful WHMCS response,
+ * which allows a fresh notification if a second outage occurs later.
+ *
+ * The notification address defaults to the site admin e-mail but can
+ * be overridden via Settings → WHMCS Price Settings → Notifications.
+ * Notifications can be disabled entirely from the same screen.
+ *
+ * @since  2.7.0
+ * @param  string $error_context Short description of the failure for the mail body.
+ * @return void
+ */
+function whmcs_price_notify_outage( string $error_context = '' ): void {
+	$options = get_option( 'whmcs_price_option', array() );
+
+	// Respect the admin's opt-out.
+	if ( isset( $options['outage_notify'] ) && '0' === (string) $options['outage_notify'] ) {
+		return;
+	}
+
+	// Circuit-breaker: only notify once per outage window.
+	if ( false !== get_transient( 'whmcs_price_outage_notified' ) ) {
+		return;
+	}
+
+	$to      = ! empty( $options['outage_email'] ) ? $options['outage_email'] : get_option( 'admin_email' );
+	$subject = sprintf(
+		/* translators: %s: site name */
+		__( '[%s] WHMCS pricing data unavailable', 'whmcs-price' ),
+		get_bloginfo( 'name' )
+	);
+
+	$body  = __( 'Hi,', 'whmcs-price' ) . "\n\n";
+	$body .= __( 'The Mornolink for WHMCS plugin could not retrieve pricing data from your WHMCS instance.', 'whmcs-price' ) . "\n\n";
+
+	if ( ! empty( $error_context ) ) {
+		/* translators: %s: error detail string */
+		$body .= sprintf( __( 'Error detail: %s', 'whmcs-price' ), $error_context ) . "\n\n";
+	}
+
+	$whmcs_url = ! empty( $options['whmcs_url'] ) ? $options['whmcs_url'] : __( '(not configured)', 'whmcs-price' );
+	/* translators: %s: WHMCS URL */
+	$body .= sprintf( __( 'WHMCS URL: %s', 'whmcs-price' ), $whmcs_url ) . "\n\n";
+	$body .= __( 'Visitors are currently seeing a "pricing unavailable" message in place of live prices.', 'whmcs-price' ) . "\n\n";
+	$body .= __( 'Please check that your WHMCS instance is running and reachable.', 'whmcs-price' ) . "\n\n";
+	$body .= sprintf(
+		/* translators: %s: settings page URL */
+		__( 'Plugin settings: %s', 'whmcs-price' ),
+		admin_url( 'options-general.php?page=whmcs_price' )
+	) . "\n\n";
+	$body .= '— ' . __( 'Mornolink for WHMCS', 'whmcs-price' );
+
+	wp_mail( $to, $subject, $body );
+
+	// Prevent repeat notifications for 6 hours.
+	set_transient( 'whmcs_price_outage_notified', 1, 6 * HOUR_IN_SECONDS );
+}
+
+/**
+ * Clear the outage notification circuit-breaker transient.
+ *
+ * Called on every successful WHMCS response so that a future outage
+ * will trigger a fresh notification.
+ *
+ * @since  2.7.0
+ * @return void
+ */
+function whmcs_price_clear_outage(): void {
+	delete_transient( 'whmcs_price_outage_notified' );
+}
+
+/**
  * Strip an embedded setup fee suffix from a WHMCS price string.
  *
  * WHMCS's productsinfo.php?get=price may return prices with the setup fee
@@ -34,6 +233,7 @@ function whmcs_price_strip_setup_fee( string $price ): string {
 	}
 	return $price;
 }
+
 
 /**
  * Format a price string with an optional per-period breakdown.
