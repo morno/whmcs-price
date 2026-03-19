@@ -24,6 +24,13 @@ All notable changes to this project will be documented in this file.
   The function now loads the existing saved values as a base and uses a hidden `_tab`
   field in each tab's form to update only the fields that belong to the active tab.
 
+- **Request-level in-memory cache added to `WHMCS_Price_API`**: A static `$request_cache`
+  property now stores results for the duration of the current PHP process. When multiple
+  shortcodes, blocks, or Elementor widgets on the same page request the same data, only
+  the first call hits the WordPress transient (database) or WHMCS — all subsequent calls
+  within the same request are served from memory. This eliminates duplicate WHMCS feed
+  requests that occurred when `ServerSideRender` REST calls ran shortly after the main
+  page request before the transient cache was warmed.
 
 ## [2.7.0] - 2026-03-17
 

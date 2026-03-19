@@ -24,6 +24,20 @@ class WHMCS_Price_API {
     private static $cache_expiry = 3600; // Fallback if TTL value in WHMCS Price Settings is missed
 
     /**
+     * In-memory request cache.
+     *
+     * Stores results for the duration of the current PHP process so that the
+     * same data is never fetched twice in a single request — even if multiple
+     * shortcodes, blocks, or Elementor widgets on the same page ask for it.
+     * This is a second caching layer above WordPress transients; it survives
+     * only for the lifetime of the request and uses no persistent storage.
+     *
+     * @since  2.7.1
+     * @var    array<string, string>
+     */
+    private static array $request_cache = array();
+
+    /**
      * Retrieve the WHMCS base URL from plugin settings.
      *
      * @since 2.2.0
@@ -288,13 +302,23 @@ class WHMCS_Price_API {
 		}
 
 		$cache_key = 'whmcs_product_' . md5( $pid . '_' . $billing_cycle . '_' . $attribute );
-		$cached    = get_transient( $cache_key );
+
+		// Check the in-memory request cache first — avoids a DB round-trip when the
+		// same data is needed more than once within a single PHP request (e.g. both
+		// a shortcode and a Gutenberg block on the same page request the same product).
+		if ( isset( self::$request_cache[ $cache_key ] ) ) {
+			self::debug_log( 'Product data served from request cache', array( 'cache_key' => $cache_key ) );
+			return self::$request_cache[ $cache_key ];
+		}
+
+		$cached = get_transient( $cache_key );
 
 		if ( $cached !== false ) {
 			self::debug_log( 'Product data served from cache', array(
 				'cache_key' => $cache_key,
 				'length'    => strlen( $cached ),
 			) );
+			self::$request_cache[ $cache_key ] = $cached;
 			return $cached;
 		}
 
@@ -415,13 +439,20 @@ class WHMCS_Price_API {
 		}
 
 		$cache_key = 'whmcs_domain_' . md5( $tld . '_' . $type . '_' . $reg_period );
-		$cached    = get_transient( $cache_key );
+
+		if ( isset( self::$request_cache[ $cache_key ] ) ) {
+			self::debug_log( 'Domain price served from request cache', array( 'cache_key' => $cache_key ) );
+			return self::$request_cache[ $cache_key ];
+		}
+
+		$cached = get_transient( $cache_key );
 
 		if ( $cached !== false ) {
 			self::debug_log( 'Domain price served from cache', array(
 				'cache_key' => $cache_key,
 				'length'    => strlen( $cached ),
 			) );
+			self::$request_cache[ $cache_key ] = $cached;
 			return $cached;
 		}
 
@@ -484,6 +515,7 @@ class WHMCS_Price_API {
 		) );
 
 		set_transient( $cache_key, $data, self::get_cache_expiry() );
+		self::$request_cache[ $cache_key ] = $data;
 		delete_transient( $lock_key ); // Release lock after successful cache write.
 		whmcs_price_clear_outage();
 
@@ -511,13 +543,20 @@ class WHMCS_Price_API {
 		}
 
 		$cache_key = 'whmcs_domain_all';
-		$cached    = get_transient( $cache_key );
+
+		if ( isset( self::$request_cache[ $cache_key ] ) ) {
+			self::debug_log( 'All domain prices served from request cache', array( 'cache_key' => $cache_key ) );
+			return self::$request_cache[ $cache_key ];
+		}
+
+		$cached = get_transient( $cache_key );
 
 		if ( $cached !== false ) {
 			self::debug_log( 'All domain prices served from cache', array(
 				'cache_key'   => $cache_key,
 				'data_length' => strlen( $cached ),
 			) );
+			self::$request_cache[ $cache_key ] = $cached;
 			return $cached;
 		}
 
@@ -569,6 +608,7 @@ class WHMCS_Price_API {
 		) );
 
 		set_transient( $cache_key, $data, self::get_cache_expiry() );
+		self::$request_cache[ $cache_key ] = $data;
 		delete_transient( $lock_key ); // Release lock after successful cache write.
 		whmcs_price_clear_outage();
 
@@ -678,7 +718,15 @@ class WHMCS_Price_API {
 
 		// Cache the full pricing feed per PID — one HTTP request serves all billing cycles.
 		$cache_key = 'whmcs_pricefeed_' . md5( (string) $pid );
-		$cached    = get_transient( $cache_key );
+
+		// Unique key for the final setup-fee result (pid + billing cycle combination).
+		$result_key = 'whmcs_setupfee_' . md5( $pid . '_' . $billing_cycle );
+		if ( isset( self::$request_cache[ $result_key ] ) ) {
+			self::debug_log( 'Setup fee served from request cache', array( 'result_key' => $result_key ) );
+			return self::$request_cache[ $result_key ];
+		}
+
+		$cached = get_transient( $cache_key );
 
 		if ( false === $cached ) {
 			$lock_key = 'lock_' . $cache_key;
@@ -742,7 +790,9 @@ class WHMCS_Price_API {
 			return '';
 		}
 
-		return self::extract_setup_fee_from_html( $cached, $billing_cycle );
+		$result = self::extract_setup_fee_from_html( $cached, $billing_cycle );
+		self::$request_cache[ $result_key ] = $result;
+		return $result;
 	}
 
 	/**
