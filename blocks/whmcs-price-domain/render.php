@@ -28,7 +28,7 @@ $whmcs_reg_period = str_replace( 'y', '', $whmcs_reg_period_raw );
 $whmcs_wrapper_class = 'whmcs-domain-display whmcs-domain-display--' . esc_attr( $whmcs_display_style );
 
 ?>
-<div <?php echo wp_kses_post( get_block_wrapper_attributes( array( 'class' => $whmcs_wrapper_class ) ) ); ?>>
+<div <?php echo get_block_wrapper_attributes( array( 'class' => $whmcs_wrapper_class ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped; ?>>
 
 	<?php if ( empty( $whmcs_tld ) ) : ?>
 		<?php

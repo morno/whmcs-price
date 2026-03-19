@@ -55,7 +55,7 @@ class WHMCSPrice {
 	private function get_active_tab(): string {
 		$allowed = array( 'connection', 'performance', 'notifications', 'advanced' );
 		if ( isset( $_GET['tab'] ) && in_array( $_GET['tab'], $allowed, true ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			return sanitize_key( $_GET['tab'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return sanitize_key( wp_unslash( $_GET['tab'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		}
 		$saved = get_user_meta( get_current_user_id(), 'whmcs_price_active_tab', true );
 		return in_array( $saved, $allowed, true ) ? $saved : 'connection';
@@ -142,6 +142,7 @@ class WHMCSPrice {
 		$whmcs_url  = $this->options['whmcs_url'] ?? '';
 		$bypass_cdn = isset( $this->options['bypass_cdn_cache'] ) ? (bool) $this->options['bypass_cdn_cache'] : false;
 		?>
+		<input type="hidden" name="whmcs_price_option[_tab]" value="connection" />
 		<table class="form-table" role="presentation">
 			<tr>
 				<th scope="row"><label for="whmcs_url"><?php esc_html_e( 'WHMCS URL', 'whmcs-price' ); ?></label></th>
@@ -189,6 +190,7 @@ class WHMCSPrice {
 			86400 => __( '24 hours', 'whmcs-price' ),
 		);
 		?>
+		<input type="hidden" name="whmcs_price_option[_tab]" value="performance" />
 		<table class="form-table" role="presentation">
 			<tr>
 				<th scope="row"><label for="cache_ttl"><?php esc_html_e( 'Cache Duration', 'whmcs-price' ); ?></label></th>
@@ -225,6 +227,7 @@ class WHMCSPrice {
 				<?php esc_html_e( 'WHMCS pricing data could not be fetched. Visitors are seeing the unavailability message. An e-mail notification has already been sent.', 'whmcs-price' ); ?>
 			</p></div>
 		<?php endif; ?>
+		<input type="hidden" name="whmcs_price_option[_tab]" value="notifications" />
 		<table class="form-table" role="presentation">
 			<tr>
 				<th scope="row"><label for="outage_notify"><?php esc_html_e( 'Outage Alerts', 'whmcs-price' ); ?></label></th>
@@ -253,6 +256,7 @@ class WHMCSPrice {
 		$plugin_version = defined( 'WHMCS_PRICE_VERSION' ) ? WHMCS_PRICE_VERSION : '';
 		$default_ua     = "WordPress ({$site_url}) whmcs-price/{$plugin_version}";
 		?>
+		<input type="hidden" name="whmcs_price_option[_tab]" value="advanced" />
 		<table class="form-table" role="presentation">
 			<tr>
 				<th scope="row"><label for="custom_user_agent"><?php esc_html_e( 'Custom User-Agent', 'whmcs-price' ); ?></label></th>
@@ -341,35 +345,60 @@ class WHMCSPrice {
 	}
 
 	public function sanitize( $input ): array {
-		$new_input = array();
+		// Start with the existing saved values so that fields on other tabs
+		// are not lost when saving a single tab's form. Each tab only submits
+		// its own fields, so missing keys must fall back to what was already stored.
+		$existing  = get_option( 'whmcs_price_option', array() );
+		$new_input = is_array( $existing ) ? $existing : array();
 
-		if ( ! empty( $input['whmcs_url'] ) ) {
-			$url = esc_url_raw( trim( $input['whmcs_url'] ) );
-			if ( ! str_starts_with( strtolower( $url ), 'https://' ) ) {
-				add_settings_error( 'whmcs_price_option', 'http_url_blocked', __( 'WHMCS URL must use HTTPS. HTTP URLs are blocked for security reasons.', 'whmcs-price' ) );
+		// Use the hidden _tab field to determine which tab was saved.
+		// Only fields belonging to that tab are updated — all other fields
+		// keep their existing values loaded from the database above.
+		$active_tab = isset( $input['_tab'] ) ? sanitize_key( $input['_tab'] ) : '';
+
+		if ( 'connection' === $active_tab ) {
+			if ( ! empty( $input['whmcs_url'] ) ) {
+				$url = esc_url_raw( trim( $input['whmcs_url'] ) );
+				if ( ! str_starts_with( strtolower( $url ), 'https://' ) ) {
+					add_settings_error( 'whmcs_price_option', 'http_url_blocked', __( 'WHMCS URL must use HTTPS. HTTP URLs are blocked for security reasons.', 'whmcs-price' ) );
+				} else {
+					$new_input['whmcs_url'] = $url;
+				}
 			} else {
-				$new_input['whmcs_url'] = $url;
+				unset( $new_input['whmcs_url'] );
+			}
+			$new_input['bypass_cdn_cache'] = isset( $input['bypass_cdn_cache'] ) && '1' === (string) $input['bypass_cdn_cache'] ? '1' : '0';
+		}
+
+		if ( 'performance' === $active_tab ) {
+			$allowed_ttls           = array( 3600, 7200, 10800, 21600, 43200, 86400 );
+			$new_input['cache_ttl'] = ( ! empty( $input['cache_ttl'] ) && in_array( (int) $input['cache_ttl'], $allowed_ttls, true ) )
+				? (int) $input['cache_ttl'] : 3600;
+		}
+
+		if ( 'advanced' === $active_tab ) {
+			if ( ! empty( $input['custom_user_agent'] ) ) {
+				$ua = sanitize_text_field( trim( $input['custom_user_agent'] ) );
+				$ua = preg_replace( '/[^\x20-\x7E]/', '', $ua );
+				if ( strlen( $ua ) > 255 ) { $ua = substr( $ua, 0, 255 ); }
+				if ( ! empty( $ua ) ) {
+					$new_input['custom_user_agent'] = $ua;
+				} else {
+					unset( $new_input['custom_user_agent'] );
+				}
+			} else {
+				unset( $new_input['custom_user_agent'] );
 			}
 		}
 
-		$allowed_ttls       = array( 3600, 7200, 10800, 21600, 43200, 86400 );
-		$new_input['cache_ttl'] = ( ! empty( $input['cache_ttl'] ) && in_array( (int) $input['cache_ttl'], $allowed_ttls, true ) )
-			? (int) $input['cache_ttl'] : 3600;
-
-		if ( ! empty( $input['custom_user_agent'] ) ) {
-			$ua = sanitize_text_field( trim( $input['custom_user_agent'] ) );
-			$ua = preg_replace( '/[^\x20-\x7E]/', '', $ua );
-			if ( strlen( $ua ) > 255 ) { $ua = substr( $ua, 0, 255 ); }
-			if ( ! empty( $ua ) ) { $new_input['custom_user_agent'] = $ua; }
-		}
-
-		$new_input['bypass_cdn_cache'] = isset( $input['bypass_cdn_cache'] ) && '1' === (string) $input['bypass_cdn_cache'] ? '1' : '0';
-
-		$new_input['outage_notify'] = isset( $input['outage_notify'] ) && '1' === (string) $input['outage_notify'] ? '1' : '0';
-
-		if ( ! empty( $input['outage_email'] ) ) {
-			$email = sanitize_email( $input['outage_email'] );
-			if ( is_email( $email ) ) { $new_input['outage_email'] = $email; }
+		if ( 'notifications' === $active_tab ) {
+			$new_input['outage_notify'] = isset( $input['outage_notify'] ) && '1' === (string) $input['outage_notify'] ? '1' : '0';
+			if ( ! empty( $input['outage_email'] ) ) {
+				$email = sanitize_email( $input['outage_email'] );
+				if ( is_email( $email ) ) { $new_input['outage_email'] = $email; }
+			} else {
+				unset( $new_input['outage_email'] );
+			}
 		}
 
 		return $new_input;

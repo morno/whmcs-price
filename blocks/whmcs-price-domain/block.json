@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "whmcs-price/domain",
-	"version": "2.7.0",
+	"version": "2.7.1",
 	"title": "WHMCS Domain Price",
 	"category": "widgets",
 	"icon": "admin-site",

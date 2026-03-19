@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.7.1] - 2026-03-18
+
+### Fixed
+
+- **`wp_unslash()` added before `sanitize_key()`**: The active tab value read from
+  `$_GET['tab']` in `settings.php` now correctly passes through `wp_unslash()` before
+  sanitization, following WordPress Coding Standards for all superglobal input.
+
+- **`get_block_wrapper_attributes()` no longer double-escaped**: Both `render.php` files
+  previously wrapped the function's output in `wp_kses_post()`. The function already
+  runs `esc_attr()` internally on all attribute values, making the outer escaping both
+  redundant and incorrect — `wp_kses_post()` is an HTML content filter, not an attribute
+  escaper, and could strip valid attributes such as `data-*`. Output is now echoed
+  directly as recommended in the WordPress developer reference.
+
+- **Settings page no longer loses values when switching tabs**: `sanitize()` previously
+  started with an empty array and wrote default values for all fields on every save.
+  Since each tab only submits its own fields, saving one tab silently reset all other
+  tabs to their defaults (e.g. saving Connection cleared Cache Duration back to 1 hour).
+  The function now loads the existing saved values as a base and uses a hidden `_tab`
+  field in each tab's form to update only the fields that belong to the active tab.
+
+
 ## [2.7.0] - 2026-03-17
 
 ### Added
