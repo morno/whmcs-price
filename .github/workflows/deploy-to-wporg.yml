@@ -36,26 +36,24 @@ jobs:
         run: |
           TAG_VERSION="${{ steps.version.outputs.version }}"
           PHP_VERSION=$(grep -oE "Version:[[:space:]]+[0-9]+\.[0-9]+\.[0-9]+([.-][a-zA-Z0-9.]+)?" whmcs_price.php | grep -oE "[0-9]+\.[0-9]+\.[0-9]+([.-][a-zA-Z0-9.]+)?$" | head -1)
-          README_VERSION=$(grep -oE "Stable tag:[[:space:]]+[0-9]+\.[0-9]+\.[0-9]+([.-][a-zA-Z0-9.]+)?" readme.txt | grep -oE "[0-9]+\.[0-9]+\.[0-9]+([.-][a-zA-Z0-9.]+)?$" | head -1)
 
-          echo "Tag version    : $TAG_VERSION"
-          echo "PHP version    : $PHP_VERSION"
-          echo "readme version : $README_VERSION"
+          echo "Tag version : $TAG_VERSION"
+          echo "PHP version : $PHP_VERSION"
 
           if [ -z "$PHP_VERSION" ]; then
             echo "ERROR: Could not parse version from whmcs_price.php"
             exit 1
           fi
 
-          if [ -z "$README_VERSION" ]; then
-            echo "ERROR: Could not parse Stable tag from readme.txt"
+          if [ "$TAG_VERSION" != "$PHP_VERSION" ]; then
+            echo "VERSION MISMATCH — tag does not match whmcs_price.php. Aborting."
             exit 1
           fi
 
-          if [ "$TAG_VERSION" != "$PHP_VERSION" ] || [ "$TAG_VERSION" != "$README_VERSION" ]; then
-            echo "VERSION MISMATCH — aborting deploy."
-            exit 1
-          fi
+          # Patch Stable tag in readme.txt to match the release tag
+          # (sync-changelog may not have committed before the tag was created)
+          sed -i "s/Stable tag:.*/Stable tag: $TAG_VERSION/" readme.txt
+          echo "Stable tag patched to $TAG_VERSION in readme.txt"
 
           echo "Version consistency OK."
 
