@@ -66,11 +66,6 @@ jobs:
 
           echo "Version consistency OK."
 
-      - name: Build JS assets
-        run: |
-          npm install
-          npm run build
-
       - name: Deploy to WordPress.org SVN
         uses: 10up/action-wordpress-plugin-deploy@stable
         env:
