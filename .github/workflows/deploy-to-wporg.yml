@@ -5,6 +5,12 @@ name: Deploy to WordPress.org
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (e.g. 2.7.2) — must match an existing git tag v{version}'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -17,8 +23,8 @@ jobs:
     name: SVN deploy to WordPress.org
     runs-on: ubuntu-latest
 
-    # Skip pre-releases (tags like v2.7.2-beta1, v3.0.0-rc1)
-    if: "!github.event.release.prerelease"
+    # Skip pre-releases on release trigger; always run on workflow_dispatch
+    if: "github.event_name == 'workflow_dispatch' || !github.event.release.prerelease"
 
     steps:
       - name: Checkout tag
@@ -27,8 +33,11 @@ jobs:
       - name: Extract version from tag
         id: version
         run: |
-          # Strip the leading "v" from the tag name (v2.7.2 → 2.7.2)
-          VERSION="${GITHUB_REF_NAME#v}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Deploying version: $VERSION"
 
@@ -59,7 +68,7 @@ jobs:
 
       - name: Build JS assets
         run: |
-          npm ci
+          npm install
           npm run build
 
       - name: Deploy to WordPress.org SVN
