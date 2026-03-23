@@ -33,6 +33,34 @@ jobs:
           with open('readme.txt', 'r', encoding='utf-8') as f:
               readme = f.read()
 
+          # Extract latest version from CHANGELOG.md
+          m = re.search(r'^##\s+\[([\d\.]+(?:-[\w\.]+)*)\]', changelog, re.MULTILINE)
+          if not m:
+              print('Could not determine latest version from CHANGELOG.md')
+              sys.exit(1)
+          latest_version = m.group(1)
+          print(f'Latest version: {latest_version}')
+
+          # Update Stable tag in readme.txt header
+          readme = re.sub(
+              r'(Stable tag:\s*)[\d\.]+(?:-[\w\.]+)*',
+              rf'\g<1>{latest_version}',
+              readme
+          )
+
+          # Update version badge in README.md
+          with open('README.md', 'r', encoding='utf-8') as f:
+              readme_md = f.read()
+          readme_md_updated = re.sub(
+              r'(version-)[\d\.]+(?:-[\w\.]+)*(-brightgreen)',
+              rf'\g<1>{latest_version}\2',
+              readme_md
+          )
+          if readme_md_updated != readme_md:
+              with open('README.md', 'w', encoding='utf-8') as f:
+                  f.write(readme_md_updated)
+              print(f'README.md badge updated to {latest_version}')
+
           blocks = re.findall(
               r'^(##\s+\[[\d\.]+(?:-[\w\.]+)*\].*?)(?=^##\s+\[|\Z)',
               changelog,
@@ -119,8 +147,8 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git diff --quiet readme.txt && echo "No changes to commit." && exit 0
+          git diff --quiet readme.txt README.md && echo "No changes to commit." && exit 0
 
-          git add readme.txt
-          git commit -m "chore: sync changelog to readme.txt [skip ci]"
+          git add readme.txt README.md
+          git commit -m "chore: sync changelog + stable tag to readme.txt [skip ci]"
           git push
