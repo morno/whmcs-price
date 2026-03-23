@@ -69,6 +69,23 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 
 == Changelog ==
 
+= 2.7.2 =
+* Fix: **WordPress Coding Standards**: `class-whmcs-api.php` previously mixed 4-space
+  indentation (top of file) with tabs (rest of file). All indentation is now tabs
+  throughout, consistent with WordPress Coding Standards. Non-Yoda comparisons
+  (`$cached !== false`) corrected to Yoda form (`false !== $cached`). Missing spaces
+  in function calls (`get_option('...')` → `get_option( '...' )`) corrected.
+  `shortcode.php` missing spaces in `if` and `foreach` statements corrected.
+* Fix: **`wait_for_cache()` reduced from 2s to 450ms**: The maximum wait time when a
+  concurrent process holds a fetch lock was reduced from 2 seconds (8 × 250ms) to
+  450ms (3 × 150ms). This limits the impact on PHP-FPM worker availability on
+  shared hosting while still resolving the common case where a `ServerSideRender`
+  REST request arrives shortly after the main page request has begun fetching.
+* Fix: **`uninstall.php` cleaned up**: Removed obsolete user meta keys that belonged to
+  the postbox-based settings layout removed in v2.7.0 (`whmcs_price_settings_mode`,
+  `closedpostboxes_*`, `metaboxhidden_*`, `meta-box-order_*`, `screen_layout_*`).
+  Only `whmcs_price_active_tab` is now removed on uninstall.
+
 = 2.7.1 =
 * Fix: **`wp_unslash()` added before `sanitize_key()`**: The active tab value read from
   `$_GET['tab']` in `settings.php` now correctly passes through `wp_unslash()` before
@@ -85,6 +102,13 @@ This is the shortcode to extract domain registration, renewal, or transfer price
   tabs to their defaults (e.g. saving Connection cleared Cache Duration back to 1 hour).
   The function now loads the existing saved values as a base and uses a hidden `_tab`
   field in each tab's form to update only the fields that belong to the active tab.
+* Fix: **Request-level in-memory cache added to `WHMCS_Price_API`**: A static `$request_cache`
+  property now stores results for the duration of the current PHP process. When multiple
+  shortcodes, blocks, or Elementor widgets on the same page request the same data, only
+  the first call hits the WordPress transient (database) or WHMCS — all subsequent calls
+  within the same request are served from memory. This eliminates duplicate WHMCS feed
+  requests that occurred when `ServerSideRender` REST calls ran shortly after the main
+  page request before the transient cache was warmed.
 
 = 2.7.0 =
 * Added: **Third-party page cache flushing**: `whmcs_price_flush_page_cache()` in
