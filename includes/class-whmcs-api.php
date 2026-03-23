@@ -15,219 +15,270 @@ defined( 'ABSPATH' ) || exit;
 
 class WHMCS_Price_API {
 
-    /**
-     * Default cache expiry time in seconds (1 hour).
-     *
-     * @since 2.2.0
-     * @var int
-     */
-    private static $cache_expiry = 3600; // Fallback if TTL value in WHMCS Price Settings is missed
+	/**
+	 * Default cache expiry time in seconds (1 hour).
+	 *
+	 * @since 2.2.0
+	 * @var int
+	 */
+	private static $cache_expiry = 3600; // Fallback if TTL value in WHMCS Price Settings is missed
 
-    /**
-     * In-memory request cache.
-     *
-     * Stores results for the duration of the current PHP process so that the
-     * same data is never fetched twice in a single request — even if multiple
-     * shortcodes, blocks, or Elementor widgets on the same page ask for it.
-     * This is a second caching layer above WordPress transients; it survives
-     * only for the lifetime of the request and uses no persistent storage.
-     *
-     * @since  2.7.1
-     * @var    array<string, string>
-     */
-    private static array $request_cache = array();
+	/**
+	 * In-memory request cache.
+	 *
+	 * Stores results for the duration of the current PHP process so that the
+	 * same data is never fetched twice in a single request — even if multiple
+	 * shortcodes, blocks, or Elementor widgets on the same page ask for it.
+	 * This is a second caching layer above WordPress transients; it survives
+	 * only for the lifetime of the request and uses no persistent storage.
+	 *
+	 * @since  2.7.1
+	 * @var    array<string, string>
+	 */
+	private static array $request_cache = array();
 
-    /**
-     * Retrieve the WHMCS base URL from plugin settings.
-     *
-     * @since 2.2.0
-     * @access private
-     * @return string The saved WHMCS URL or an empty string if not configured.
-     */
-    private static function get_url() {
-        $options = get_option('whmcs_price_option');
-        if ( empty( $options['whmcs_url'] ) ) {
-            return '';
-        }
+	/**
+	 * Retrieve the WHMCS base URL from plugin settings.
+	 *
+	 * @since 2.2.0
+	 * @access private
+	 * @return string The saved WHMCS URL or an empty string if not configured.
+	 */
+	private static function get_url() {
+		$options = get_option( 'whmcs_price_option' );
+		if ( empty( $options['whmcs_url'] ) ) {
+			return '';
+		}
 
-        $url    = esc_url_raw( $options['whmcs_url'] );
-        $parsed = wp_parse_url( $url );
-        $host   = strtolower( $parsed['host'] ?? '' );
+		$url    = esc_url_raw( $options['whmcs_url'] );
+		$parsed = wp_parse_url( $url );
+		$host   = strtolower( $parsed['host'] ?? '' );
 
-        // Block URLs with embedded credentials (https://user:pass@host).
-        // These serve no legitimate purpose for a WHMCS feed URL and
-        // could be used to obscure the real destination.
-        if ( isset( $parsed['user'] ) || isset( $parsed['pass'] ) ) {
-            return '';
-        }
+		// Block URLs with embedded credentials (https://user:pass@host).
+		// These serve no legitimate purpose for a WHMCS feed URL and
+		// could be used to obscure the real destination.
+		if ( isset( $parsed['user'] ) || isset( $parsed['pass'] ) ) {
+			return '';
+		}
 
-        // Block non-standard ports. WHMCS feeds should always be on 443.
-        // Allowing arbitrary ports widens the SSRF attack surface.
-        if ( isset( $parsed['port'] ) && 443 !== (int) $parsed['port'] ) {
-            return '';
-        }
+		// Block non-standard ports. WHMCS feeds should always be on 443.
+		// Allowing arbitrary ports widens the SSRF attack surface.
+		if ( isset( $parsed['port'] ) && 443 !== (int) $parsed['port'] ) {
+			return '';
+		}
 
-        // Block private/internal IP ranges and localhost (SSRF protection)
-        $blocked_hosts = array( 'localhost', 'localhost.localdomain' );
-        if ( in_array( $host, $blocked_hosts, true ) ) {
-            return '';
-        }
+		// Block private/internal IP ranges and localhost (SSRF protection)
+		$blocked_hosts = array( 'localhost', 'localhost.localdomain' );
+		if ( in_array( $host, $blocked_hosts, true ) ) {
+			return '';
+		}
 
-        // Block private IPv4 ranges and loopback
-        if ( filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
-            if ( filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) === false ) {
-                return '';
-            }
-        }
+		// Block private IPv4 ranges and loopback
+		if ( filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+			if ( filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) === false ) {
+				return '';
+			}
+		}
 
-        // Block IPv6 loopback
-        if ( filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
-            if ( filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) === false ) {
-                return '';
-            }
-        }
+		// Block IPv6 loopback
+		if ( filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+			if ( filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) === false ) {
+				return '';
+			}
+		}
 
-        // Block cloud metadata endpoints and known internal hostnames (SSRF protection).
-        // These can bypass IP-based checks via DNS or hostname patterns.
-        $blocked_patterns = array(
-            '169.254.169.254',       // AWS / Azure / GCP instance metadata.
-            '100.100.100.200',       // Alibaba Cloud metadata.
-            'metadata.google.internal',
-            'metadata.google',
-            'instance-data',         // Some cloud providers use this hostname.
-        );
-        foreach ( $blocked_patterns as $pattern ) {
-            if ( str_contains( $host, $pattern ) ) {
-                return '';
-            }
-        }
+		// Block cloud metadata endpoints and known internal hostnames (SSRF protection).
+		// These can bypass IP-based checks via DNS or hostname patterns.
+		$blocked_patterns = array(
+			'169.254.169.254',       // AWS / Azure / GCP instance metadata.
+			'100.100.100.200',       // Alibaba Cloud metadata.
+			'metadata.google.internal',
+			'metadata.google',
+			'instance-data',         // Some cloud providers use this hostname.
+		);
+		foreach ( $blocked_patterns as $pattern ) {
+			if ( str_contains( $host, $pattern ) ) {
+				return '';
+			}
+		}
 
-        // Enforce HTTPS to prevent credentials or data from leaking over plain HTTP.
-        $scheme = strtolower( $parsed['scheme'] ?? '' );
-        if ( 'https' !== $scheme ) {
-            return '';
-        }
+		// Enforce HTTPS to prevent credentials or data from leaking over plain HTTP.
+		$scheme = strtolower( $parsed['scheme'] ?? '' );
+		if ( 'https' !== $scheme ) {
+			return '';
+		}
 
-        // SSRF: resolve hostname and reject if any DNS record points to a private/reserved IP.
-        // Hostname-only checks can be bypassed via DNS rebinding or CNAME chains.
-        // Only performed for non-IP hostnames (IPs were already validated above).
-        // Skipped silently if dns_get_record() is unavailable in the current PHP environment.
-        if ( ! filter_var( $host, FILTER_VALIDATE_IP ) && function_exists( 'dns_get_record' ) ) {
-            // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-            $resolved = @dns_get_record( $host, DNS_A | DNS_AAAA );
-            if ( is_array( $resolved ) && ! empty( $resolved ) ) {
-                foreach ( $resolved as $record ) {
-                    $ip = $record['ip'] ?? $record['ipv6'] ?? '';
-                    if ( $ip && filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) === false ) {
-                        return '';
-                    }
-                }
-            }
-        }
+		// SSRF: resolve hostname and reject if any DNS record points to a private/reserved IP.
+		// Hostname-only checks can be bypassed via DNS rebinding or CNAME chains.
+		// Only performed for non-IP hostnames (IPs were already validated above).
+		// Skipped silently if dns_get_record() is unavailable in the current PHP environment.
+		if ( ! filter_var( $host, FILTER_VALIDATE_IP ) && function_exists( 'dns_get_record' ) ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			$resolved = @dns_get_record( $host, DNS_A | DNS_AAAA );
+			if ( is_array( $resolved ) && ! empty( $resolved ) ) {
+				foreach ( $resolved as $record ) {
+					$ip = $record['ip'] ?? $record['ipv6'] ?? '';
+					if ( $ip && filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) === false ) {
+						return '';
+					}
+				}
+			}
+		}
 
-        return $url;
-    }
+		return $url;
+	}
 
-    /**
-    * Retrieve the configured cache TTL from plugin settings.
-    *
-    * Falls back to the default value of 3600 seconds (1 hour)
-    * if no TTL has been saved in the options.
-    *
-    * @since  2.3.1
-    * @access private
-    * @return int Cache expiry time in seconds.
-    */
-    private static function get_cache_expiry(): int {
-        $options = get_option( 'whmcs_price_option' );
-        return isset( $options['cache_ttl'] ) ? (int) $options['cache_ttl'] : self::$cache_expiry;
-    }
+	/**
+	* Retrieve the configured cache TTL from plugin settings.
+	*
+	* Falls back to the default value of 3600 seconds (1 hour)
+	* if no TTL has been saved in the options.
+	*
+	* @since  2.3.1
+	* @access private
+	* @return int Cache expiry time in seconds.
+	*/
+	private static function get_cache_expiry(): int {
+		$options = get_option( 'whmcs_price_option' );
+		return isset( $options['cache_ttl'] ) ? (int) $options['cache_ttl'] : self::$cache_expiry;
+	}
 
-    /**
-     * Log debug messages when WP_DEBUG is enabled.
-     *
-     * @since 2.3.0
-     * @access private
-     * @param string $message The message to log.
-     * @param array  $context Additional context data.
-     * @return void
-     */
-    private static function debug_log( $message, $context = array() ) {
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
-            $log_message = '[WHMCS Price] ' . $message;
-            if ( ! empty( $context ) ) {
-                $log_message .= ' | Context: ' . wp_json_encode( $context );
-            }
-        error_log( $log_message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-        }
-    }
+	/**
+	 * Log debug messages when WP_DEBUG is enabled.
+	 *
+	 * @since 2.3.0
+	 * @access private
+	 * @param string $message The message to log.
+	 * @param array  $context Additional context data.
+	 * @return void
+	 */
+	private static function debug_log( $message, $context = array() ) {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+			$log_message = '[WHMCS Price] ' . $message;
+			if ( ! empty( $context ) ) {
+				$log_message .= ' | Context: ' . wp_json_encode( $context );
+			}
+		error_log( $log_message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		}
+	}
 
-    /**
-    * Acquire a short-lived lock to prevent cache stampede.
-    *
-    * Prevents multiple simultaneous requests from hammering WHMCS
-    * when the cache is cold or has just been cleared.
-    *
-    * @since  2.3.1
-    * @access private
-    * @param  string $lock_key Unique key for this lock.
-    * @return bool True if lock was acquired, false if already locked.
-    */
-    private static function acquire_lock( string $lock_key ): bool {
-        $lock = get_transient( $lock_key );
-        if ( false !== $lock ) {
-            return false; // Already locked
-        }
-        set_transient( $lock_key, 1, 10 ); // Lock expires after 10 seconds
-        return true;
-    }
+	/**
+	* Acquire a short-lived lock to prevent cache stampede.
+	*
+	* Prevents multiple simultaneous requests from hammering WHMCS
+	* when the cache is cold or has just been cleared.
+	*
+	* @since  2.3.1
+	* @access private
+	* @param  string $lock_key Unique key for this lock.
+	* @return bool True if lock was acquired, false if already locked.
+	*/
+	private static function acquire_lock( string $lock_key ): bool {
+		$lock = get_transient( $lock_key );
+		if ( false !== $lock ) {
+			return false; // Already locked
+		}
+		set_transient( $lock_key, 1, 10 ); // Lock expires after 10 seconds
+		return true;
+	}
 
-    /**
-     * Build HTTP request arguments for all WHMCS API calls.
-     *
-     * Default User-Agent: WordPress (https://yoursite.com) whmcs-price/2.5.0
-     * Can be overridden via the Custom User-Agent setting in the admin.
-     *
-     * @since  2.5.0
-     * @access private
-     * @return array WordPress HTTP API argument array.
-     */
-    private static function get_request_args(): array {
-        $options    = get_option( 'whmcs_price_option', array() );
-        $custom_ua  = ! empty( $options['custom_user_agent'] ) ? trim( $options['custom_user_agent'] ) : '';
+	/**
+	 * Wait for a lock to be released and return the cached value once available.
+	 *
+	 * When a concurrent PHP process (e.g. a ServerSideRender REST request) finds
+	 * that another process is already fetching the same data from WHMCS, instead
+	 * of immediately returning 'NA' it polls the transient cache at short intervals.
+	 * Once the first process writes the result, this process reads it from cache
+	 * and returns it without making a second WHMCS HTTP request.
+	 *
+	 * @since  2.7.1
+	 * @access private
+	 * @param  string $cache_key Transient key to poll.
+	 * @param  string $lock_key  Lock transient key to monitor.
+	 * @return string            Cached value once available, or 'NA' on timeout.
+	 */
+	private static function wait_for_cache( string $cache_key, string $lock_key ): string {
+		$attempts  = 0;
+		$max_attempts = 3;   // 3 × 150ms = 450ms max wait
+		$sleep_us  = 150000; // 150ms in microseconds
 
-        if ( ! empty( $custom_ua ) ) {
-            $user_agent = $custom_ua;
-        } else {
-            $site_url       = get_bloginfo( 'url' );
-            $plugin_version = defined( 'WHMCS_PRICE_VERSION' ) ? WHMCS_PRICE_VERSION : 'unknown';
-            $user_agent     = "WordPress ({$site_url}) whmcs-price/{$plugin_version}";
-        }
+		while ( $attempts < $max_attempts ) {
+			usleep( $sleep_us );
+			$attempts++;
 
-        $bypass_cdn = isset( $options['bypass_cdn_cache'] ) ? (bool) $options['bypass_cdn_cache'] : false;
+			// Check if the lock was released and the cache was populated.
+			$cached = get_transient( $cache_key );
+			if ( false !== $cached ) {
+				self::debug_log( 'Data available after waiting for lock', array(
+					'cache_key' => $cache_key,
+					'attempts'  => $attempts,
+				) );
+				return $cached;
+			}
 
-        $args = array(
-            'user-agent'          => $user_agent,
-            'timeout'             => 15,
-            'redirection'         => 0,
-            'reject_unsafe_urls'  => true,
-            'sslverify'           => true,
-            'limit_response_size' => 1024 * 1024, // 1 MB max
-        );
+			// If the lock is also gone but cache is still empty, the other
+			// process failed — stop waiting to avoid unnecessary delay.
+			$lock = get_transient( $lock_key );
+			if ( false === $lock ) {
+				self::debug_log( 'Lock released without cache entry — other process failed', array(
+					'cache_key' => $cache_key,
+				) );
+				return 'NA';
+			}
+		}
 
-        // When enabled, tell Cloudflare and other CDNs/reverse proxies in front of
-        // the WHMCS server to bypass their cache and fetch fresh data from origin.
-        // Without this, a CDN could serve stale prices even after updating in WHMCS.
-        // Enabled by default. Can be turned off in Settings → Connection.
-        if ( $bypass_cdn ) {
-            $args['headers'] = array(
-                'Cache-Control' => 'no-cache',
-                'Pragma'        => 'no-cache',
-            );
-        }
+		self::debug_log( 'Timed out waiting for lock to release', array(
+			'cache_key' => $cache_key,
+		) );
+		return 'NA';
+	}
 
-        return $args;
-    }
+	/**
+	 * Build HTTP request arguments for all WHMCS API calls.
+	 *
+	 * Default User-Agent: WordPress (https://yoursite.com) whmcs-price/2.5.0
+	 * Can be overridden via the Custom User-Agent setting in the admin.
+	 *
+	 * @since  2.5.0
+	 * @access private
+	 * @return array WordPress HTTP API argument array.
+	 */
+	private static function get_request_args(): array {
+		$options    = get_option( 'whmcs_price_option', array() );
+		$custom_ua  = ! empty( $options['custom_user_agent'] ) ? trim( $options['custom_user_agent'] ) : '';
+
+		if ( ! empty( $custom_ua ) ) {
+			$user_agent = $custom_ua;
+		} else {
+			$site_url       = get_bloginfo( 'url' );
+			$plugin_version = defined( 'WHMCS_PRICE_VERSION' ) ? WHMCS_PRICE_VERSION : 'unknown';
+			$user_agent     = "WordPress ({$site_url}) whmcs-price/{$plugin_version}";
+		}
+
+		$bypass_cdn = isset( $options['bypass_cdn_cache'] ) ? (bool) $options['bypass_cdn_cache'] : false;
+
+		$args = array(
+			'user-agent'          => $user_agent,
+			'timeout'             => 15,
+			'redirection'         => 0,
+			'reject_unsafe_urls'  => true,
+			'sslverify'           => true,
+			'limit_response_size' => 1024 * 1024, // 1 MB max
+		);
+
+		// When enabled, tell Cloudflare and other CDNs/reverse proxies in front of
+		// the WHMCS server to bypass their cache and fetch fresh data from origin.
+		// Without this, a CDN could serve stale prices even after updating in WHMCS.
+		// Enabled by default. Can be turned off in Settings → Connection.
+		if ( $bypass_cdn ) {
+			$args['headers'] = array(
+				'Cache-Control' => 'no-cache',
+				'Pragma'        => 'no-cache',
+			);
+		}
+
+		return $args;
+	}
 
 	/**
 	 * Clean WHMCS JS-feed responses by stripping Javascript wrappers.
@@ -241,20 +292,20 @@ class WHMCS_Price_API {
 	 * @return string The cleaned text string.
 	 */
 	private static function unwrap_response_body($body) {
-        if ( ! is_string( $body ) || '' === $body ) {
-            return 'NA';
-        }
+		if ( ! is_string( $body ) || '' === $body ) {
+			return 'NA';
+		}
 
-        $body = trim( $body );
+		$body = trim( $body );
 
-        // Handle WHMCS JS-wrapped responses: document.write('...content...'); 
-        // Uses a non-greedy match and the /s flag to handle multi-line content.
-        if ( preg_match( "/^document\.write\('(.*)'\);$/s", $body, $matches ) ) {
-            $body = $matches[1];
-        }
+		// Handle WHMCS JS-wrapped responses: document.write('...content...'); 
+		// Uses a non-greedy match and the /s flag to handle multi-line content.
+		if ( preg_match( "/^document\.write\('(.*)'\);$/s", $body, $matches ) ) {
+			$body = $matches[1];
+		}
 
-        return trim( wp_kses_no_null( $body ) );
-    }
+		return trim( wp_kses_no_null( $body ) );
+	}
 
 	/**
 	 * Fetch Product Data (name, description, or price) from WHMCS.
@@ -313,7 +364,7 @@ class WHMCS_Price_API {
 
 		$cached = get_transient( $cache_key );
 
-		if ( $cached !== false ) {
+		if ( false !== $cached ) {
 			self::debug_log( 'Product data served from cache', array(
 				'cache_key' => $cache_key,
 				'length'    => strlen( $cached ),
@@ -325,10 +376,10 @@ class WHMCS_Price_API {
 		// Acquire a lock to prevent multiple simultaneous requests to WHMCS.
 		$lock_key = 'lock_' . $cache_key;
 		if ( ! self::acquire_lock( $lock_key ) ) {
-			self::debug_log( 'Product data request skipped: lock already acquired', array(
+			self::debug_log( 'Product data request waiting: lock already acquired', array(
 				'lock_key' => $lock_key,
 			) );
-			return 'NA';
+			return self::wait_for_cache( $cache_key, $lock_key );
 		}
 
 		// Use add_query_arg() to properly URL-encode all parameters and prevent query injection.
@@ -434,8 +485,8 @@ class WHMCS_Price_API {
 		$tld = substr( $tld, 0, 24 );
 
 		if ( empty( $tld ) ) {
-    		self::debug_log( 'Domain price request blocked: invalid TLD after sanitization' );
-    		return 'NA';
+			self::debug_log( 'Domain price request blocked: invalid TLD after sanitization' );
+			return 'NA';
 		}
 
 		$cache_key = 'whmcs_domain_' . md5( $tld . '_' . $type . '_' . $reg_period );
@@ -447,7 +498,7 @@ class WHMCS_Price_API {
 
 		$cached = get_transient( $cache_key );
 
-		if ( $cached !== false ) {
+		if ( false !== $cached ) {
 			self::debug_log( 'Domain price served from cache', array(
 				'cache_key' => $cache_key,
 				'length'    => strlen( $cached ),
@@ -459,10 +510,10 @@ class WHMCS_Price_API {
 		// Acquire a lock to prevent multiple simultaneous requests to WHMCS.
 		$lock_key = 'lock_' . $cache_key;
 		if ( ! self::acquire_lock( $lock_key ) ) {
-			self::debug_log( 'Domain price request skipped: lock already acquired', array(
+			self::debug_log( 'Domain price request waiting: lock already acquired', array(
 				'lock_key' => $lock_key,
 			) );
-			return 'NA';
+			return self::wait_for_cache( $cache_key, $lock_key );
 		}
 
 		// Use add_query_arg() to properly URL-encode all parameters and prevent query injection.
@@ -522,7 +573,7 @@ class WHMCS_Price_API {
 		return $data;
 	}
 
-    /**
+	/**
 	 * Fetch All Domain Prices from WHMCS (no specific TLD).
 	 *
 	 * When no TLD is specified, WHMCS returns pricing for all available
@@ -551,7 +602,7 @@ class WHMCS_Price_API {
 
 		$cached = get_transient( $cache_key );
 
-		if ( $cached !== false ) {
+		if ( false !== $cached ) {
 			self::debug_log( 'All domain prices served from cache', array(
 				'cache_key'   => $cache_key,
 				'data_length' => strlen( $cached ),
@@ -563,10 +614,10 @@ class WHMCS_Price_API {
 		// Acquire a lock to prevent multiple simultaneous requests to WHMCS.
 		$lock_key = 'lock_' . $cache_key;
 		if ( ! self::acquire_lock( $lock_key ) ) {
-			self::debug_log( 'All domain prices request skipped: lock already acquired', array(
+			self::debug_log( 'All domain prices request waiting: lock already acquired', array(
 				'lock_key' => $lock_key,
 			) );
-			return 'NA';
+			return self::wait_for_cache( $cache_key, $lock_key );
 		}
 
 		$url = "{$whmcs_url}/feeds/domainpricing.php";
@@ -731,10 +782,13 @@ class WHMCS_Price_API {
 		if ( false === $cached ) {
 			$lock_key = 'lock_' . $cache_key;
 			if ( ! self::acquire_lock( $lock_key ) ) {
-				self::debug_log( 'Product pricing feed request skipped: lock already acquired', array(
+				self::debug_log( 'Product pricing feed request waiting: lock already acquired', array(
 					'lock_key' => $lock_key,
 				) );
-				return '';
+				$waited = self::wait_for_cache( $cache_key, $lock_key );
+				return ( 'NA' !== $waited && '' !== $waited )
+					? self::extract_setup_fee_from_html( $waited, $billing_cycle )
+					: '';
 			}
 
 			$url = add_query_arg(

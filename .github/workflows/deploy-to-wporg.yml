@@ -1,0 +1,67 @@
+name: Deploy to WordPress.org
+
+# Triggers when build.ps1 creates a GitHub Release (e.g. v2.7.2)
+# Only runs on stable releases — pre-releases (alpha/beta/rc) are skipped.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: SVN deploy to WordPress.org
+    runs-on: ubuntu-latest
+
+    # Skip pre-releases (tags like v2.7.2-beta1, v3.0.0-rc1)
+    if: "!github.event.release.prerelease"
+
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          # Strip the leading "v" from the tag name (v2.7.2 → 2.7.2)
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Deploying version: $VERSION"
+
+      - name: Verify version consistency
+        run: |
+          TAG_VERSION="${{ steps.version.outputs.version }}"
+          PHP_VERSION=$(grep -oP "(?<=Version:\s{0,20})[\d\.]+(?:-[\w\.]+)*" whmcs_price.php | head -1)
+          README_VERSION=$(grep -oP "(?<=Stable tag:\s)[\d\.]+(?:-[\w\.]+)*" readme.txt | head -1)
+
+          echo "Tag version    : $TAG_VERSION"
+          echo "PHP version    : $PHP_VERSION"
+          echo "readme version : $README_VERSION"
+
+          if [ "$TAG_VERSION" != "$PHP_VERSION" ] || [ "$TAG_VERSION" != "$README_VERSION" ]; then
+            echo "VERSION MISMATCH — aborting deploy."
+            exit 1
+          fi
+
+          echo "Version consistency OK."
+
+      - name: Build JS assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy to WordPress.org SVN
+        uses: 10up/action-wordpress-plugin-deploy@stable
+        env:
+          # Add these two secrets in GitHub → Settings → Secrets → Actions:
+          # SVN_USERNAME  = your WordPress.org username (e.g. morno)
+          # SVN_PASSWORD  = your WordPress.org SVN password (from profiles.wordpress.org)
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SLUG: whmcs-price
+          VERSION: ${{ steps.version.outputs.version }}
+          # Files/folders to include in the SVN deploy.
+          # Matches what build.ps1 includes in the ZIP.
+          BUILD_DIR: .
+          ASSETS_DIR: .wordpress-org

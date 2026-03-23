@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.7.2] - 2026-03-23
+
+### Fixed
+
+- **WordPress Coding Standards**: `class-whmcs-api.php` previously mixed 4-space
+  indentation (top of file) with tabs (rest of file). All indentation is now tabs
+  throughout, consistent with WordPress Coding Standards. Non-Yoda comparisons
+  (`$cached !== false`) corrected to Yoda form (`false !== $cached`). Missing spaces
+  in function calls (`get_option('...')` → `get_option( '...' )`) corrected.
+  `shortcode.php` missing spaces in `if` and `foreach` statements corrected.
+
+- **`wait_for_cache()` reduced from 2s to 450ms**: The maximum wait time when a
+  concurrent process holds a fetch lock was reduced from 2 seconds (8 × 250ms) to
+  450ms (3 × 150ms). This limits the impact on PHP-FPM worker availability on
+  shared hosting while still resolving the common case where a `ServerSideRender`
+  REST request arrives shortly after the main page request has begun fetching.
+
+- **`uninstall.php` cleaned up**: Removed obsolete user meta keys that belonged to
+  the postbox-based settings layout removed in v2.7.0 (`whmcs_price_settings_mode`,
+  `closedpostboxes_*`, `metaboxhidden_*`, `meta-box-order_*`, `screen_layout_*`).
+  Only `whmcs_price_active_tab` is now removed on uninstall.
+
 ## [2.7.1] - 2026-03-19
 
 ### Fixed

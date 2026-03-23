@@ -58,7 +58,7 @@ function whmcs_price_shortcode_handler( $atts ) {
      * * If 'pid' and 'bc' are provided, the shortcode generates an HTML table
      * with product information fetched from WHMCS.
      */
-    if (!empty($atts['pid']) && !empty($atts['bc'])) {
+    if ( ! empty( $atts['pid'] ) && ! empty( $atts['bc'] ) ) {
         // Map short cycle codes to WHMCS internal billing cycle names
         $billing_cycles = array(
             '1m' => 'monthly', '3m' => 'quarterly', '6m' => 'semiannually',
@@ -102,16 +102,16 @@ function whmcs_price_shortcode_handler( $atts ) {
 
         // Start table output
         $output = "<table id='" . esc_attr($table_id) . "' class='whmcs-product-table'><thead><tr>";
-        foreach ($show as $header) { 
+        foreach ( $show as $header ) {
             $label = $header_labels[strtolower(trim($header))] ?? ucfirst($header);
             $output .= "<th>" . esc_html($label) . "</th>"; 
         }
         $output .= "</tr></thead><tbody>";
 
         // Loop through each Product ID and fetch requested attributes
-        foreach ($pids as $pid) {
+        foreach ( $pids as $pid ) {
             $output .= "<tr>";
-            foreach ($show as $attr) {
+            foreach ( $show as $attr ) {
                 // setupfee is fetched from productpricing.php, not productsinfo.php.
                 if ( 'setupfee' === $attr ) {
                     $val = WHMCS_Price_API::get_product_setup_fee( intval( $pid ), $bc_r );

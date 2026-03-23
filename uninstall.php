@@ -25,11 +25,6 @@ function whmcs_price_uninstall_site() {
     $screen = 'settings_page_whmcs_price';
     $user_meta_keys = array(
         'whmcs_price_active_tab',
-        'whmcs_price_settings_mode',
-        'closedpostboxes_' . $screen,
-        'metaboxhidden_' . $screen,
-        'meta-box-order_' . $screen,
-        'screen_layout_' . $screen,
     );
     foreach ( $user_meta_keys as $meta_key ) {
         // phpcs:disable WordPress.DB.DirectDatabaseQuery
