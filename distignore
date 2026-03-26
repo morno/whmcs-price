@@ -1,0 +1,20 @@
+# Files and folders excluded from SVN deploy
+# Translations are handled by translate.wordpress.org
+languages/
+
+# Development files
+.github/
+.wordpress-org/
+node_modules/
+blocks/whmcs-price-product/
+blocks/whmcs-price-domain/
+
+# Build tooling
+package.json
+package-lock.json
+.gitignore
+.distignore
+
+# Docs (GitHub-only)
+README.md
+CHANGELOG.md
