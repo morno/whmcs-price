@@ -15,7 +15,7 @@
 CHANGELOG.md
 README.md
 STRUCTURE.md
-distignore
+.distignore
 
 # Node / build tooling
 node_modules
