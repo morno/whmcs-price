@@ -1,20 +1,38 @@
-# Files and folders excluded from SVN deploy
-# Translations are handled by translate.wordpress.org
-languages/
+# Files and folders excluded from WordPress.org SVN deploy
+# The 10up/action-wordpress-plugin-deploy action reads this file.
+# Filename must be .distignore (with leading dot) to be detected.
 
-# Development files
-.github/
-.wordpress-org/
-node_modules/
-blocks/whmcs-price-product/
-blocks/whmcs-price-domain/
+# Git internals
+.git
+.gitignore
+.gitattributes
 
-# Build tooling
+# GitHub workflows and assets
+.github
+.wordpress-org
+
+# Dev-only docs
+CHANGELOG.md
+README.md
+STRUCTURE.md
+distignore
+
+# Node / build tooling
+node_modules
 package.json
 package-lock.json
-.gitignore
-.distignore
+webpack.config.js
 
-# Docs (GitHub-only)
-README.md
-CHANGELOG.md
+# Block JS/CSS source files (only compiled blocks/build/ is needed by WordPress)
+blocks/whmcs-price-product/index.js
+blocks/whmcs-price-product/edit.js
+blocks/whmcs-price-product/index.css
+blocks/whmcs-price-product/styles.css
+blocks/whmcs-price-product/package.json
+blocks/whmcs-price-domain/index.js
+blocks/whmcs-price-domain/edit.js
+blocks/whmcs-price-domain/index.css
+blocks/whmcs-price-domain/styles.css
+
+# Translations — handled automatically by translate.wordpress.org
+languages
