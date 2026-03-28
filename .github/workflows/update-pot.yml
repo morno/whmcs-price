@@ -51,7 +51,7 @@ jobs:
         run: |
           ./vendor/bin/wp i18n make-pot . languages/whmcs-price.pot \
             --domain=whmcs-price \
-            --exclude=build_temp,node_modules \
+            --exclude=build_temp,node_modules,languages \
             --allow-root
 
       - name: Commit updated .pot file (if changed)
