@@ -2,6 +2,52 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.7.3] - 2026-03-25
+
+### Fixed
+
+- **Elementor 500 error on save**: `\Elementor\Plugin::$instance->editor` is not
+  initialized during Elementor's AJAX save request. Calling `is_edit_mode()` on a
+  null object caused a PHP fatal error and a 500 response. Added `isset()` guard
+  before the method call in `product-price-widget.php`.
+
+- **Yoda conditions in `class-whmcs-api.php`**: The two remaining `$response_code !== 200`
+  comparisons in `get_product_data()` and `get_all_domain_prices()` corrected to
+  `200 !== $response_code`, consistent with WordPress Coding Standards and the rest
+  of the class.
+- **Non-greedy regex in `unwrap_response_body()`**: Changed `(.*)` to `(.*?)` to
+  reduce backtracking risk on large or malformed WHMCS responses.
+
+- **`per` parameter validated at shortcode entry point**: The `per` shortcode attribute
+  is now validated against the allowlist (`month`, `week`, `day`) immediately after
+  `shortcode_atts()`, ensuring all downstream code receives a clean value regardless
+  of how the shortcode is invoked.
+
+- **Unused `$screen` variable removed from `uninstall.php`**: A leftover variable
+  from an earlier draft was defined but never used.
+
+- **`clear_whmcs_cache()` now has its own capability check**: Added
+  `current_user_can( 'manage_options' )` guard as a defensive measure in case
+  the method is called from a future code path without the outer nonce/capability check.
+
+- **Shortcode all-TLD output missing CSS wrapper**: The `[whmcs]` shortcode fallback
+  (no TLD specified) returned raw WHMCS HTML without the `whmcs-domain-all` wrapper
+  div, so the CSS selector `.whmcs-domain-all table` never matched and the table
+  rendered without styles. Also added `wp_enqueue_scripts` to load block CSS on
+  pages using shortcodes only.
+
+### Changed
+
+- **`whmcspr_` method prefix corrected**: Three methods in `settings.php` used the legacy `whmcspr_` prefix instead of the plugin-standard `whmcs_price_` prefix. `whmcspr_plugin_page` → `whmcs_price_plugin_page`, `whmcspr_admin_page` → `whmcs_price_admin_page`, `whmcspr_init` → `whmcs_price_settings_init`. No functional change.
+
+- **Settings class not loaded during AJAX**: `is_admin()` guard updated to
+  `is_admin() && ! wp_doing_ajax()` so WHMCSPrice is not instantiated during
+  AJAX requests where admin UI is not needed.
+
+- **Shortcode CSS enqueued lazily**: Block CSS files are now registered on
+  `wp_enqueue_scripts` but only enqueued and printed when the `[whmcs]`
+  shortcode actually renders on a given page.
+
 ## [2.7.2] - 2026-03-23
 
 ### Fixed

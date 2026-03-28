@@ -300,7 +300,7 @@ class WHMCS_Price_API {
 
 		// Handle WHMCS JS-wrapped responses: document.write('...content...'); 
 		// Uses a non-greedy match and the /s flag to handle multi-line content.
-		if ( preg_match( "/^document\.write\('(.*)'\);$/s", $body, $matches ) ) {
+		if ( preg_match( "/^document\.write\('(.*?)'\);$/s", $body, $matches ) ) {
 			$body = $matches[1];
 		}
 
@@ -412,7 +412,7 @@ class WHMCS_Price_API {
 		}
 
 		$response_code = wp_remote_retrieve_response_code( $response );
-		if ( $response_code !== 200 ) {
+		if ( 200 !== $response_code ) {
 			self::debug_log( 'Product data request failed with HTTP error', array(
 				'response_code' => $response_code,
 				'url'           => $url,
@@ -547,7 +547,7 @@ class WHMCS_Price_API {
 		}
 
 		$response_code = wp_remote_retrieve_response_code( $response );
-		if ( $response_code !== 200 ) {
+		if ( 200 !== $response_code ) {
 			self::debug_log( 'Domain price request failed with HTTP error', array(
 				'response_code' => $response_code,
 				'url'           => $url,
@@ -639,7 +639,7 @@ class WHMCS_Price_API {
 		}
 
 		$response_code = wp_remote_retrieve_response_code( $response );
-		if ( $response_code !== 200 ) {
+		if ( 200 !== $response_code ) {
 			self::debug_log( 'All domain prices request failed with HTTP error', array(
 				'response_code' => $response_code,
 				'url'           => $url,

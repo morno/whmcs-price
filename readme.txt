@@ -1,10 +1,10 @@
-=== Mornolink for WHMCS ===
+﻿=== Mornolink for WHMCS ===
 Contributors: morno, kamalireal
 Tags: whmcs, price, hosting, domain, billing
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 2.7.2
+Stable tag: 2.7.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -34,33 +34,10 @@ The full source code for this plugin is available on GitHub:
 https://github.com/morno/whmcs-price
 
 == Product Pricing ==
-This is the shortcode to extract product name, description, or price:
-
-`[whmcs pid="1" show="name,description,price" bc="1m"]`
-
-1. **pid**: Change the value with your Product ID from WHMCS.
-2. **show**: Choose what to display (name, description, price). You can use one or all, comma-separated.
-3. **bc**: Change the value with your Product Billing Cycle:
-    * Monthly (1 Month) : `bc="1m"`
-    * Quarterly (3 Month) : `bc="3m"`
-    * Semiannually (6 Month) : `bc="6m"`
-    * Annually (1 Year) : `bc="1y"`
-    * Biennially (2 Year) : `bc="2y"`
-    * Triennially (3 Year) : `bc="3y"`
+See [Product Pricing](https://github.com/morno/whmcs-price/wiki/Product-Pricing) in the documentation.
 
 == Domain Pricing ==
-This is the shortcode to extract domain registration, renewal, or transfer prices:
-
-`[whmcs tld="com" type="register" reg="1y"]`
-
-1. **tld**: Change the value with your Domain TLD (com, org, net, etc.).
-2. **type**: Choose between `register`, `renew`, or `transfer`.
-3. **reg**: Change the value with the Registration Period:
-    * Annually (1 Year) : `reg="1y"`
-    * Biennially (2 Year) : `reg="2y"`
-    * Triennially (3 Year) : `reg="3y"`
-    * ... (up to 10 years: `reg="10y"`)
-4. If left like this `[whmcs tld]` it will call without any Domain TLD and will take all the TLDs that are in WHMCS.
+See [Domain Pricing](https://github.com/morno/whmcs-price/wiki/Domain-Pricing) in the documentation.
 
 == Installation ==
 1. Upload `whmcs_price` folder to the `/wp-content/plugins/` directory
@@ -69,593 +46,87 @@ This is the shortcode to extract domain registration, renewal, or transfer price
 
 == Changelog ==
 
+For the full changelog, see [CHANGELOG.md](https://github.com/morno/whmcs-price/blob/main/CHANGELOG.md).
+
 = 2.7.2 =
-* Fix: **WordPress Coding Standards**: `class-whmcs-api.php` previously mixed 4-space
-  indentation (top of file) with tabs (rest of file). All indentation is now tabs
-  throughout, consistent with WordPress Coding Standards. Non-Yoda comparisons
-  (`$cached !== false`) corrected to Yoda form (`false !== $cached`). Missing spaces
-  in function calls (`get_option('...')` → `get_option( '...' )`) corrected.
-  `shortcode.php` missing spaces in `if` and `foreach` statements corrected.
-* Fix: **`wait_for_cache()` reduced from 2s to 450ms**: The maximum wait time when a
-  concurrent process holds a fetch lock was reduced from 2 seconds (8 × 250ms) to
-  450ms (3 × 150ms). This limits the impact on PHP-FPM worker availability on
-  shared hosting while still resolving the common case where a `ServerSideRender`
-  REST request arrives shortly after the main page request has begun fetching.
-* Fix: **`uninstall.php` cleaned up**: Removed obsolete user meta keys that belonged to
-  the postbox-based settings layout removed in v2.7.0 (`whmcs_price_settings_mode`,
-  `closedpostboxes_*`, `metaboxhidden_*`, `meta-box-order_*`, `screen_layout_*`).
-  Only `whmcs_price_active_tab` is now removed on uninstall.
+* 3 bug fixes
 
 = 2.7.1 =
-* Fix: **`wp_unslash()` added before `sanitize_key()`**: The active tab value read from
-  `$_GET['tab']` in `settings.php` now correctly passes through `wp_unslash()` before
-  sanitization, following WordPress Coding Standards for all superglobal input.
-* Fix: **`get_block_wrapper_attributes()` no longer double-escaped**: Both `render.php` files
-  previously wrapped the function's output in `wp_kses_post()`. The function already
-  runs `esc_attr()` internally on all attribute values, making the outer escaping both
-  redundant and incorrect — `wp_kses_post()` is an HTML content filter, not an attribute
-  escaper, and could strip valid attributes such as `data-*`. Output is now echoed
-  directly as recommended in the WordPress developer reference.
-* Fix: **Settings page no longer loses values when switching tabs**: `sanitize()` previously
-  started with an empty array and wrote default values for all fields on every save.
-  Since each tab only submits its own fields, saving one tab silently reset all other
-  tabs to their defaults (e.g. saving Connection cleared Cache Duration back to 1 hour).
-  The function now loads the existing saved values as a base and uses a hidden `_tab`
-  field in each tab's form to update only the fields that belong to the active tab.
-* Fix: **Request-level in-memory cache added to `WHMCS_Price_API`**: A static `$request_cache`
-  property now stores results for the duration of the current PHP process. When multiple
-  shortcodes, blocks, or Elementor widgets on the same page request the same data, only
-  the first call hits the WordPress transient (database) or WHMCS — all subsequent calls
-  within the same request are served from memory. This eliminates duplicate WHMCS feed
-  requests that occurred when `ServerSideRender` REST calls ran shortly after the main
-  page request before the transient cache was warmed.
+* 4 bug fixes
 
 = 2.7.0 =
-* Added: **Third-party page cache flushing**: `whmcs_price_flush_page_cache()` in
-  `includes/class-whmcs-price-helpers.php` is now called automatically at the end
-  of `clear_whmcs_cache()` in `settings.php`. When an admin clears the WHMCS price
-  cache, supported page cache plugins are flushed in the same operation so visitors
-  immediately receive fresh prices without waiting for their page cache to expire.
-  Covers 18 integrations across two patterns:
-  **Action-hook based** (safe to fire regardless of whether the plugin is active):
-* Added: LiteSpeed Cache — `litespeed_purge_all`
-* Added: Hummingbird — `wphb_clear_page_cache`
-* Added: Breeze (Cloudways) — `breeze_clear_all_cache`
-* Added: NitroPack — `nitropack_integration_purge_all`
-* Added: Swift Performance — `swift_performance_after_clear_all_cache`
-* Added: Cache Enabler (KeyCDN) — `cache_enabler_clear_complete_cache`
-* Added: Cachify — `cachify_flush_cache`
-* Added: Pantheon — `pantheon_cache_flush`
-* Added: FlyingPress — `flying_press_purge_all`
-  **Function/class based** (guarded with `function_exists` / `class_exists` +
-  `method_exists` before calling):
-* Added: WP Rocket — `rocket_clean_domain()`
-* Added: WP Fastest Cache — `wpfc_clear_all_cache()`
-* Added: W3 Total Cache — `w3tc_flush_all()`
-* Added: WP Super Cache — `wp_cache_clear_cache()`
-* Added: SG Optimizer (SiteGround) — `sg_cachepress_purge_cache()`
-* Added: Autoptimize — `autoptimizeCache::clearall()`
-* Added: Comet Cache — `comet_cache::clear()`
-* Added: WP Engine (MU plugin) — `WpeCommon::purge_memcached()` + `purge_varnish_cache()`
-* Added: Kinsta (MU plugin) — `kinsta_cache_purge_all_cache()`
-  `do_action('whmcs_price_after_flush_page_cache')` fires at the end for custom
-  integrations not covered above. `wp_cache_flush()` is intentionally excluded as it
-  flushes the shared object cache (Redis/Memcached) which could affect other plugins
-  or sites. Cloudflare is excluded as their WordPress plugin exposes no stable PHP API.
-* Added: **Outage e-mail notifications**: The plugin now sends an admin e-mail when WHMCS
-  pricing data becomes unreachable. A transient-based circuit-breaker ensures at most
-  one notification is sent per outage window (6 hours). When WHMCS recovers and the
-  next request succeeds, the circuit-breaker resets so a subsequent outage will trigger
-  a fresh alert.
-  New helpers in `includes/class-whmcs-price-helpers.php`:
-* Added: `whmcs_price_notify_outage( string $error_context )` — sends the notification and
-    sets the circuit-breaker transient. Called on every `WP_Error` or non-200 HTTP
-    response across all four API methods in `class-whmcs-api.php`.
-* Added: `whmcs_price_clear_outage()` — deletes the circuit-breaker transient. Called on
-    every successful WHMCS response so future outages trigger a new notification.
-* Added: **Notifications settings section**: A new **Notifications** tab has been
-  added to the settings page between the Performance and Advanced tabs. Controls:
-* Added: **Outage Alerts** checkbox — enable or disable e-mail notifications (on by default).
-* Added: **Alert Address** — e-mail address to notify; defaults to the site admin address.
-* Added: An inline warning banner is shown in the tab when an outage is currently active
-    (circuit-breaker transient is set), giving admins immediate visibility in the
-    WordPress dashboard without needing to check the front end.
-* Added: **`whmcs_price_unavailable_html()`**: New helper in
-  `includes/class-whmcs-price-helpers.php` that returns a styled, translatable
-  `<span class="whmcs-price-unavailable">` element. Used by all render paths when
-  WHMCS returns `'NA'` for a data field.
-* Added: **Redesigned settings page UI**: The settings page has been rebuilt following
-  standard WordPress admin conventions (same pattern as WooCommerce, Yoast, etc.):
-* Added: **Tabbed navigation** — Connection, Performance, Notifications and Advanced are
-    separated into tabs using WordPress's native `nav-tab-wrapper` styling. The active
-    tab is saved per user and restored on next visit.
-* Added: **Sidebar cards** — Operational Status, Product Pricing reference and Domain
-    Pricing reference are displayed as sidebar panels using WordPress's native `.card`
-    class, placed to the right of the main form.
-* Added: The previous postbox-based layout with custom drag-and-drop and column controls
-    has been removed in favour of this simpler, more familiar approach.
-* Changed: **Configurable CDN/proxy cache bypass**: A new **Bypass CDN Cache** checkbox
-  in Settings → Connection controls whether `Cache-Control: no-cache` and
-  `Pragma: no-cache` are sent with every outgoing request to WHMCS. Disabled by
-  default — most WHMCS installations are not affected since Cloudflare does not
-  cache dynamic PHP responses unless explicitly configured to do so. Enable if your
-  WHMCS server sits behind a CDN or reverse proxy that is set up to cache PHP feeds,
-  to ensure price updates are visible immediately regardless of the CDN cache TTL.
-* Changed: **Frontend renders a friendly message instead of `'NA'`**: All three output paths
-  (shortcode, Gutenberg block, Elementor widget) across all display styles (Table,
-  Cards, Grid) now render `whmcs_price_unavailable_html()` in place of the raw `'NA'`
-  string that WHMCS_Price_API returns on failure. The `<span>` element can be styled
-  via `.whmcs-price-unavailable` in theme CSS.
-* Changed: **Gutenberg blocks now show a live price preview in the editor**: Both the Product
-  Price and Domain Price blocks use `ServerSideRender` (`@wordpress/server-side-render`)
-  to render the actual server-side output directly in the block editor canvas — the same
-  data path as the frontend, served from the transient cache. The `REST_REQUEST` guard
-  that previously blocked all editor previews has been removed; only `DOING_AUTOSAVE`
-  is now skipped. All existing input validation and allowlists in `render.php` remain
-  unchanged.
-* Changed: **`Requires at least` raised to 6.4**: The minimum WordPress version has been updated
-  from 6.0 to 6.4, which is the baseline for `apiVersion: 3` blocks and `ServerSideRender`
-  stability. `Tested up to` is now 7.0.
-* Changed: **`uninstall.php` cleans up user meta**: The uninstall routine now also removes all
-  per-user preferences stored by the plugin (`whmcs_price_active_tab`,
-  `whmcs_price_settings_mode`, and WordPress's own screen meta for the settings page)
-  so no orphaned rows remain in `wp_usermeta` after deletion.
+* 9 new features, 5 improvements
 
 = 2.6.0 =
-* Added: **Operational Status box in settings sidebar**: Added a new diagnostics postbox on the
-  settings page sidebar that provides a read-only overview of the plugin’s local cache
-  state. It shows the number of cached entries, active lock transients (stampede
-  protection), and the nearest/farthest cache expiry windows. This is based on existing
-  WordPress transients stored in `wp_options` and does **not** trigger any outbound
-  WHMCS request.
-* Added: **Per-period price breakdown** (`per="month|week|day"`): All output modules
-  (shortcode, Gutenberg block, Elementor widget) now support an optional
-  `per` / `perPeriod` parameter that displays the full price alongside a
-  per-period breakdown. Example output: `$99.00/yr ($8.25/mo)`.
-  Works with all billing cycles and multi-year domain registrations.
-  Shortcode examples:
-  ```
-  [whmcs pid="1" bc="1y" show="name,price" per="month"]
-  [whmcs tld="se" show="register,renew" per="month"]
-  ```
-* Added: **`includes/class-whmcs-price-helpers.php`** — New shared helpers file loaded
-  by `whmcs_price.php` before all other modules. Contains rendering and
-  formatting utilities available to shortcodes, blocks, and Elementor widgets
-  without duplication. New output modules can consume these helpers immediately.
-  Currently provides:
-* Added: `whmcs_price_format_per()` — per-period price formatting
-* Added: **`WHMCS_Price_API::divide_price()`** — New static method that divides a raw
-  WHMCS price string by a given divisor while preserving the currency symbol.
-  Handles common WHMCS price formats: `$9.99`, `€12.50`, `99.00 kr`, `9,99 kr`.
-* Added: **`WHMCS_Price_API::billing_cycle_months()`** — New static method that returns
-  the number of months in a given WHMCS internal billing cycle string
-  (e.g. `"annually"` → `12`).
-* Added: **Domain shortcode multi-type support** (`show="register,renew"`): The `[whmcs]`
-  shortcode now accepts a comma-separated list of transaction types in the `show`
-  parameter, rendering a comparison table. Previously only one type at a time was
-  supported. Fully backwards compatible — existing single-type shortcodes are
-  unaffected.
-* Added: **Setup Fee support** (`show="setupfee"`): All output modules (shortcode, Gutenberg
-  block, Elementor widget) now support displaying the WHMCS one-time setup fee as an
-  explicit column or field. Setup fee is fetched separately from `productpricing.php`
-  and is only shown when explicitly requested — it is never displayed automatically
-  alongside the price.
-  Shortcode example:
-  ```
-  [whmcs pid="1" bc="1y" show="name,price,setupfee"]
-  ```
-  In Gutenberg, tick **Setup Fee** in the Display Columns panel. In Elementor, select
-  **Setup Fee** from the Display Columns list. In the cards view, the setup fee label
-  and value are rendered above the description regardless of the order selected.
-* Added: **`WHMCS_Price_API::get_product_setup_fee()`** — New public static method that fetches
-  the setup fee for a given product ID and billing cycle from `productpricing.php`. The
-  full pricing feed is cached per PID so all billing cycles share a single HTTP request.
-  Returns the formatted setup fee string (e.g. `100 kr`) or an empty string if the fee
-  is zero or unavailable.
-* Added: **`whmcs_price_strip_setup_fee()`** — New helper function in
-  `class-whmcs-price-helpers.php` that strips the embedded setup fee suffix WHMCS
-  sometimes appends to the `productsinfo.php` price response (e.g. `"999 kr + 100 kr"`
-  → `"999 kr"`). Applied to all price fields before rendering across shortcode, block,
-  and Elementor to prevent the fee from appearing twice or in the wrong place.
-* Security: **Tightened remote HTML allowlist**: All three output paths that render the
-  WHMCS all-domains feed (`shortcode.php`, `blocks/whmcs-price-domain/render.php`,
-  `includes/elementor/widgets/domain-price-widget.php`) now use a strict
-  `wp_kses()` allowlist limited to table and list elements (`table`, `thead`,
-  `tbody`, `tfoot`, `tr`, `th`, `td`, `ul`, `li`, `p`, `strong`, `small`,
-  `span`). Previously `wp_kses_post()` was used, which permits a much broader
-  set of tags including `<a>`, `<img>`, and `<iframe>`. This reduces the blast
-  radius if the configured WHMCS endpoint were ever compromised or misconfigured.
-* Security: **Hardened HTTP request arguments**: `get_request_args()` in `class-whmcs-api.php`
-  now passes four additional arguments to `wp_remote_get()`:
-* Security: `redirection => 0` — redirects are never followed, preventing an attacker
-    from redirecting the plugin to an internal endpoint after initial validation.
-* Security: `reject_unsafe_urls => true` — enables WordPress’s own built-in SSRF filter
-    on top of the existing manual host checks.
-* Security: `sslverify => true` — enforces valid TLS certificate verification (explicit,
-    not relying on the WordPress default which can be overridden by filters).
-* Security: `limit_response_size => 1048576` — caps the response at 1 MB to prevent a
-    runaway WHMCS feed from exhausting PHP memory.
-* Security: **Hardened `clean_response()` parser**: Replaced two chained `preg_replace()`
-  calls that naively stripped `document.write(\'` and `\');` from anywhere in the
-  string with a single anchored regex (`/^document\.write\(\'(.*)\'\);$/s`). The
-  new pattern only unwraps the JS wrapper when it spans the entire response,
-  rejecting malformed or unexpected payloads instead of silently passing them
-  through. `wp_kses_no_null()` is now applied to the result to strip null bytes.
-  Empty or non-string responses return `'NA'` immediately.
-* Security: **DNS-resolution SSRF check**: `get_url()` in `class-whmcs-api.php` now resolves
-  the configured hostname via `dns_get_record()` and rejects the URL if any A or
-  AAAA record points to a private or reserved IP address. The previous hostname-only
-  checks could be bypassed via DNS rebinding or CNAME chains pointing to internal
-  infrastructure. Only applies to non-IP hostnames; direct IP inputs are still
-  validated by the existing `FILTER_FLAG_NO_PRIV_RANGE` check. A `function_exists()`
-  guard skips the check silently on environments where `dns_get_record()` is
-  unavailable. The type argument uses bitwise OR (`DNS_A | DNS_AAAA`) and the call
-  is silenced with `@` + guarded with `is_array()` to handle error returns safely.
-* Security: **Strict output escaping in product table**: In `shortcode.php`, the product
-  table now uses `esc_html( wp_strip_all_tags() )` for `name` and `description`
-  columns. Previously all three columns used `wp_kses()` with a `<span>` allowlist,
-  meaning remote WHMCS data could influence HTML structure even in plain-text fields.
-  Only the `price` column retains `wp_kses()` since WHMCS may wrap currency values
-  in `<span>` elements for styling.
-* Security: **Block credentials and non-standard ports in WHMCS URL**: `get_url()` in
-  `class-whmcs-api.php` now rejects URLs that contain embedded credentials
-  (`https://user:pass@host`) or a port other than 443. Neither serves a legitimate
-  purpose for a WHMCS feed URL and both widen the SSRF attack surface unnecessarily.
-* Security: **Debug log no longer records raw response data**: All `debug_log()` calls that
-  previously logged the fetched value (`'value' => $data`) or the first 100
-  characters of the all-domains feed now log only the data length
-  (`'length' => strlen( $data )`). This prevents response content from leaking
-  into debug logs on shared or multi-tenant environments.
-* Security: **Consistent output escaping across all product display styles**: The table, cards,
-  and grid views in `blocks/whmcs-price-product/render.php` and
-  `includes/elementor/widgets/product-price-widget.php` now all apply the same model:
-  `wp_kses()` only for `price`, and `esc_html( wp_strip_all_tags() )` for `name` and
-  `description`. Previously the table view in both files used `wp_kses()` for all
-  columns regardless of field type, and the grid view did the same. This closes the
-  inconsistency and ensures the trust boundary is uniform across all rendering paths.
-* Security: **`setupfee` added to Elementor column allowlist**: The server-side `$allowed_columns`
-  array in `product-price-widget.php` now includes `setupfee`. Previously the allowlist
-  only permitted `name`, `description`, and `price`, causing `setupfee` to be silently
-  filtered out and the widget to render nothing on pages where it was selected.
-* Security: **`setupfee` added to Elementor header label map**: `$whmcs_header_labels` in
-  `product-price-widget.php` now includes a translatable `Setup Fee` entry. Previously
-  the label fell back to `ucfirst('setupfee')` in table and grid views.
-* Security: **Explicit display style and column allowlists in block render.php**: `displayStyle`
-  is now validated against `array( 'table', 'cards', 'grid' )` and falls back to
-  `'table'` if an unknown value is passed. The `show` array is filtered against
-  `array( 'name', 'description', 'price', 'setupfee' )` early in the render file,
-  matching the same defensive pattern already used in the Elementor widget.
-* Fix: **Fatal “link expired” on settings save**: The Performance section rendered a
-  `<form>` element inside the existing settings `<form>`. HTML forbids nested forms —
-  the browser discarded the inner form’s data and sent the wrong nonce to `options.php`,
-  causing WordPress to reject every save with “The link you followed has expired”.
-  Replaced the inner form with a plain `<a href>` using `wp_nonce_url()`, reusing the
-  existing Admin Bar cache-clear flow.
-* Fix: **Missing `translators:` comments on `_n()` calls**: Added required
-  `/* translators: %d: number of X */` comments above all three `_n()` calls in
-  `format_seconds()` to satisfy `WordPress.WP.I18n.MissingTranslatorsComment`.
-* Fix: **`readme.txt` stable tag mismatch**: `Stable tag` was set to `2.5.3` while the
-  plugin header declared `2.6.0`. Updated to `2.6.0` to match.
-* Fix: **WPCS: missing spaces in `defined()` calls**: `defined('ABSPATH')` corrected to
-  `defined( 'ABSPATH' )` in `class-whmcs-api.php` and `shortcode.php`.
-* Fix: **WPCS: non-Yoda comparisons in `class-whmcs-api.php`**: `$cached !== false` →
-  `false !== $cached` and `$response_code !== 200` → `200 !== $response_code` across
-  all three API methods.
-* Fix: **WPCS: short array syntax in `shortcode.php`**: `$billing_cycles = [...]` and
-  `$header_labels = [...]` converted to `array()` syntax per WordPress Coding Standards.
-* Fix: **WPCS: missing `esc_url()` and `esc_html__()` in `settings.php`**: The Settings
-  link in the plugin list row passed `admin_url()` output directly into an HTML
-  attribute without escaping, and used `__()` instead of `esc_html__()` for the link
-  text. Both are now correctly escaped.
-* Changed: **Hardened handling of admin query flags**: Query flags used for cache-related UI
-  flow and admin bar actions (e.g. `cache_cleared`, `whmcs_clear_cache`) are now read
-  using WordPress-standard sanitization (`wp_unslash()` + `absint()`). This improves
-  defensive robustness and aligns more closely with WordPress Coding Standards without
-  changing behavior.
-* Changed: **`whmcs_price_format_per()` moved to helpers file**: Previously defined inline
-  in `shortcode.php`. Now lives in `class-whmcs-price-helpers.php` and is
-  available globally to all modules. No functional change.
-* Changed: **TLD sanitization now lowercases input**: `strtolower()` added to TLD
-  sanitization in the domain shortcode so `.SE` and `.se` produce the same cache
-  key and consistent output.
-* Changed: **Domain `reg` parameter now validates range 1–10**: Previously any numeric
-  value was accepted. Values outside 1–10 now fall back to `1`.
-* Changed: **`clean_response()` renamed to `unwrap_response_body()`**: The function name
-  previously implied sanitization, which it does not perform — it only unwraps
-  WHMCS JS-feed responses. The new name accurately describes what the method does.
-  No functional change.
-* Changed: **`<code>` tag now renders correctly in settings description**: The Custom
-  User-Agent field description used `printf( esc_html__(...), '<code>...</code>' )`
-  which caused the `<code>` tag to render as literal text. Replaced with
-  `echo wp_kses( sprintf( __(...), '<code>...</code>' ), array( 'code' => array() ) )`
-  so the default User-Agent string is correctly displayed in a code element.
+* 11 security fixes, 7 bug fixes, 9 new features, 6 improvements
 
 = 2.5.5 =
-* Security: **HTTP URL blocked at save**: The `sanitize()` method in `settings.php` now actively
-  rejects WHMCS URLs that do not use HTTPS at the point of saving. Previously the URL
-  was accepted and silently discarded later in `get_url()`, leaving the admin with no
-  feedback. A proper `add_settings_error()` notice is now shown explaining why the URL
-  was not saved.
-* Security: **TLD sanitization in API layer**: `WHMCS_Price_API::get_domain_price()` now applies
-  the same character stripping and 24-character length cap that the shortcode handler
-  already applied. Previously the API method trusted callers to pre-sanitize.
-* Security: **Elementor widget server-side allowlists**: Both Elementor widgets accepted
-  `display_style`, `show_columns`, and `transaction_type` values without server-side
-  validation. Added allowlist checks in `render_product_pricing()` and
-  `render_domain_pricing()` - invalid values fall back to safe defaults.
-* Fix: **PIDs not cast to integers in product block**: `blocks/whmcs-price-product/render.php`
-  and `product-price-widget.php` were mapping PIDs with `trim()` only. Both now use
-  `intval()` and `array_filter()` to remove invalid values before any API call.
-* Fix: **Lock transients not removed on cache clear or uninstall**: `clear_whmcs_cache()`
-  and `uninstall.php` only deleted `_transient_whmcs_*` entries, leaving stampede lock
-  entries (`_transient_lock_whmcs_*`) behind. Both now explicitly delete both prefixes.
-* Fix: **Uninstall not multisite-aware**: Plugin data was only cleaned from the main site.
-  The uninstall routine now iterates all sites via `get_sites()` and cleans each one.
-* Fix: **PHPCS warning on `error_log()`**: Added `phpcs:ignore` to the `error_log()` call
-  in `WHMCS_Price_API::debug_log()`. Already correctly guarded behind
-  `WP_DEBUG && WP_DEBUG_LOG`.
-* Fix: **PHPCS warning on unprefixed variables in `uninstall.php`**: `$sites` and `$site_id`
-  renamed to `$whmcs_price_sites` and `$whmcs_price_site_id` to satisfy
-  `WordPress.NamingConventions.PrefixAllGlobals`.
-* Changed: **Settings page redesigned**: Settings are now grouped into three `postbox` sections -
-  **Connection** (WHMCS URL), **Performance** (Cache Duration + Clear Cache), and
-  **Advanced** (Custom User-Agent). A two-column layout separates settings from
-  reference material.
-* Changed: **Clear Cache moved into Performance section**: The Clear Cache button now sits
-  directly alongside the Cache Duration setting instead of being isolated at the bottom.
-* Changed: **Documentation sidebar added**: A right-hand sidebar provides quick-reference
-  shortcode examples and direct links to the GitHub Wiki. A Documentation button is
-  added to the page title bar. Replaces the old inline documentation rendered as fake
-  settings fields.
-* Changed: **Admin notices use WordPress CSS classes**: Inline color styles replaced with
-  `notice notice-error inline` and `notice notice-warning inline`.
-* Changed: **Settings page moved to WordPress standard location**: Replaced `add_menu_page()`
-  with `add_options_page()` so settings now live under Settings > WHMCS Price Settings.
-* Changed: **Settings link added to plugin list**: A Settings link now appears on the plugin row
-  under Plugins > Installed Plugins via `plugin_action_links_` filter.
-* Changed: **`DOCS_URL` constant added**: GitHub Wiki base URL defined as a class constant so
-  all documentation links are maintained in one place.
-* Changed: **`uninstall.php` refactored**: Cleanup logic extracted into
-  `whmcs_price_uninstall_site()` helper to avoid duplication between single-site and
-  multisite paths.
+* 3 security fixes, 5 bug fixes, 8 improvements
 
 = 2.5.2 =
-* Security: **HTTP URL blocked at save**: The `sanitize()` method in `settings.php` now actively
-  rejects WHMCS URLs that do not use HTTPS at the point of saving. Previously the URL
-  was accepted and silently discarded later in `get_url()`, leaving the admin with no
-  feedback. A proper `add_settings_error()` notice is now shown explaining why the URL
-  was not saved.
-* Security: **TLD sanitization in API layer**: `WHMCS_Price_API::get_domain_price()` now applies
-  the same character stripping (`[^a-zA-Z0-9\-]`) and 24-character length cap that the
-  shortcode handler already applied. Previously the API method trusted callers to
-  pre-sanitize, meaning direct calls from third-party code or future integrations were
-  unprotected.
-* Fix: **PIDs not cast to integers in product block**: `blocks/whmcs-price-product/render.php`
-  was mapping PIDs with `trim()` only, passing raw strings to `get_product_data()`.
-  The shortcode handler correctly used `intval()` and `array_filter()`. Both paths now
-  behave identically — invalid or non-numeric PIDs are removed before any API call.
-* Fix: **Lock transients not removed on uninstall**: `uninstall.php` only deleted transients
-  matching `_transient_whmcs_%`, leaving cache stampede lock entries
-  (`_transient_lock_whmcs_%`) behind. Both prefixes are now explicitly queried and
-  deleted.
-* Fix: **Uninstall not multisite-aware**: Plugin data (options and transients) was only
-  cleaned from the main site when running on a WordPress Multisite network. The
-  uninstall routine now iterates over all sites via `get_sites()`, calls
-  `switch_to_blog()` per site, and restores context with `restore_current_blog()`.
-* Changed: **`uninstall.php` refactored**: Cleanup logic extracted into a local helper function
-  `whmcs_price_uninstall_site()` to avoid code duplication between single-site and
-  multisite execution paths.
+* 2 security fixes, 3 bug fixes, 1 improvement
 
 = 2.5.1 =
-* Fix: **Author name encoding**: Corrected double-encoded UTF-8 characters in the plugin
-  header of `whmcs_price.php`. The author name `Sörensson` was stored as mojibake
-  (`SÃ¶rensson`) due to a file being re-encoded by an external tool or editor.
-* Fix: **Misplaced docblock**: The `clean_response()` method in `class-whmcs-api.php` was
-  missing its own docblock, and an orphaned docblock originally written for it had
-  ended up placed above `get_request_args()` instead. Both methods now have correct,
-  properly placed documentation.
-* Fix: **TLD max length**: Added a `substr()` cap of 24 characters to the TLD value in
-  the `[whmcs]` shortcode handler, preventing excessively long strings from being
-  passed to the API or generating oversized cache keys.
-* Changed: **Shortcode function renamed**: `whmcs_func()` renamed to
-  `whmcs_price_shortcode_handler()` to follow WordPress coding standards requiring
-  all global functions to use a unique plugin prefix.
-* Changed: **Blocks file renamed**: `includes/class-whmcs-blocks.php` renamed to
-  `includes/blocks.php`. The file contains only a hooked function — not a class —
-  so the `class-` prefix was misleading and against WordPress naming conventions.
-  The `require_once` reference in `whmcs_price.php` updated accordingly.
-* Changed: **License unified**: `includes/settings.php` had `GPL-3.0-or-later` in its file
-  header, inconsistent with the rest of the plugin. Updated to `GPLv2 or later`
-  with the correct license URI to match the main plugin header and `readme.txt`.
-* Added: **`uninstall.php`**: Added a proper uninstall routine that removes all plugin data
-  from the database when the plugin is deleted via the WordPress admin. Previously,
-  data was left behind after deletion. The plugin stores the following in `wp_options`:
-* Added: `whmcs_price_option` — plugin settings (WHMCS URL, cache TTL, custom User-Agent)
-* Added: `_transient_whmcs_product_*` — cached product prices (name, description, price)
-* Added: `_transient_whmcs_domain_*` — cached domain prices per TLD/type/period
-* Added: `_transient_whmcs_domain_all` — cached full TLD price list
-* Added: `_transient_lock_whmcs_*` — short-lived stampede-prevention locks (10 s TTL)
+* 3 bug fixes, 1 new feature, 3 improvements
 
 = 2.5.0 =
-* Added: **Custom User-Agent setting**: A new "Custom User-Agent" field has been added to
-  the plugin settings page. When filled in, this value overrides the auto-generated
-  User-Agent for all HTTP requests to WHMCS. Useful for matching server or firewall
-  allow-rules, or for identifying plugin requests in access logs.
-  Leave the field blank to use the default auto-generated string.
-* Added: **Hybrid User-Agent + explicit timeout**: All HTTP requests to WHMCS now send a
-  descriptive User-Agent header and have an explicit 15-second timeout.
-* Changed: **Default User-Agent format**: WordPress version number removed to avoid exposing
-  version info. New format: `WordPress (https://yoursite.com) whmcs-price/2.5.0`
+* 2 new features, 1 improvement
 
 = 2.4.7 =
-* Fix: **Slow Save with Shortcodes**: The `[whmcs]` shortcode ran via the `the_content`
-  filter on every Gutenberg REST save request, triggering live HTTP calls to WHMCS
-  for each shortcode on the page. Added the same `REST_REQUEST` / `DOING_AUTOSAVE`
-  early return as in `render.php`, returning a lightweight HTML comment instead.
-  Frontend page loads are unaffected.
+* 1 bug fix
 
 = 2.4.6 =
-* Fix: **Slow Gutenberg Save**: When saving a post in the block editor, WordPress fires
-  the `the_content` filter via a REST API request, which triggered server-side
-  rendering of both WHMCS blocks. This caused live HTTP requests to the WHMCS server
-  on every save — even though the result is never shown in the editor. Added an early
-  exit in both `render.php` files when `REST_REQUEST` or `DOING_AUTOSAVE` is defined,
-  returning a lightweight HTML comment instead. The real data continues to render
-  correctly on frontend page loads.
+* 1 bug fix
 
 = 2.4.5 =
-* Fix: **Gutenberg Editor Crash**: Both Gutenberg blocks (`whmcs-price/product` and
-  `whmcs-price/domain`) were missing a `save` function in their `registerBlockType`
-  call. Without `save: () => null`, WordPress attempts to serialize the block's
-  editor output as static HTML. On page reload, the editor compares the stored HTML
-  against what `save()` returns — the mismatch triggers a block validation error that
-  causes the editor to hang indefinitely on load. Added `save: () => null` to both
-  `index.js` source files and their compiled counterparts in `blocks/build/` to
-  correctly declare these as dynamic (server-side rendered) blocks.
+* 1 bug fix
 
 = 2.4.4 =
-* Security: **Query Injection Fix**: Replaced raw string concatenation for WHMCS API URLs with
-  `add_query_arg()` in `get_product_data()` and `get_domain_price()`. Previously,
-  unsanitized parameters could be used to inject additional query parameters into
-  requests sent to the WHMCS feed endpoints.
-* Security: **Input Allowlists**: Added strict allowlist validation in `WHMCS_Price_API` for all
-  parameters passed to WHMCS feed URLs. `$attribute` is restricted to `name`,
-  `description`, `price`; `$billing_cycle` to the six known WHMCS cycle names;
-  `$type` to `register`, `renew`, `transfer`; and `$reg_period` to integers 1–10.
-  Requests with invalid values now return `'NA'` immediately without hitting WHMCS.
-* Security: **TLD Sanitization**: The `tld` shortcode attribute is now sanitized with
-  `sanitize_text_field()` and stripped of all characters outside `[a-zA-Z0-9-]`
-  before being passed to `WHMCS_Price_API::get_domain_price()`. Previously the raw
-  unsanitized value was forwarded directly.
-* Security: **Shortcode Allowlists**: The `bc` (billing cycle), `show` (columns), and `type`
-  (transaction type) shortcode attributes are now validated against allowlists before
-  being used. Invalid `bc` or empty `show` after filtering causes the shortcode to
-  return an empty string. Invalid `type` falls back to `register`.
-* Security: **SSRF Hardening**: Extended the SSRF protection in `get_url()` with a blocklist
-  for known cloud metadata endpoints (`169.254.169.254`, `100.100.100.200`,
-  `metadata.google.internal`, etc.) that can bypass IP-range checks via DNS.
-  Additionally, the WHMCS URL is now required to use HTTPS; HTTP URLs are rejected
-  entirely, preventing credential or data leakage over unencrypted connections.
-* Fix: **Multisite Compatibility**: Removed the early `return` that caused the plugin
-  settings page to be completely unavailable on WordPress Multisite installations.
-  The settings page now loads correctly for all admin contexts, including network
-  sites.
-* Added: **Directory Index Files**: Added `index.php` (silence is golden) to seven
-  subdirectories that were missing them (`languages/`, `includes/elementor/`,
-  `includes/elementor/widgets/`, `blocks/`, `blocks/whmcs-price-product/`,
-  `blocks/whmcs-price-domain/`, `blocks/build/`), preventing directory listing
-  on servers without `Options -Indexes`.
-* Added: **HTTPS Warning in Admin**: The settings page now displays a visible warning
-  if the configured WHMCS URL does not use HTTPS, informing the admin that HTTP
-  URLs are blocked by the plugin.
-* Changed: **Code Comment**: Added an explanatory comment to the `wp_kses_post()` call in
-  the `[whmcs]` shortcode fallback (all-TLD output), documenting that the use of
-  `wp_kses_post` rather than `esc_html` is intentional and by design.
+* 5 security fixes, 1 bug fix, 2 new features, 1 improvement
 
 = 2.4.3 =
-* Changed: **Plugin renamed**: Changed display name from "WHMCS Price" to "Mornolink for WHMCS" to comply with WordPress.org trademark guidelines.
-* Changed: **readme.txt**: Added `== Source Code ==` section with link to GitHub repository as required by WordPress.org.
-* Removed: **Persian documentation**: Removed link to Persian documentation from `readme.txt` as the hosting site (blog.iranwebsv.net) is no longer available.
+* 2 improvements, 1 removal
 
 = 2.4.2 =
-* Fix: **Escape Fix**: Applied `absint()` to integer output in `cache_ttl_callback()` in
-  `settings.php` to satisfy WordPress escaping standards (PHPCS `WordPress.Security.EscapeOutput`).
+* 1 bug fix
 
 = 2.4.1 =
-* Security: **SSRF Protection**: Added validation in `get_url()` to block private IPv4/IPv6 ranges,
-  reserved IP ranges, and localhost from being used as the WHMCS URL. Prevents
-  server-side request forgery if an unauthorized party gains access to plugin settings.
-* Security: **XSS Fix**: Wrapped `get_all_domain_prices()` output in `wp_kses_post()` in the
-  `[whmcs]` shortcode fallback. Previously unescaped HTML from the WHMCS feed could
-  allow injected markup if the remote source was compromised.
-* Changed: **Cache Key Hardening**: Replaced interpolated cache keys with `md5()`-hashed keys
-  in `get_product_data()` and `get_domain_price()` to prevent key collisions and
-  oversized transient entries from arbitrary input values.
-* Changed: **Configurable Cache TTL**: Admins can now set cache duration from the plugin settings
-  page. Available options: 1, 2, 3, 6, 12, and 24 hours. Falls back to 1 hour if not
-  configured. Added `get_cache_expiry()` method to `WHMCS_Price_API` to read the
-  setting dynamically.
-* Added: **Cache Stampede Protection**: Added `acquire_lock()` method in `WHMCS_Price_API`
-  using a short-lived transient lock (10 seconds). Prevents multiple simultaneous
-  requests from hitting WHMCS when the cache is cold or has just been cleared.
-  Applied to both `get_product_data()` and `get_domain_price()`. Locks are
-  automatically released on success, HTTP error, or request failure.
+* 2 security fixes, 1 new feature, 2 improvements
 
 = 2.4.0 =
-* Added: **Elementor Product Price Widget**: Display WHMCS product pricing in Elementor with visual builder
-* Added: Product IDs input (comma-separated)
-* Added: Billing cycle dropdown selector
-* Added: Display columns multi-select (name, description, price)
-* Added: 3 display styles: Table, Cards, Pricing Grid
-* Added: Live preview in Elementor editor
-* Added: **Elementor Domain Price Widget**: Display WHMCS domain pricing in Elementor
-* Added: TLD input (leave empty for all TLDs)
-* Added: Registration period selector (1-10 years)
-* Added: "Show all transaction types" toggle
-* Added: Transaction type selector (register, renew, transfer)
-* Added: 3 display styles: Table, Badge, Inline
-* Added: Live preview in Elementor editor
-* Added: **Custom Elementor Category**: "WHMCS Price" category in Elementor widget panel
-* Added: **Shared Styling**: Elementor widgets reuse block CSS for consistency
-* Changed: **File Structure**: Reorganized for better maintainability
-* Changed: Renamed `includes/short_code/` → `includes/shortcodes/`
-* Changed: Renamed `short_code.php` → `shortcode.php`
-* Changed: Added `includes/elementor/` for Elementor integration
-* Changed: Added `STRUCTURE.md` documentation
+* 4 new features, 1 improvement
 
 = 2.3.0 =
-* Added: **Gutenberg Block: WHMCS Product Price** — Native block editor support for displaying real-time product pricing from WHMCS. Configured via the block sidebar (InspectorControls) with controls for Product ID(s), Billing Cycle, and display columns (Name, Description, Price).
-* Added: **Gutenberg Block: WHMCS Domain Price** — Native block editor support for displaying real-time domain pricing from WHMCS. Configured via the block sidebar with controls for TLD, Transaction Type (register, renew, transfer), and Registration Period (1–10 years).
-* Added: Both blocks use **server-side rendering** (`render.php`) and reuse the existing `WHMCS_Price_API` class — no logic duplication, full transient caching inherited automatically.
-* Added: `block.json` metadata files for both blocks following WordPress block API v3 standards.
-* Added: `class-whmcs-blocks.php` for block registration via `register_block_type()`.
-* Added: Editor preview shown in the block canvas when a Product ID or TLD has been configured.
-* Added: `Placeholder` component shown in the editor when the block has not yet been configured.
-* Changed: Updated `WHMCS_PRICE_VERSION` constant to `2.3.0`.
-* Changed: Fixed author name encoding in plugin header (`Sörensson` was incorrectly stored as mojibake).
-* Changed: Block registration uses `WHMCS_PRICE_DIR` constant consistently with the rest of the plugin.
-* Changed: Changed Tags in readme.txt to the supported Tags of 5.
+* 2 new features
 
 = 2.2.2 =
-* Fix: Fixed a typo in the domain price shortcode output that could trigger PHP notices by referencing an undefined variable.
-* Fix: Updated Swedish language files in the `languages/` directory.
-* Changed: **WordPress Directory Compliance:** Updated "Tested up to" value to 6.7 to match the current stable WordPress release.
-* Changed: **Readme Optimization:** Refactored `readme.txt` headers and spacing to ensure compatibility with the WordPress.org plugin parser.
-* Changed: **License Clarification:** Added explicit GPLv2 license declaration to `README.md` as requested by the plugin review team.
-* Changed: **Version Alignment:** Synchronized versioning (2.2.2) across all core files, `readme.txt`, and `README.md`.
-* Removed: Removed the `/assets/` directory from the plugin distribution (to be managed via SVN assets as per WordPress.org guidelines).
+* 4 improvements
 
 = 2.2.1 =
-* Added: Implemented redirect-safe cache clearing from the Admin Bar (prevents double execution on page refresh).
-* Added: Added success notices when clearing cache via the Admin Bar.
-* Fix: Resolved browser console warnings by fixing duplicate HTML `id` and `name` attributes in the settings page.
-* Fix: Fixed minor PHPDoc alignment to better follow WordPress Coding Standards.
-* Changed: Updated plugin versioning to 2.2.1 across all core files.
-* Changed: Improved shortcode usage examples for better clarity.
+* Maintenance update
 
 = 2.2.0 =
-* Added: Complete **PHPDoc documentation** in English for all classes and functions following WordPress Coding Standards.
-* Added: New `WHMCS_Price_API` service class to centralize data fetching and caching logic.
-* Added: Support for translation via text-domain `whmcs-price` and `/languages` folder.
-* Added: **Official Swedish (sv_SE) translation** and `.pot` template for localization.
-* Added: Security nonces for cache clearing actions in both Admin Bar and Settings page.
-* Added: Visual feedback (admin notices) when cache is successfully cleared.
-* Changed: **Adopted Semantic Versioning (x.y.z)** to allow for easier minor updates and patches.
-* Changed: Refactored shortcode logic for better performance and readability.
-* Changed: Modernized the Settings UI with improved instructions and code examples.
-* Changed: Updated minimum PHP requirement to 7.4 (recommended 8.0+) for better stability.
-* Changed: Standardized file structure following WordPress Plugin Guidelines.
-* Fix: Fixed issues with JS-feed cleaning where raw Javascript strings were sometimes displayed.
-* Fix: Resolved potential conflicts by prefixing all functions and classes correctly.
+* 1 new feature, 1 improvement
 
 = 2.1 =
-* Initial refactor of the original plugin.
-* Switched from direct SQL/Legacy API to WHMCS JS Feeds (HTTP).
-* Added WordPress Transients API for caching.
+* Maintenance update
+
+= 1.3 =
+* Fix Bug
+
+= 1.2 =
+* Fix Bug
+
+= 1.1 =
+* Fix Interference Bug
+
+= 1.0 =
+* First Version
 
 == Screenshots ==
 1. /assets/screenshot-1.jpg
 2. /assets/screenshot-2.jpg
-3. /assets/screenshot-2.jpg
-4. /assets/screenshot-3.jpg
-
+3. /assets/screenshot-3.jpg
+4. /assets/screenshot-4.jpg
+5. /assets/screenshot-5.jpg
+6. /assets/screenshot-6.jpg

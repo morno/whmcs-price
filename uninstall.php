@@ -22,7 +22,6 @@ function whmcs_price_uninstall_site() {
     delete_option( 'whmcs_price_option' );
 
     // Remove per-user settings preferences.
-    $screen = 'settings_page_whmcs_price';
     $user_meta_keys = array(
         'whmcs_price_active_tab',
     );

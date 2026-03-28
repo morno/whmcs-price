@@ -133,7 +133,7 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 		$settings = $this->get_settings_for_display();
 
 		if ( empty( $settings['product_ids'] ) ) {
-			if ( \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
+			if ( isset( \Elementor\Plugin::$instance->editor ) && \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
 				echo '<div style="padding: 20px; background: #f0f0f1; border: 1px dashed #ccc; text-align: center;">';
 				echo esc_html__( 'Please enter Product IDs in the widget settings.', 'whmcs-price' );
 				echo '</div>';

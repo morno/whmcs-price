@@ -32,6 +32,9 @@ defined( 'ABSPATH' ) || exit;
  * @return string HTML output containing the requested data or an empty string on failure.
  */
 function whmcs_price_shortcode_handler( $atts ) {
+    // Enqueue CSS lazily — only on pages where this shortcode actually runs.
+    whmcs_price_shortcode_maybe_enqueue();
+
     // Skip WHMCS API calls during Gutenberg saves and autosaves.
     // Shortcodes run via the_content filter which fires on every REST save request,
     // causing live HTTP calls to WHMCS on each keypress/save in the block editor.
@@ -52,6 +55,9 @@ function whmcs_price_shortcode_handler( $atts ) {
         'reg'  => '',
         'per'  => '',   // Optional: month | week | day
     ], $atts, 'whmcs');
+
+    // Allowlist: validate 'per' at the entry point so all downstream code receives a clean value.
+    $atts['per'] = in_array( $atts['per'], array( 'month', 'week', 'day' ), true ) ? $atts['per'] : '';
 
     /**
      * 1. PRODUCT PRICING LOGIC
@@ -271,12 +277,69 @@ function whmcs_price_shortcode_handler( $atts ) {
     if ( 'NA' === $all_prices ) {
         return whmcs_price_unavailable_html();
     }
-    return wp_kses( $all_prices, $allowed_html );
+    return '<div class="whmcs-domain-all">' . wp_kses( $all_prices, $allowed_html ) . '</div>';
 }
 /**
  * Register the [whmcs] shortcode on WordPress initialization.
  * * @since 2.2.0
  */
-add_action('init', function() {
-    add_shortcode('whmcs', 'whmcs_price_shortcode_handler');
-});
+add_action( 'init', function() {
+    add_shortcode( 'whmcs', 'whmcs_price_shortcode_handler' );
+} );
+
+/**
+ * Register and lazily enqueue frontend CSS for the [whmcs] shortcode.
+ *
+ * Styles are registered on wp_enqueue_scripts but only enqueued when the
+ * shortcode actually renders on a given page. This avoids loading CSS on
+ * pages where the shortcode is not present.
+ *
+ * A static flag is set inside the shortcode handler the first time it runs,
+ * and a wp_footer hook triggers the enqueue after the page has been parsed.
+ * Because wp_footer fires after the <head> has been sent, late_enqueue uses
+ * wp_print_styles() to output the <link> tags inline at the footer if needed.
+ *
+ * @since 2.7.3
+ */
+add_action( 'wp_enqueue_scripts', function() {
+    if ( ! defined( 'WHMCS_PRICE_DIR' ) || ! defined( 'WHMCS_PRICE_URL' ) ) {
+        return;
+    }
+    $ver = defined( 'WHMCS_PRICE_VERSION' ) ? WHMCS_PRICE_VERSION : null;
+
+    if ( file_exists( WHMCS_PRICE_DIR . 'blocks/build/whmcs-price-product.css' ) ) {
+        wp_register_style(
+            'whmcs-price-product',
+            WHMCS_PRICE_URL . 'blocks/build/whmcs-price-product.css',
+            array(),
+            $ver
+        );
+    }
+    if ( file_exists( WHMCS_PRICE_DIR . 'blocks/build/whmcs-price-domain.css' ) ) {
+        wp_register_style(
+            'whmcs-price-domain',
+            WHMCS_PRICE_URL . 'blocks/build/whmcs-price-domain.css',
+            array(),
+            $ver
+        );
+    }
+} );
+
+/**
+ * Enqueue the shortcode CSS in wp_footer if the shortcode ran on this page.
+ * Called by whmcs_price_shortcode_maybe_enqueue() from inside the shortcode handler.
+ *
+ * @since 2.7.3
+ */
+function whmcs_price_shortcode_maybe_enqueue(): void {
+    static $hooked = false;
+    if ( $hooked ) {
+        return;
+    }
+    $hooked = true;
+    add_action( 'wp_footer', function() {
+        wp_enqueue_style( 'whmcs-price-product' );
+        wp_enqueue_style( 'whmcs-price-domain' );
+        wp_print_styles( array( 'whmcs-price-product', 'whmcs-price-domain' ) );
+    }, 1 );
+}

@@ -3,7 +3,7 @@
  * Plugin Name:       Mornolink for WHMCS
  * Plugin URI:        https://github.com/morno/whmcs-price
  * Description:       A modernized and secure way to display real-time pricing for products and domains from your WHMCS instance.
- * Version:           2.7.2
+ * Version:           2.7.3
  * Requires at least: 6.4
  * Tested up to:      7.0
  * Requires PHP:      8.1
@@ -36,7 +36,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * * Used for file pathing and versioning throughout the plugin.
  * @since 2.2.0
  */
-define( 'WHMCS_PRICE_VERSION', '2.7.2' );
+define( 'WHMCS_PRICE_VERSION', '2.7.3' );
 define( 'WHMCS_PRICE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WHMCS_PRICE_URL', plugin_dir_url( __FILE__ ) );
 
@@ -91,7 +91,7 @@ function whmcs_price_init() {
     }
 
     // Load Admin Settings (Dashboard only)
-    if ( is_admin() ) {
+    if ( is_admin() && ! wp_doing_ajax() ) {
         $settings_file = WHMCS_PRICE_DIR . 'includes/settings.php';
         if ( file_exists( $settings_file ) ) {
             require_once $settings_file;

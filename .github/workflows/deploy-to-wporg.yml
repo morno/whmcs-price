@@ -1,14 +1,12 @@
 name: Deploy to WordPress.org
 
-# Triggers when build.ps1 creates a GitHub Release (e.g. v2.7.2)
-# Only runs on stable releases — pre-releases (alpha/beta/rc) are skipped.
 on:
   release:
     types: [published]
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to deploy (e.g. 2.7.2) — must match an existing git tag v{version}'
+        description: 'Version to deploy (e.g. 2.7.3) — must match an existing git tag v{version}'
         required: true
         type: string
 
@@ -24,13 +22,10 @@ jobs:
     runs-on: ubuntu-latest
 
     # Skip pre-releases on release trigger; always run on workflow_dispatch
-    if: "github.event_name == 'workflow_dispatch' || !github.event.release.prerelease"
+    if: "${{ github.event_name == 'workflow_dispatch' || !github.event.release.prerelease }}"
 
     steps:
-      - name: Checkout tag
-        uses: actions/checkout@v6
-
-      - name: Extract version from tag
+      - name: Extract version from trigger
         id: version
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -41,10 +36,19 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Deploying version: $VERSION"
 
+      # BUG FIX: For workflow_dispatch we must checkout the specific tag,
+      # not the default branch. Without this the deployed code would be
+      # whatever is on main rather than the version being released.
+      - name: Checkout tag
+        uses: actions/checkout@v6
+        with:
+          ref: "v${{ steps.version.outputs.version }}"
+
       - name: Verify version consistency
         run: |
           TAG_VERSION="${{ steps.version.outputs.version }}"
-          PHP_VERSION=$(grep -oE "Version:[[:space:]]+[0-9]+\.[0-9]+\.[0-9]+([.-][a-zA-Z0-9.]+)?" whmcs_price.php | grep -oE "[0-9]+\.[0-9]+\.[0-9]+([.-][a-zA-Z0-9.]+)?$" | head -1)
+          PHP_VERSION=$(grep -oE "Version:[[:space:]]+[0-9]+\.[0-9]+\.[0-9]+([.-][a-zA-Z0-9.]+)?" whmcs_price.php \
+            | grep -oE "[0-9]+\.[0-9]+\.[0-9]+([.-][a-zA-Z0-9.]+)?$" | head -1)
 
           echo "Tag version : $TAG_VERSION"
           echo "PHP version : $PHP_VERSION"
@@ -59,24 +63,17 @@ jobs:
             exit 1
           fi
 
-          # Patch Stable tag in readme.txt to match the release tag
-          # (sync-changelog may not have committed before the tag was created)
+          # sync-changelog action may not have committed before the tag was created
           sed -i "s/Stable tag:.*/Stable tag: $TAG_VERSION/" readme.txt
           echo "Stable tag patched to $TAG_VERSION in readme.txt"
-
           echo "Version consistency OK."
 
       - name: Deploy to WordPress.org SVN
         uses: 10up/action-wordpress-plugin-deploy@stable
         env:
-          # Add these two secrets in GitHub → Settings → Secrets → Actions:
-          # SVN_USERNAME  = your WordPress.org username (e.g. morno)
-          # SVN_PASSWORD  = your WordPress.org SVN password (from profiles.wordpress.org)
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
           SLUG: whmcs-price
           VERSION: ${{ steps.version.outputs.version }}
-          # Files/folders to include in the SVN deploy.
-          # Matches what build.ps1 includes in the ZIP.
           BUILD_DIR: .
           ASSETS_DIR: .wordpress-org

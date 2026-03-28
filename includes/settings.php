@@ -23,8 +23,8 @@ class WHMCSPrice {
 	}
 
 	public function __construct() {
-		add_action( 'admin_menu', array( $this, 'whmcspr_plugin_page' ) );
-		add_action( 'admin_init', array( $this, 'whmcspr_init' ) );
+		add_action( 'admin_menu', array( $this, 'whmcs_price_plugin_page' ) );
+		add_action( 'admin_init', array( $this, 'whmcs_price_settings_init' ) );
 		add_action( 'admin_bar_menu', array( $this, 'add_admin_bar_clear_cache' ), 100 );
 		add_action( 'admin_init', array( $this, 'handle_admin_bar_clear_cache_action' ) );
 		add_filter( 'plugin_action_links_' . plugin_basename( WHMCS_PRICE_DIR . 'whmcs_price.php' ), array( $this, 'add_settings_link' ) );
@@ -39,13 +39,13 @@ class WHMCSPrice {
 		return $links;
 	}
 
-	public function whmcspr_plugin_page() {
+	public function whmcs_price_plugin_page() {
 		add_options_page(
 			__( 'WHMCS Price Options', 'whmcs-price' ),
 			__( 'WHMCS Price Settings', 'whmcs-price' ),
 			'manage_options',
 			'whmcs_price',
-			array( $this, 'whmcspr_admin_page' )
+			array( $this, 'whmcs_price_admin_page' )
 		);
 	}
 
@@ -61,7 +61,7 @@ class WHMCSPrice {
 		return in_array( $saved, $allowed, true ) ? $saved : 'connection';
 	}
 
-	public function whmcspr_admin_page() {
+	public function whmcs_price_admin_page() {
 		if ( ! current_user_can( 'manage_options' ) ) { return; }
 
 		if ( 1 === $this->get_query_flag( 'cache_cleared' ) ) {
@@ -340,7 +340,7 @@ class WHMCSPrice {
 	// SETTINGS API
 	// =========================================================
 
-	public function whmcspr_init() {
+	public function whmcs_price_settings_init() {
 		register_setting( 'price_option_group', 'whmcs_price_option', array( $this, 'sanitize' ) );
 	}
 
@@ -409,6 +409,9 @@ class WHMCSPrice {
 	// =========================================================
 
 	public function clear_whmcs_cache() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
 		global $wpdb;
 		$prefixes = array(
 			$wpdb->esc_like( '_transient_whmcs_' ) . '%',
