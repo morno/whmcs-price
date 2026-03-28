@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Mornolink for WHMCS 2.7.2\n"
+"Project-Id-Version: Mornolink for WHMCS 2.7.3\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/whmcs-price\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-03-23T17:59:19+00:00\n"
+"POT-Creation-Date: 2026-03-28T12:40:49+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: whmcs-price\n"
@@ -65,7 +65,7 @@ msgstr ""
 #: includes/elementor/widgets/domain-price-widget.php:98
 #: includes/elementor/widgets/domain-price-widget.php:191
 #: includes/elementor/widgets/domain-price-widget.php:232
-#: includes/shortcode/shortcode.php:203
+#: includes/shortcode/shortcode.php:209
 #: blocks/build/whmcs-price-domain.js:1
 #: blocks/whmcs-price-domain/edit.js:27
 msgid "Transfer"
@@ -78,7 +78,7 @@ msgstr ""
 #: blocks/whmcs-price-product/render.php:73
 #: includes/elementor/widgets/product-price-widget.php:80
 #: includes/elementor/widgets/product-price-widget.php:186
-#: includes/shortcode/shortcode.php:94
+#: includes/shortcode/shortcode.php:100
 #: blocks/build/whmcs-price-product.js:1
 #: blocks/whmcs-price-product/edit.js:35
 msgid "Name"
@@ -87,7 +87,7 @@ msgstr ""
 #: blocks/whmcs-price-product/render.php:74
 #: includes/elementor/widgets/product-price-widget.php:81
 #: includes/elementor/widgets/product-price-widget.php:187
-#: includes/shortcode/shortcode.php:95
+#: includes/shortcode/shortcode.php:101
 #: blocks/build/whmcs-price-product.js:1
 #: blocks/whmcs-price-product/edit.js:36
 msgid "Description"
@@ -96,7 +96,7 @@ msgstr ""
 #: blocks/whmcs-price-product/render.php:75
 #: includes/elementor/widgets/product-price-widget.php:82
 #: includes/elementor/widgets/product-price-widget.php:188
-#: includes/shortcode/shortcode.php:96
+#: includes/shortcode/shortcode.php:102
 #: blocks/build/whmcs-price-product.js:1
 #: blocks/whmcs-price-product/edit.js:37
 msgid "Price"
@@ -107,7 +107,7 @@ msgstr ""
 #: includes/elementor/widgets/product-price-widget.php:83
 #: includes/elementor/widgets/product-price-widget.php:189
 #: includes/elementor/widgets/product-price-widget.php:266
-#: includes/shortcode/shortcode.php:97
+#: includes/shortcode/shortcode.php:103
 #: blocks/build/whmcs-price-product.js:1
 #: blocks/whmcs-price-product/edit.js:38
 msgid "Setup Fee"
@@ -224,7 +224,7 @@ msgid "Domain Settings"
 msgstr ""
 
 #: includes/elementor/widgets/domain-price-widget.php:47
-#: includes/shortcode/shortcode.php:233
+#: includes/shortcode/shortcode.php:239
 #: blocks/build/whmcs-price-domain.js:1
 #: blocks/whmcs-price-domain/edit.js:58
 msgid "TLD"
@@ -686,58 +686,58 @@ msgstr ""
 msgid "WHMCS URL must use HTTPS. HTTP URLs are blocked for security reasons."
 msgstr ""
 
-#: includes/settings.php:431
-#: includes/settings.php:433
+#: includes/settings.php:434
+#: includes/settings.php:436
 msgid "Clear WHMCS Cache"
 msgstr ""
 
-#: includes/settings.php:441
+#: includes/settings.php:444
 msgid "Unauthorized access."
 msgstr ""
 
-#: includes/settings.php:472
+#: includes/settings.php:475
 msgid "Now"
 msgstr ""
 
-#: includes/settings.php:479
+#: includes/settings.php:482
 #, php-format
 msgid "%d day"
 msgid_plural "%d days"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/settings.php:480
+#: includes/settings.php:483
 #, php-format
 msgid "%d hour"
 msgid_plural "%d hours"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/settings.php:481
+#: includes/settings.php:484
 #, php-format
 msgid "%d minute"
 msgid_plural "%d minutes"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/settings.php:482
+#: includes/settings.php:485
 msgid "Soon"
 msgstr ""
 
-#: includes/shortcode/shortcode.php:201
+#: includes/shortcode/shortcode.php:207
 msgid "Registration"
 msgstr ""
 
-#: includes/shortcode/shortcode.php:202
+#: includes/shortcode/shortcode.php:208
 msgid "Renewal"
 msgstr ""
 
-#: includes/shortcode/shortcode.php:225
+#: includes/shortcode/shortcode.php:231
 msgid "1 year"
 msgstr ""
 
 #. translators: %d: number of years
-#: includes/shortcode/shortcode.php:227
+#: includes/shortcode/shortcode.php:233
 #, php-format
 msgid "%d years"
 msgstr ""
