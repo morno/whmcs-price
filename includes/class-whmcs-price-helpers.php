@@ -134,9 +134,33 @@ function whmcs_price_flush_page_cache(): void {
  * @return string Safe HTML string — already escaped, safe to echo directly.
  */
 function whmcs_price_unavailable_html(): string {
-	return '<span class="whmcs-price-unavailable">'
-		. esc_html__( 'Pricing unavailable — please check back shortly.', 'whmcs-price' )
-		. '</span>';
+	$options        = get_option( 'whmcs_price_option', array() );
+	$fallback_price = ! empty( $options['fallback_price'] ) ? trim( $options['fallback_price'] ) : '';
+
+	if ( '' !== $fallback_price ) {
+		/**
+		 * Filter the fallback price string shown when WHMCS is unavailable.
+		 *
+		 * @since 2.8.0
+		 * @param string $fallback_price The admin-configured fallback price string.
+		 */
+		$fallback_price = (string) apply_filters( 'whmcs_price_fallback_price', $fallback_price );
+		return '<span class="whmcs-price-unavailable whmcs-price-fallback">'
+			. esc_html( $fallback_price )
+			. '</span>';
+	}
+
+	$label = esc_html__( 'Pricing unavailable — please check back shortly.', 'whmcs-price' );
+
+	/**
+	 * Filter the "pricing unavailable" label shown when no fallback price is set.
+	 *
+	 * @since 2.8.0
+	 * @param string $label The translated unavailable label.
+	 */
+	$label = (string) apply_filters( 'whmcs_price_unavailable_label', $label );
+
+	return '<span class="whmcs-price-unavailable">' . esc_html( $label ) . '</span>';
 }
 
 /**

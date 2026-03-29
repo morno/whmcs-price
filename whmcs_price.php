@@ -3,14 +3,14 @@
  * Plugin Name:       Mornolink for WHMCS
  * Plugin URI:        https://github.com/morno/whmcs-price
  * Description:       A modernized and secure way to display real-time pricing for products and domains from your WHMCS instance.
- * Version:           2.7.3
+ * Version:           2.8.0
  * Requires at least: 6.4
  * Tested up to:      7.0
  * Requires PHP:      8.1
+ * Requires Plugins:  
  * Author:            Tobias Sörensson (Morno), MohammadReza Kamali
  * Author URI:        https://github.com/morno
  * Text Domain:       whmcs-price
- * Domain Path:       /languages
  * License:           GPLv2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  */
@@ -36,7 +36,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * * Used for file pathing and versioning throughout the plugin.
  * @since 2.2.0
  */
-define( 'WHMCS_PRICE_VERSION', '2.7.3' );
+define( 'WHMCS_PRICE_VERSION', '2.8.0' );
 define( 'WHMCS_PRICE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WHMCS_PRICE_URL', plugin_dir_url( __FILE__ ) );
 
@@ -62,10 +62,22 @@ require_once WHMCS_PRICE_DIR . 'includes/class-whmcs-api.php';
 require_once WHMCS_PRICE_DIR . 'includes/class-whmcs-price-helpers.php';
 
 /**
- * Load the Blocks Class.
- * This class handles the registration and rendering of Gutenberg blocks for WHMCS pricing.
+ * Load the Gutenberg Block Registration.
+ * Handles block registration, Pattern Overrides (Block Bindings), and related hooks.
  */
-require_once WHMCS_PRICE_DIR . 'includes/blocks.php';
+require_once WHMCS_PRICE_DIR . 'includes/gutenberg/blocks.php';
+
+/**
+ * Load the REST API endpoints.
+ * Provides /wp-json/whmcs-price/v1/product/{pid} and /domain/{tld} for headless use.
+ */
+require_once WHMCS_PRICE_DIR . 'includes/rest-api.php';
+
+/**
+ * Load the Dashboard Widget.
+ * Shows cache status on the WordPress admin dashboard.
+ */
+require_once WHMCS_PRICE_DIR . 'includes/dashboard-widget.php';
 
 /**
  * Load the Elementor Class.

@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.8.0] - 2026-03-29
+
+### Added
+
+- **Pattern Overrides support for Gutenberg blocks (WordPress 7.0)**: Both the
+  Product Price and Domain Price blocks now support synced pattern overrides via
+  the WordPress 7.0 Block Bindings API. Attributes `pid` and `billingCycle`
+  (product block) and `tld` and `regPeriod` (domain block) are registered as
+  overridable — allowing site editors to build synced patterns where each
+  instance shows a different product or domain without duplicating the pattern
+  structure.
+
+- **REST API endpoints**: `GET /wp-json/whmcs-price/v1/product/{pid}` and
+  `/domain/{tld}` for headless WordPress and JavaScript price loaders.
+  Served from the same transient cache as shortcodes and blocks.
+
+- **Dashboard widget**: Cache status widget on the WordPress admin dashboard
+  showing cached entry count, active locks, earliest expiry, and a clear-cache button.
+
+- **Fallback price**: New "Fallback Price" setting (Advanced tab) shown instead
+  of "Pricing unavailable" when WHMCS cannot be reached.
+
+- **Developer filters**: `whmcs_price_product_data`, `whmcs_price_domain_price`,
+  `whmcs_price_fallback_price`, and `whmcs_price_unavailable_label` for
+  customizing returned values and labels.
+
+- **`Requires Plugins` header**: Declared in plugin header for future use.
+
+### Changed
+
+- **Block registration moved to `includes/gutenberg/blocks.php`**: Consistent
+  with the `includes/elementor/` structure. No functional change.
+
+- **`Domain Path` header removed**: The plugin relied on WordPress.org language
+  packs for translations. The `languages/` folder is excluded from the SVN
+  deploy and was causing a plugin check warning. Removing the header resolves
+  the warning. `Text Domain` is retained.
+
 ## [2.7.3] - 2026-03-28
 
 ### Fixed

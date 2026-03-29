@@ -259,6 +259,18 @@ class WHMCSPrice {
 		<input type="hidden" name="whmcs_price_option[_tab]" value="advanced" />
 		<table class="form-table" role="presentation">
 			<tr>
+				<th scope="row"><label for="fallback_price"><?php esc_html_e( 'Fallback Price', 'whmcs-price' ); ?></label></th>
+				<td>
+					<input type="text" id="fallback_price" class="regular-text" style="direction:ltr;"
+						name="whmcs_price_option[fallback_price]"
+						value="<?php echo esc_attr( $this->options['fallback_price'] ?? '' ); ?>"
+						placeholder="<?php esc_attr_e( 'e.g. from 9.99 kr/mo', 'whmcs-price' ); ?>" />
+					<p class="description">
+						<?php esc_html_e( 'Shown instead of "Pricing unavailable" when WHMCS cannot be reached. Leave blank to show the default message.', 'whmcs-price' ); ?>
+					</p>
+				</td>
+			</tr>
+			<tr>
 				<th scope="row"><label for="custom_user_agent"><?php esc_html_e( 'Custom User-Agent', 'whmcs-price' ); ?></label></th>
 				<td>
 					<input type="text" id="custom_user_agent" class="large-text"
@@ -377,6 +389,14 @@ class WHMCSPrice {
 		}
 
 		if ( 'advanced' === $active_tab ) {
+			// Fallback price: free-form string, sanitized as text field, max 60 chars.
+			if ( ! empty( $input['fallback_price'] ) ) {
+				$fp = sanitize_text_field( wp_unslash( $input['fallback_price'] ) );
+				$new_input['fallback_price'] = substr( $fp, 0, 60 );
+			} else {
+				unset( $new_input['fallback_price'] );
+			}
+
 			if ( ! empty( $input['custom_user_agent'] ) ) {
 				$ua = sanitize_text_field( trim( $input['custom_user_agent'] ) );
 				$ua = preg_replace( '/[^\x20-\x7E]/', '', $ua );

@@ -434,6 +434,18 @@ class WHMCS_Price_API {
 		delete_transient( $lock_key ); // Release lock after successful cache write.
 		whmcs_price_clear_outage();
 
+		/**
+		 * Filter the product data returned from WHMCS before it is cached and displayed.
+		 *
+		 * @since 2.8.0
+		 * @param string $data          The raw price/name/description string from WHMCS.
+		 * @param int    $pid           The WHMCS product ID.
+		 * @param string $billing_cycle The billing cycle (e.g. 'monthly', 'annually').
+		 * @param string $attribute     The requested attribute ('name', 'description', 'price').
+		 */
+		$data = (string) apply_filters( 'whmcs_price_product_data', $data, $pid, $billing_cycle, $attribute );
+
+		self::$request_cache[ $cache_key ] = $data;
 		return $data;
 	}
 
@@ -566,10 +578,21 @@ class WHMCS_Price_API {
 		) );
 
 		set_transient( $cache_key, $data, self::get_cache_expiry() );
-		self::$request_cache[ $cache_key ] = $data;
 		delete_transient( $lock_key ); // Release lock after successful cache write.
 		whmcs_price_clear_outage();
 
+		/**
+		 * Filter the domain price returned from WHMCS before it is cached and displayed.
+		 *
+		 * @since 2.8.0
+		 * @param string $data       The raw price string from WHMCS.
+		 * @param string $tld        The domain extension (without leading dot).
+		 * @param string $type       Transaction type: 'register', 'renew', or 'transfer'.
+		 * @param int    $reg_period Registration period in years.
+		 */
+		$data = (string) apply_filters( 'whmcs_price_domain_price', $data, $tld, $type, $reg_period_int );
+
+		self::$request_cache[ $cache_key ] = $data;
 		return $data;
 	}
 
