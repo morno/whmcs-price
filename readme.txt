@@ -4,7 +4,7 @@ Tags: whmcs, price, hosting, domain, billing
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 2.7.3
+Stable tag: 2.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -47,6 +47,9 @@ See [Domain Pricing](https://github.com/morno/whmcs-price/wiki/Domain-Pricing) i
 == Changelog ==
 
 For the full changelog, see [CHANGELOG.md](https://github.com/morno/whmcs-price/blob/main/CHANGELOG.md).
+
+= 2.8.0 =
+* 6 new features, 2 improvements
 
 = 2.7.3 =
 * 7 bug fixes, 3 improvements
