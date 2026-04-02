@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-03-29T18:03:13+00:00\n"
+"POT-Creation-Date: 2026-04-02T05:21:02+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: whmcs-price\n"
@@ -147,6 +147,7 @@ msgid "Error detail: %s"
 msgstr ""
 
 #: includes/class-whmcs-price-helpers.php:210
+#: whmcs_price.php:185
 msgid "(not configured)"
 msgstr ""
 
@@ -257,6 +258,7 @@ msgstr ""
 
 #: includes/dashboard-widget.php:118
 #: includes/settings.php:148
+#: whmcs_price.php:176
 msgid "WHMCS URL"
 msgstr ""
 
@@ -270,6 +272,8 @@ msgid "Settings ↗"
 msgstr ""
 
 #: includes/elementor/class-whmcs-elementor.php:42
+#: whmcs_price.php:142
+#: whmcs_price.php:143
 msgid "WHMCS Price"
 msgstr ""
 
@@ -534,6 +538,7 @@ msgid "Pricing data is currently unavailable."
 msgstr ""
 
 #: includes/settings.php:38
+#: whmcs_price.php:192
 msgid "Settings"
 msgstr ""
 
@@ -801,6 +806,26 @@ msgstr ""
 #: includes/shortcode/shortcode.php:233
 #, php-format
 msgid "%d years"
+msgstr ""
+
+#: whmcs_price.php:164
+msgid "You do not have permission to access this page."
+msgstr ""
+
+#: whmcs_price.php:170
+msgid "WHMCS Price — Network Overview"
+msgstr ""
+
+#: whmcs_price.php:171
+msgid "Settings are configured per site. Click a site below to manage its WHMCS Price settings."
+msgstr ""
+
+#: whmcs_price.php:175
+msgid "Site"
+msgstr ""
+
+#: whmcs_price.php:177
+msgid "Actions"
 msgstr ""
 
 #: blocks/build/whmcs-price-domain.js:1
