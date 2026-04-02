@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.8.0] - 2026-03-29
+## [2.8.0] - 2026-04-01
 
 ### Added
 
@@ -10,7 +10,7 @@ All notable changes to this project will be documented in this file.
   Product Price and Domain Price blocks now support synced pattern overrides via
   the WordPress 7.0 Block Bindings API. Attributes `pid` and `billingCycle`
   (product block) and `tld` and `regPeriod` (domain block) are registered as
-  overridable — allowing site editors to build synced patterns where each
+  overridable - allowing site editors to build synced patterns where each
   instance shows a different product or domain without duplicating the pattern
   structure.
 
@@ -29,6 +29,14 @@ All notable changes to this project will be documented in this file.
   customizing returned values and labels.
 
 - **`Requires Plugins` header**: Declared in plugin header for future use.
+
+- **WP-CLI support**: `wp whmcs-price cache status|clear` and `wp whmcs-price price product|domain`
+
+- **Schema.org JSON-LD**: `whmcs_price_schema_product()` and `whmcs_price_schema_domain()` helpers for structured data output.
+
+- **Block editor translations**: `wp_set_script_translations()` registered for both blocks - sidebar strings are now translatable.
+
+- **Multisite Network Admin**: Network Admin overview page listing all sites with their WHMCS URL and settings links.
 
 ### Changed
 
@@ -76,7 +84,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- **`whmcspr_` method prefix corrected**: Three methods in `settings.php` used the legacy `whmcspr_` prefix instead of the plugin-standard `whmcs_price_` prefix. `whmcspr_plugin_page` → `whmcs_price_plugin_page`, `whmcspr_admin_page` → `whmcs_price_admin_page`, `whmcspr_init` → `whmcs_price_settings_init`. No functional change.
+- **`whmcspr_` method prefix corrected**: Three methods in `settings.php` used the legacy `whmcspr_` prefix instead of the plugin-standard `whmcs_price_` prefix. `whmcspr_plugin_page` * `whmcs_price_plugin_page`, `whmcspr_admin_page` → `whmcs_price_admin_page`, `whmcspr_init` * `whmcs_price_settings_init`. No functional change.
 
 - **Settings class not loaded during AJAX**: `is_admin()` guard updated to
   `is_admin() && ! wp_doing_ajax()` so WHMCSPrice is not instantiated during
@@ -98,8 +106,8 @@ All notable changes to this project will be documented in this file.
   `shortcode.php` missing spaces in `if` and `foreach` statements corrected.
 
 - **`wait_for_cache()` reduced from 2s to 450ms**: The maximum wait time when a
-  concurrent process holds a fetch lock was reduced from 2 seconds (8 × 250ms) to
-  450ms (3 × 150ms). This limits the impact on PHP-FPM worker availability on
+  concurrent process holds a fetch lock was reduced from 2 seconds (8 x 250ms) to
+  450ms (3 x 150ms). This limits the impact on PHP-FPM worker availability on
   shared hosting while still resolving the common case where a `ServerSideRender`
   REST request arrives shortly after the main page request has begun fetching.
 
@@ -133,7 +141,7 @@ All notable changes to this project will be documented in this file.
 - **Request-level in-memory cache added to `WHMCS_Price_API`**: A static `$request_cache`
   property now stores results for the duration of the current PHP process. When multiple
   shortcodes, blocks, or Elementor widgets on the same page request the same data, only
-  the first call hits the WordPress transient (database) or WHMCS — all subsequent calls
+  the first call hits the WordPress transient (database) or WHMCS - all subsequent calls
   within the same request are served from memory. This eliminates duplicate WHMCS feed
   requests that occurred when `ServerSideRender` REST calls ran shortly after the main
   page request before the transient cache was warmed.
@@ -151,27 +159,27 @@ All notable changes to this project will be documented in this file.
   Covers 18 integrations across two patterns:
 
   **Action-hook based** (safe to fire regardless of whether the plugin is active):
-  - LiteSpeed Cache — `litespeed_purge_all`
-  - Hummingbird — `wphb_clear_page_cache`
-  - Breeze (Cloudways) — `breeze_clear_all_cache`
-  - NitroPack — `nitropack_integration_purge_all`
-  - Swift Performance — `swift_performance_after_clear_all_cache`
-  - Cache Enabler (KeyCDN) — `cache_enabler_clear_complete_cache`
-  - Cachify — `cachify_flush_cache`
-  - Pantheon — `pantheon_cache_flush`
-  - FlyingPress — `flying_press_purge_all`
+  - LiteSpeed Cache - `litespeed_purge_all`
+  - Hummingbird - `wphb_clear_page_cache`
+  - Breeze (Cloudways) - `breeze_clear_all_cache`
+  - NitroPack - `nitropack_integration_purge_all`
+  - Swift Performance - `swift_performance_after_clear_all_cache`
+  - Cache Enabler (KeyCDN) - `cache_enabler_clear_complete_cache`
+  - Cachify - `cachify_flush_cache`
+  - Pantheon - `pantheon_cache_flush`
+  - FlyingPress - `flying_press_purge_all`
 
   **Function/class based** (guarded with `function_exists` / `class_exists` +
   `method_exists` before calling):
-  - WP Rocket — `rocket_clean_domain()`
-  - WP Fastest Cache — `wpfc_clear_all_cache()`
-  - W3 Total Cache — `w3tc_flush_all()`
-  - WP Super Cache — `wp_cache_clear_cache()`
-  - SG Optimizer (SiteGround) — `sg_cachepress_purge_cache()`
-  - Autoptimize — `autoptimizeCache::clearall()`
-  - Comet Cache — `comet_cache::clear()`
-  - WP Engine (MU plugin) — `WpeCommon::purge_memcached()` + `purge_varnish_cache()`
-  - Kinsta (MU plugin) — `kinsta_cache_purge_all_cache()`
+  - WP Rocket - `rocket_clean_domain()`
+  - WP Fastest Cache - `wpfc_clear_all_cache()`
+  - W3 Total Cache - `w3tc_flush_all()`
+  - WP Super Cache - `wp_cache_clear_cache()`
+  - SG Optimizer (SiteGround) - `sg_cachepress_purge_cache()`
+  - Autoptimize - `autoptimizeCache::clearall()`
+  - Comet Cache - `comet_cache::clear()`
+  - WP Engine (MU plugin) - `WpeCommon::purge_memcached()` + `purge_varnish_cache()`
+  - Kinsta (MU plugin) - `kinsta_cache_purge_all_cache()`
 
   `do_action('whmcs_price_after_flush_page_cache')` fires at the end for custom
   integrations not covered above. `wp_cache_flush()` is intentionally excluded as it
@@ -185,16 +193,16 @@ All notable changes to this project will be documented in this file.
   a fresh alert.
 
   New helpers in `includes/class-whmcs-price-helpers.php`:
-  - `whmcs_price_notify_outage( string $error_context )` — sends the notification and
+  - `whmcs_price_notify_outage( string $error_context )` - sends the notification and
     sets the circuit-breaker transient. Called on every `WP_Error` or non-200 HTTP
     response across all four API methods in `class-whmcs-api.php`.
-  - `whmcs_price_clear_outage()` — deletes the circuit-breaker transient. Called on
+  - `whmcs_price_clear_outage()` - deletes the circuit-breaker transient. Called on
     every successful WHMCS response so future outages trigger a new notification.
 
 - **Notifications settings section**: A new **Notifications** tab has been
   added to the settings page between the Performance and Advanced tabs. Controls:
-  - **Outage Alerts** checkbox — enable or disable e-mail notifications (on by default).
-  - **Alert Address** — e-mail address to notify; defaults to the site admin address.
+  - **Outage Alerts** checkbox - enable or disable e-mail notifications (on by default).
+  - **Alert Address** - e-mail address to notify; defaults to the site admin address.
   - An inline warning banner is shown in the tab when an outage is currently active
     (circuit-breaker transient is set), giving admins immediate visibility in the
     WordPress dashboard without needing to check the front end.
@@ -206,10 +214,10 @@ All notable changes to this project will be documented in this file.
 
 - **Redesigned settings page UI**: The settings page has been rebuilt following
   standard WordPress admin conventions (same pattern as WooCommerce, Yoast, etc.):
-  - **Tabbed navigation** — Connection, Performance, Notifications and Advanced are
+  - **Tabbed navigation** - Connection, Performance, Notifications and Advanced are
     separated into tabs using WordPress's native `nav-tab-wrapper` styling. The active
     tab is saved per user and restored on next visit.
-  - **Sidebar cards** — Operational Status, Product Pricing reference and Domain
+  - **Sidebar cards** - Operational Status, Product Pricing reference and Domain
     Pricing reference are displayed as sidebar panels using WordPress's native `.card`
     class, placed to the right of the main form.
   - The previous postbox-based layout with custom drag-and-drop and column controls
@@ -218,9 +226,9 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - **Configurable CDN/proxy cache bypass**: A new **Bypass CDN Cache** checkbox
-  in Settings → Connection controls whether `Cache-Control: no-cache` and
+  in Settings * Connection controls whether `Cache-Control: no-cache` and
   `Pragma: no-cache` are sent with every outgoing request to WHMCS. Disabled by
-  default — most WHMCS installations are not affected since Cloudflare does not
+  default - most WHMCS installations are not affected since Cloudflare does not
   cache dynamic PHP responses unless explicitly configured to do so. Enable if your
   WHMCS server sits behind a CDN or reverse proxy that is set up to cache PHP feeds,
   to ensure price updates are visible immediately regardless of the CDN cache TTL.
@@ -271,31 +279,31 @@ All notable changes to this project will be documented in this file.
   [whmcs tld="se" show="register,renew" per="month"]
   ```
 
-- **`includes/class-whmcs-price-helpers.php`** — New shared helpers file loaded
+- **`includes/class-whmcs-price-helpers.php`** - New shared helpers file loaded
   by `whmcs_price.php` before all other modules. Contains rendering and
   formatting utilities available to shortcodes, blocks, and Elementor widgets
   without duplication. New output modules can consume these helpers immediately.
   Currently provides:
-  - `whmcs_price_format_per()` — per-period price formatting
+  - `whmcs_price_format_per()` - per-period price formatting
 
-- **`WHMCS_Price_API::divide_price()`** — New static method that divides a raw
+- **`WHMCS_Price_API::divide_price()`** - New static method that divides a raw
   WHMCS price string by a given divisor while preserving the currency symbol.
   Handles common WHMCS price formats: `$9.99`, `€12.50`, `99.00 kr`, `9,99 kr`.
 
-- **`WHMCS_Price_API::billing_cycle_months()`** — New static method that returns
+- **`WHMCS_Price_API::billing_cycle_months()`** - New static method that returns
   the number of months in a given WHMCS internal billing cycle string
   (e.g. `"annually"` → `12`).
 
 - **Domain shortcode multi-type support** (`show="register,renew"`): The `[whmcs]`
   shortcode now accepts a comma-separated list of transaction types in the `show`
   parameter, rendering a comparison table. Previously only one type at a time was
-  supported. Fully backwards compatible — existing single-type shortcodes are
+  supported. Fully backwards compatible - existing single-type shortcodes are
   unaffected.
 
 - **Setup Fee support** (`show="setupfee"`): All output modules (shortcode, Gutenberg
   block, Elementor widget) now support displaying the WHMCS one-time setup fee as an
   explicit column or field. Setup fee is fetched separately from `productpricing.php`
-  and is only shown when explicitly requested — it is never displayed automatically
+  and is only shown when explicitly requested - it is never displayed automatically
   alongside the price.
 
   Shortcode example:

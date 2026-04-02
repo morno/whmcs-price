@@ -331,3 +331,188 @@ function whmcs_price_format_per( string $price, string $bc_internal, int $reg_ye
 	return '<span class="whmcs-price-full">' . esc_html( $price . $orig_suffix ) . '</span>'
 		. '<span class="whmcs-price-per">' . esc_html( $divided . $per_suffix ) . '</span>';
 }
+
+/**
+ * Generate Schema.org JSON-LD markup for a WHMCS product price.
+ *
+ * Outputs a <script type="application/ld+json"> element with Product and
+ * Offer structured data. This can improve search engine visibility and
+ * enable rich results (pricing shown directly in Google search results).
+ *
+ * Only outputs when the price is available (not 'NA'). Silently returns an
+ * empty string if the price cannot be fetched or is unavailable.
+ *
+ * Can be suppressed via the filter whmcs_price_enable_schema (return false).
+ *
+ * @since  2.8.0
+ * @param  string $name     Product name, already fetched from WHMCS.
+ * @param  string $price    Raw price string from WHMCS (e.g. "999 Kr").
+ * @param  string $currency ISO 4217 currency code override. If empty,
+ *                          the plugin attempts to extract it from the price
+ *                          string — falls back to site locale currency.
+ * @param  string $url      Canonical URL for the product. Defaults to current URL.
+ * @return string           Safe JSON-LD <script> block, or empty string.
+ */
+function whmcs_price_schema_product( string $name, string $price, string $currency = '', string $url = '' ): string {
+	/**
+	 * Filter: disable Schema.org output globally or conditionally.
+	 *
+	 * @since 2.8.0
+	 * @param bool $enabled Whether to output JSON-LD. Default true.
+	 */
+	if ( false === apply_filters( 'whmcs_price_enable_schema', true ) ) {
+		return '';
+	}
+
+	if ( 'NA' === $price || empty( $price ) || empty( $name ) ) {
+		return '';
+	}
+
+	// Extract numeric price value from raw WHMCS string (e.g. "999 Kr" → "999").
+	$numeric = preg_replace( '/[^0-9.,]/', '', $price );
+	$numeric = str_replace( ',', '.', $numeric );
+	$numeric = is_numeric( $numeric ) ? $numeric : '';
+
+	if ( '' === $numeric ) {
+		return '';
+	}
+
+	// Attempt to detect currency from price string if not provided.
+	if ( empty( $currency ) ) {
+		$currency_map = array(
+			'kr'  => 'SEK',
+			'sek' => 'SEK',
+			'nok' => 'NOK',
+			'dkk' => 'DKK',
+			'eur' => 'EUR',
+			'€'   => 'EUR',
+			'gbp' => 'GBP',
+			'£'   => 'GBP',
+			'usd' => 'USD',
+			'$'   => 'USD',
+			'chf' => 'CHF',
+		);
+		$price_lower = strtolower( $price );
+		foreach ( $currency_map as $symbol => $iso ) {
+			if ( str_contains( $price_lower, $symbol ) ) {
+				$currency = $iso;
+				break;
+			}
+		}
+	}
+
+	$url = ! empty( $url ) ? esc_url_raw( $url ) : ( is_singular() ? get_permalink() : home_url( add_query_arg( array() ) ) );
+
+	$schema = array(
+		'@context'    => 'https://schema.org/',
+		'@type'       => 'Product',
+		'name'        => wp_strip_all_tags( $name ),
+		'url'         => $url,
+		'offers'      => array(
+			'@type'         => 'Offer',
+			'url'           => $url,
+			'price'         => $numeric,
+			'priceCurrency' => ! empty( $currency ) ? strtoupper( $currency ) : 'USD',
+			'availability'  => 'https://schema.org/InStock',
+		),
+	);
+
+	/**
+	 * Filter the Schema.org data array before it is encoded and output.
+	 *
+	 * @since 2.8.0
+	 * @param array  $schema   The schema.org data array.
+	 * @param string $name     Product name.
+	 * @param string $price    Raw price string.
+	 * @param string $currency Resolved ISO currency code.
+	 */
+	$schema = (array) apply_filters( 'whmcs_price_schema_data', $schema, $name, $price, $currency );
+
+	$json = wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+	if ( false === $json ) {
+		return '';
+	}
+
+	return '<script type="application/ld+json">' . $json . '</script>' . "\n";
+}
+
+/**
+ * Generate Schema.org JSON-LD markup for a WHMCS domain offer.
+ *
+ * Similar to whmcs_price_schema_product() but typed as a Service with
+ * the domain TLD as the name. Useful for TLD-specific landing pages.
+ *
+ * @since  2.8.0
+ * @param  string $tld      Domain extension without dot, e.g. "se".
+ * @param  string $price    Raw price string from WHMCS.
+ * @param  string $type     Transaction type: register, renew, transfer.
+ * @param  string $currency ISO 4217 currency code override.
+ * @param  string $url      Canonical URL. Defaults to current URL.
+ * @return string           Safe JSON-LD <script> block, or empty string.
+ */
+function whmcs_price_schema_domain( string $tld, string $price, string $type = 'register', string $currency = '', string $url = '' ): string {
+	if ( false === apply_filters( 'whmcs_price_enable_schema', true ) ) {
+		return '';
+	}
+
+	if ( 'NA' === $price || empty( $price ) || empty( $tld ) ) {
+		return '';
+	}
+
+	$numeric = preg_replace( '/[^0-9.,]/', '', $price );
+	$numeric = str_replace( ',', '.', $numeric );
+	$numeric = is_numeric( $numeric ) ? $numeric : '';
+
+	if ( '' === $numeric ) {
+		return '';
+	}
+
+	$type_labels = array(
+		'register' => 'Domain Registration',
+		'renew'    => 'Domain Renewal',
+		'transfer' => 'Domain Transfer',
+	);
+	$service_name = sprintf( '.%s %s', strtolower( $tld ), $type_labels[ $type ] ?? 'Domain' );
+
+	// Detect currency from price string if not provided.
+	if ( empty( $currency ) ) {
+		$currency_map = array(
+			'kr' => 'SEK', 'sek' => 'SEK', 'nok' => 'NOK', 'dkk' => 'DKK',
+			'eur' => 'EUR', '€' => 'EUR', 'gbp' => 'GBP', '£' => 'GBP',
+			'usd' => 'USD', '$' => 'USD', 'chf' => 'CHF',
+		);
+		$price_lower = strtolower( $price );
+		foreach ( $currency_map as $symbol => $iso ) {
+			if ( str_contains( $price_lower, $symbol ) ) {
+				$currency = $iso;
+				break;
+			}
+		}
+	}
+
+	$url = ! empty( $url ) ? esc_url_raw( $url ) : ( is_singular() ? get_permalink() : home_url( add_query_arg( array() ) ) );
+
+	$schema = array(
+		'@context' => 'https://schema.org/',
+		'@type'    => 'Product',
+		'name'     => $service_name,
+		'url'      => $url,
+		'offers'   => array(
+			'@type'         => 'Offer',
+			'url'           => $url,
+			'price'         => $numeric,
+			'priceCurrency' => ! empty( $currency ) ? strtoupper( $currency ) : 'USD',
+			'availability'  => 'https://schema.org/InStock',
+		),
+	);
+
+	/** @see whmcs_price_schema_data filter above */
+	$schema = (array) apply_filters( 'whmcs_price_schema_data', $schema, $service_name, $price, $currency );
+
+	$json = wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+	if ( false === $json ) {
+		return '';
+	}
+
+	return '<script type="application/ld+json">' . $json . '</script>' . "\n";
+}

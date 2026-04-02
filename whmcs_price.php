@@ -80,6 +80,12 @@ require_once WHMCS_PRICE_DIR . 'includes/rest-api.php';
 require_once WHMCS_PRICE_DIR . 'includes/dashboard-widget.php';
 
 /**
+ * Load WP-CLI commands.
+ * Only loaded when WP-CLI is running — has no effect on web requests.
+ */
+require_once WHMCS_PRICE_DIR . 'includes/cli.php';
+
+/**
  * Load the Elementor Class.
  * This class handles the registration and rendering of Elementor for WHMCS pricing.
  */
@@ -120,3 +126,74 @@ function whmcs_price_init() {
     }
 }
 add_action( 'plugins_loaded', 'whmcs_price_init' );
+
+/**
+ * Multisite: Register a Network Admin settings page so network admins can
+ * configure the plugin from the Network Admin dashboard. Settings are stored
+ * per-site — this page just provides navigation to each site's settings.
+ *
+ * Only registered when running in a Multisite network.
+ *
+ * @since 2.8.0
+ */
+if ( is_multisite() ) {
+    add_action( 'network_admin_menu', function() {
+        add_menu_page(
+            __( 'WHMCS Price', 'whmcs-price' ),
+            __( 'WHMCS Price', 'whmcs-price' ),
+            'manage_network_options',
+            'whmcs_price_network',
+            'whmcs_price_network_admin_page',
+            'dashicons-tag',
+            81
+        );
+    } );
+}
+
+/**
+ * Render the Network Admin page.
+ *
+ * Shows a list of all sites in the network with direct links to each
+ * site's own WHMCS Price settings page. Settings are always per-site.
+ *
+ * @since 2.8.0
+ * @return void
+ */
+function whmcs_price_network_admin_page(): void {
+    if ( ! current_user_can( 'manage_network_options' ) ) {
+        wp_die( esc_html__( 'You do not have permission to access this page.', 'whmcs-price' ) );
+    }
+
+    $sites = get_sites( array( 'fields' => 'ids', 'number' => 100 ) );
+    ?>
+    <div class="wrap">
+        <h1><?php esc_html_e( 'WHMCS Price — Network Overview', 'whmcs-price' ); ?></h1>
+        <p><?php esc_html_e( 'Settings are configured per site. Click a site below to manage its WHMCS Price settings.', 'whmcs-price' ); ?></p>
+        <table class="widefat">
+            <thead>
+                <tr>
+                    <th><?php esc_html_e( 'Site', 'whmcs-price' ); ?></th>
+                    <th><?php esc_html_e( 'WHMCS URL', 'whmcs-price' ); ?></th>
+                    <th><?php esc_html_e( 'Actions', 'whmcs-price' ); ?></th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach ( $sites as $site_id ) :
+                switch_to_blog( $site_id );
+                $blog_details = get_blog_details( $site_id );
+                $options      = get_option( 'whmcs_price_option', array() );
+                $whmcs_url    = ! empty( $options['whmcs_url'] ) ? $options['whmcs_url'] : esc_html__( '(not configured)', 'whmcs-price' );
+                $settings_url = get_admin_url( $site_id, 'options-general.php?page=whmcs_price' );
+                restore_current_blog();
+                ?>
+                <tr>
+                    <td><strong><?php echo esc_html( $blog_details->blogname ); ?></strong><br><small><?php echo esc_html( $blog_details->siteurl ); ?></small></td>
+                    <td><?php echo esc_html( $whmcs_url ); ?></td>
+                    <td><a href="<?php echo esc_url( $settings_url ); ?>" class="button button-secondary"><?php esc_html_e( 'Settings', 'whmcs-price' ); ?></a></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php
+}

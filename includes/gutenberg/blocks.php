@@ -25,6 +25,32 @@ defined( 'ABSPATH' ) || exit;
 add_action( 'init', function () {
 	register_block_type( plugin_dir_path( __FILE__ ) . '../../blocks/whmcs-price-product' );
 	register_block_type( plugin_dir_path( __FILE__ ) . '../../blocks/whmcs-price-domain' );
+
+	/**
+	 * Register translation files for block editor scripts.
+	 *
+	 * wp_set_script_translations() makes strings in the block editor JS
+	 * (edit.js, index.js) translatable via the WordPress i18n system.
+	 * The script handles are derived from block.json editorScript + block name.
+	 *
+	 * Without this call, strings like "Product ID", "Billing Cycle", and
+	 * "Display Style" in the block sidebar are untranslatable.
+	 *
+	 * @since 2.8.0
+	 */
+	$lang_dir = defined( 'WHMCS_PRICE_DIR' ) ? WHMCS_PRICE_DIR . 'languages' : '';
+	if ( $lang_dir && is_dir( $lang_dir ) ) {
+		wp_set_script_translations(
+			'whmcs-price-whmcs-price-product-editor-script',
+			'whmcs-price',
+			$lang_dir
+		);
+		wp_set_script_translations(
+			'whmcs-price-whmcs-price-domain-editor-script',
+			'whmcs-price',
+			$lang_dir
+		);
+	}
 } );
 
 /**

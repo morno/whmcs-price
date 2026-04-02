@@ -2,12 +2,18 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "whmcs-price/domain",
-	"version": "2.7.3",
+	"version": "2.8.0",
 	"title": "WHMCS Domain Price",
 	"category": "widgets",
 	"icon": "admin-site",
 	"description": "Display real-time domain pricing from your WHMCS instance.",
-	"keywords": [ "whmcs", "price", "domain", "tld", "hosting" ],
+	"keywords": [
+		"whmcs",
+		"price",
+		"domain",
+		"tld",
+		"hosting"
+	],
 	"supports": {
 		"html": false,
 		"align": false
