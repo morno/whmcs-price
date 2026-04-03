@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to deploy (e.g. 2.7.3) — must match an existing git tag v{version}'
+        description: 'Version to deploy (e.g. 2.8.0) — must match an existing git tag v{version}'
         required: true
         type: string
 
@@ -21,7 +21,6 @@ jobs:
     name: SVN deploy to WordPress.org
     runs-on: ubuntu-latest
 
-    # Skip pre-releases on release trigger; always run on workflow_dispatch
     if: "${{ github.event_name == 'workflow_dispatch' || !github.event.release.prerelease }}"
 
     steps:
@@ -36,9 +35,6 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Deploying version: $VERSION"
 
-      # BUG FIX: For workflow_dispatch we must checkout the specific tag,
-      # not the default branch. Without this the deployed code would be
-      # whatever is on main rather than the version being released.
       - name: Checkout tag
         uses: actions/checkout@v6
         with:
@@ -63,7 +59,6 @@ jobs:
             exit 1
           fi
 
-          # sync-changelog action may not have committed before the tag was created
           sed -i "s/Stable tag:.*/Stable tag: $TAG_VERSION/" readme.txt
           echo "Stable tag patched to $TAG_VERSION in readme.txt"
           echo "Version consistency OK."
@@ -75,5 +70,6 @@ jobs:
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
           SLUG: whmcs-price
           VERSION: ${{ steps.version.outputs.version }}
-          BUILD_DIR: .
+          # BUILD_DIR intentionally omitted — when set, .distignore is ignored by the action.
+          # Without BUILD_DIR the action reads .distignore via rsync --exclude-from.
           ASSETS_DIR: .wordpress-org
