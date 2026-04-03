@@ -1,6 +1,6 @@
 # Mornolink for WHMCS 🚀
 
-![WordPress Version](https://img.shields.io/badge/wordpress-%3E%3D%206.4-blue.svg)
+![WordPress Version](https://img.shields.io/badge/wordpress-%3E%3D%206.9-blue.svg)
 ![PHP Version](https://img.shields.io/badge/php-%3E%3D%208.1-8892bf.svg)
 ![License](https://img.shields.io/badge/license-GPL--2.0--or--later-orange.svg)
 ![Version](https://img.shields.io/badge/version-2.8.0-brightgreen.svg)
