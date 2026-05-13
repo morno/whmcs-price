@@ -3,13 +3,13 @@
 ## Supported Versions
 
 The following versions of Mornolink for WHMCS currently receive security
-updates. We recommend always running the latest 2.6.x release.
+updates. We recommend always running the latest release.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 2.6.x   | :white_check_mark: |
-| 2.5.x   | :white_check_mark: |
-| < 2.5   | :x:                |
+| 2.8.x   | :white_check_mark: |
+| 2.7.x   | :white_check_mark: |
+| < 2.6   | :x:                |
 
 ## Reporting a Vulnerability
 
