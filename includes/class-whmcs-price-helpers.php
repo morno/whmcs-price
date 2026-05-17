@@ -118,6 +118,11 @@ function whmcs_price_flush_page_cache(): void {
 	}
 
 	// Extensibility hook for custom integrations.
+	// Flush object cache group (Redis/Memcached) if supported.
+	if ( function_exists( 'wp_cache_flush_group' ) ) {
+		wp_cache_flush_group( 'whmcs_price' );
+	}
+
 	do_action( 'whmcs_price_after_flush_page_cache' );
 }
 
@@ -515,4 +520,58 @@ function whmcs_price_schema_domain( string $tld, string $price, string $type = '
 	}
 
 	return '<script type="application/ld+json">' . $json . '</script>' . "\n";
+}
+
+/**
+ * Get the configured promo notice HTML for a given context (product or domain).
+ *
+ * Returns an HTML string to be output directly after a price, or an empty
+ * string if no promo code is configured or context does not match.
+ *
+ * Usage in render.php / shortcode:
+ *   echo whmcs_price_promo_notice( 'product' );
+ *   echo whmcs_price_promo_notice( 'domain' );
+ *
+ * @since  2.9.0
+ * @param  string $context 'product' or 'domain'
+ * @return string           Safe HTML or empty string.
+ */
+function whmcs_price_promo_notice( string $context = 'product' ): string {
+	$options = get_option( 'whmcs_price_option', array() );
+	$code    = ! empty( $options['promo_code'] ) ? $options['promo_code'] : '';
+	$text    = ! empty( $options['promo_text'] ) ? $options['promo_text'] : '';
+	$target  = ! empty( $options['promo_target'] ) ? $options['promo_target'] : 'both';
+
+	if ( empty( $code ) || empty( $text ) ) {
+		return '';
+	}
+
+	if ( 'both' !== $target && $target !== $context ) {
+		return '';
+	}
+
+	$notice = str_replace( '{code}', esc_html( $code ), esc_html( $text ) );
+
+	/**
+	 * Filter the promo notice HTML.
+	 *
+	 * @since 2.9.0
+	 * @param string $html    The promo notice HTML.
+	 * @param string $code    The promo code.
+	 * @param string $context 'product' or 'domain'.
+	 */
+	$html = apply_filters(
+		'whmcs_price_promo_notice',
+		'<p class="whmcs-price-promo">' . $notice . '</p>',
+		$code,
+		$context
+	);
+
+	return wp_kses( $html, array(
+		'p'    => array( 'class' => true ),
+		'span' => array( 'class' => true ),
+		'strong' => array(),
+		'em'   => array(),
+		'code' => array(),
+	) );
 }

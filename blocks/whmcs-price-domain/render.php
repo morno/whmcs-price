@@ -22,9 +22,34 @@ $whmcs_transaction_type = ! empty( $attributes['transactionType'] ) ? sanitize_t
 $whmcs_reg_period_raw   = ! empty( $attributes['regPeriod'] ) ? sanitize_text_field( $attributes['regPeriod'] ) : '1y';
 $whmcs_show_all         = ! empty( $attributes['showAll'] ) && true === $attributes['showAll'];
 $whmcs_display_style    = ! empty( $attributes['displayStyle'] ) ? sanitize_text_field( $attributes['displayStyle'] ) : 'table';
+$whmcs_per_period       = ! empty( $attributes['perPeriod'] ) ? sanitize_text_field( $attributes['perPeriod'] ) : '';
+$whmcs_per_period       = in_array( $whmcs_per_period, array( 'month', 'week', 'day' ), true ) ? $whmcs_per_period : '';
+
+// Allowlist transactionType and displayStyle — defense in depth against
+// any path that bypasses the editor's attribute schema (e.g. blocks
+// inserted via REST with arbitrary attribute values, or rendered with
+// pre-existing post content that predates the schema). Match the
+// product block's behaviour for consistency.
+$whmcs_allowed_types  = array( 'register', 'renew', 'transfer' );
+if ( ! in_array( $whmcs_transaction_type, $whmcs_allowed_types, true ) ) {
+	$whmcs_transaction_type = 'register';
+}
+
+$whmcs_allowed_styles = array( 'table', 'badge', 'inline' );
+if ( ! in_array( $whmcs_display_style, $whmcs_allowed_styles, true ) ) {
+	$whmcs_display_style = 'table';
+}
 // phpcs:enable
 
 $whmcs_reg_period = str_replace( 'y', '', $whmcs_reg_period_raw );
+
+// Helper closure to format a domain price with optional per-period breakdown.
+$whmcs_format_domain_price = function( string $price ) use ( $whmcs_per_period, $whmcs_reg_period ): string {
+	if ( 'NA' === $price || empty( $whmcs_per_period ) ) {
+		return $price;
+	}
+	return whmcs_price_format_per( $price, 'annually', (int) $whmcs_reg_period, $whmcs_per_period );
+};
 $whmcs_wrapper_class = 'whmcs-domain-display whmcs-domain-display--' . esc_attr( $whmcs_display_style );
 
 ?>
@@ -75,7 +100,7 @@ $whmcs_wrapper_class = 'whmcs-domain-display whmcs-domain-display--' . esc_attr(
 				<tbody>
 					<tr>
 						<?php foreach ( array_keys( $whmcs_types ) as $whmcs_type_key ) : ?>
-							<td><?php echo esc_html( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_type_key, $whmcs_reg_period ) ); ?></td>
+							<td><?php echo esc_html( $whmcs_format_domain_price( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_type_key, $whmcs_reg_period ) ) ); ?></td>
 						<?php endforeach; ?>
 					</tr>
 				</tbody>
@@ -86,7 +111,7 @@ $whmcs_wrapper_class = 'whmcs-domain-display whmcs-domain-display--' . esc_attr(
 				<?php foreach ( $whmcs_types as $whmcs_type_key => $whmcs_type_label ) : ?>
 					<div class="whmcs-domain-badge">
 						<span class="whmcs-domain-badge__label"><?php echo esc_html( $whmcs_type_label ); ?></span>
-						<span class="whmcs-domain-badge__price"><?php echo esc_html( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_type_key, $whmcs_reg_period ) ); ?></span>
+						<span class="whmcs-domain-badge__price"><?php echo esc_html( $whmcs_format_domain_price( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_type_key, $whmcs_reg_period ) ) ); ?></span>
 					</div>
 				<?php endforeach; ?>
 			</div>
@@ -95,7 +120,7 @@ $whmcs_wrapper_class = 'whmcs-domain-display whmcs-domain-display--' . esc_attr(
 				<strong class="whmcs-domain-inline__tld">.<?php echo esc_html( $whmcs_tld ); ?></strong>
 				<?php foreach ( $whmcs_types as $whmcs_type_key => $whmcs_type_label ) : ?>
 					<span class="whmcs-domain-inline__item">
-						<?php echo esc_html( $whmcs_type_label ); ?>: <strong><?php echo esc_html( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_type_key, $whmcs_reg_period ) ); ?></strong>
+						<?php echo esc_html( $whmcs_type_label ); ?>: <strong><?php echo esc_html( $whmcs_format_domain_price( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_type_key, $whmcs_reg_period ) ) ); ?></strong>
 					</span>
 				<?php endforeach; ?>
 			</div>
@@ -116,19 +141,20 @@ $whmcs_wrapper_class = 'whmcs-domain-display whmcs-domain-display--' . esc_attr(
 					echo esc_html( $whmcs_type_labels[ $whmcs_transaction_type ] ?? ucfirst( $whmcs_transaction_type ) );
 					?>
 				</span>
-				<span class="whmcs-domain-badge__price"><?php echo esc_html( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) ); ?></span>
+				<span class="whmcs-domain-badge__price"><?php echo esc_html( $whmcs_format_domain_price( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) ) ); ?></span>
 			</div>
 		<?php elseif ( 'inline' === $whmcs_display_style ) : ?>
 			<span class="whmcs-domain-inline whmcs-domain-inline--single">
 				<strong>.<?php echo esc_html( $whmcs_tld ); ?></strong> —
-				<?php echo esc_html( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) ); ?>
+				<?php echo esc_html( $whmcs_format_domain_price( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) ) ); ?>
 			</span>
 		<?php else : ?>
 			<div class="whmcs-price">
-				<?php echo esc_html( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) ); ?>
+				<?php echo esc_html( $whmcs_format_domain_price( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) ) ); ?>
 			</div>
 		<?php endif; ?>
 
 	<?php endif; ?>
 
+	<?php echo whmcs_price_promo_notice( 'domain' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 </div>

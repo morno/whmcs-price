@@ -38,13 +38,160 @@ class WHMCS_Price_API {
 	private static array $request_cache = array();
 
 	/**
+	 * Cached cache-version integer for the current request.
+	 *
+	 * Read once per process from the `whmcs_price_cache_version` option and
+	 * reused for every subsequent cache-key construction. Avoids a get_option()
+	 * call on every cache hit.
+	 *
+	 * @since  2.9.0
+	 * @var    int|null
+	 */
+	private static ?int $cache_version = null;
+
+	/**
+	 * Return the current cache version. Lazy-loaded and request-cached.
+	 *
+	 * Stored in the `whmcs_price_cache_version` option. Incremented by
+	 * bump_cache_version() to invalidate all cached entries at once.
+	 *
+	 * @since  2.9.0
+	 * @access private
+	 * @return int
+	 */
+	private static function get_cache_version(): int {
+		if ( null === self::$cache_version ) {
+			self::$cache_version = (int) get_option( 'whmcs_price_cache_version', 1 );
+			if ( self::$cache_version < 1 ) {
+				self::$cache_version = 1;
+			}
+		}
+		return self::$cache_version;
+	}
+
+	/**
+	 * Wrap a cache key with the current cache-version prefix.
+	 *
+	 * Including the version in the key means a single option update
+	 * invalidates every cached entry atomically — no key inventory needed,
+	 * works identically on database transients and persistent object caches.
+	 *
+	 * @since  2.9.0
+	 * @access private
+	 * @param  string $key Base cache key.
+	 * @return string      Versioned cache key, e.g. "v3_whmcs_product_<md5>".
+	 */
+	private static function versioned_key( string $key ): string {
+		return 'v' . self::get_cache_version() . '_' . $key;
+	}
+
+	/**
+	 * Bump the cache version, invalidating all cached entries at once.
+	 *
+	 * This is the canonical "purge cache" operation: it works on every cache
+	 * backend (database transients, Redis, Memcached) because it simply makes
+	 * every previously-stored key unreachable. Old entries expire naturally
+	 * via their existing TTL.
+	 *
+	 * Also flushes the local 'whmcs_price' object-cache group so any in-process
+	 * caches are cleared immediately, and the request-scoped static cache is
+	 * reset so the same PHP process picks up the new version straight away.
+	 *
+	 * @since  2.9.0
+	 * @access public
+	 * @return int The new cache version.
+	 */
+	public static function bump_cache_version(): int {
+		$current = (int) get_option( 'whmcs_price_cache_version', 1 );
+		$next    = $current + 1;
+		update_option( 'whmcs_price_cache_version', $next, false );
+
+		// Reset the request-scoped caches so this process sees the bump.
+		self::$cache_version = $next;
+		self::$request_cache = array();
+
+		// Flush our own object-cache group — old versioned entries become
+		// unreachable anyway, but this releases memory immediately.
+		if ( function_exists( 'wp_cache_flush_group' ) ) {
+			wp_cache_flush_group( 'whmcs_price' );
+		}
+
+		return $next;
+	}
+
+	/**
+	 * Retrieve a cached value — checks object cache first, then transient.
+	 *
+	 * On sites with a persistent object cache (Redis, Memcached), the object
+	 * cache is significantly faster than a database transient lookup. This
+	 * method checks the object cache first and falls back to the transient,
+	 * keeping the two layers in sync automatically.
+	 *
+	 * The key is automatically wrapped with the current cache version so that
+	 * bump_cache_version() invalidates every entry in one operation.
+	 *
+	 * @since  2.9.0
+	 * @access private
+	 * @param  string $transient_key Transient key (without _transient_ prefix).
+	 * @return mixed                  Cached value or false if not found.
+	 */
+	private static function get_cache( string $transient_key ): mixed {
+		$key = self::versioned_key( $transient_key );
+
+		// Try object cache first (Redis/Memcached) — faster than DB.
+		$cached = wp_cache_get( $key, 'whmcs_price' );
+		if ( false !== $cached ) {
+			return $cached;
+		}
+		// Fall back to transient (database).
+		return get_transient( $key );
+	}
+
+	/**
+	 * Store a value in both object cache and transient.
+	 *
+	 * @since  2.9.0
+	 * @access private
+	 * @param  string $transient_key Transient key.
+	 * @param  mixed  $value         Value to cache.
+	 * @param  int    $expiry        TTL in seconds.
+	 * @return void
+	 */
+	private static function set_cache( string $transient_key, mixed $value, int $expiry ): void {
+		$key = self::versioned_key( $transient_key );
+		wp_cache_set( $key, $value, 'whmcs_price', $expiry );
+		set_transient( $key, $value, $expiry );
+	}
+
+	/**
+	 * Delete a value from both object cache and transient.
+	 *
+	 * @since  2.9.0
+	 * @access private
+	 * @param  string $transient_key Transient key.
+	 * @return void
+	 */
+	private static function delete_cache( string $transient_key ): void {
+		$key = self::versioned_key( $transient_key );
+		wp_cache_delete( $key, 'whmcs_price' );
+		delete_transient( $key );
+	}
+
+	/**
 	 * Retrieve the WHMCS base URL from plugin settings.
 	 *
+	 * Validated against SSRF: rejects URLs with embedded credentials,
+	 * non-standard ports, private/loopback IPs (IPv4 + IPv6), cloud-metadata
+	 * endpoints, plain HTTP, and hostnames that resolve to private IPs.
+	 *
+	 * Public so other plugin subsystems (Site Health, admin diagnostics)
+	 * can reuse the same validation instead of touching raw options.
+	 *
 	 * @since 2.2.0
-	 * @access private
-	 * @return string The saved WHMCS URL or an empty string if not configured.
+	 * @since 2.9.0 Made public.
+	 * @return string The validated WHMCS URL or an empty string if not configured/invalid.
 	 */
-	private static function get_url() {
+	public static function get_url(): string {
 		$options = get_option( 'whmcs_price_option' );
 		if ( empty( $options['whmcs_url'] ) ) {
 			return '';
@@ -109,19 +256,35 @@ class WHMCS_Price_API {
 		}
 
 		// SSRF: resolve hostname and reject if any DNS record points to a private/reserved IP.
-		// Hostname-only checks can be bypassed via DNS rebinding or CNAME chains.
-		// Only performed for non-IP hostnames (IPs were already validated above).
-		// Skipped silently if dns_get_record() is unavailable in the current PHP environment.
-		if ( ! filter_var( $host, FILTER_VALIDATE_IP ) && function_exists( 'dns_get_record' ) ) {
-			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-			$resolved = @dns_get_record( $host, DNS_A | DNS_AAAA );
-			if ( is_array( $resolved ) && ! empty( $resolved ) ) {
-				foreach ( $resolved as $record ) {
-					$ip = $record['ip'] ?? $record['ipv6'] ?? '';
-					if ( $ip && filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) === false ) {
+		// Fail closed: if the hostname cannot be resolved, the URL is rejected.
+		if ( ! filter_var( $host, FILTER_VALIDATE_IP ) ) {
+			$resolved_ok = false;
+
+			if ( function_exists( 'dns_get_record' ) ) {
+				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				$resolved = @dns_get_record( $host, DNS_A | DNS_AAAA );
+				if ( is_array( $resolved ) && ! empty( $resolved ) ) {
+					$resolved_ok = true;
+					foreach ( $resolved as $record ) {
+						$ip = $record['ip'] ?? $record['ipv6'] ?? '';
+						if ( $ip && filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) === false ) {
+							return '';
+						}
+					}
+				}
+			} else {
+				// Fallback when dns_get_record() is unavailable (A records only).
+				$resolved_ip = gethostbyname( $host );
+				if ( $resolved_ip && $resolved_ip !== $host ) {
+					$resolved_ok = true;
+					if ( filter_var( $resolved_ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) === false ) {
 						return '';
 					}
 				}
+			}
+
+			if ( ! $resolved_ok ) {
+				return '';
 			}
 		}
 
@@ -163,23 +326,96 @@ class WHMCS_Price_API {
 	}
 
 	/**
+	 * Lock TTL in seconds. Locks self-expire after this period — a request
+	 * that takes longer than this to reach WHMCS will lose its lock and may
+	 * be raced by another process, but that is preferable to a deadlock
+	 * caused by a crashed/timed-out process leaving an indefinite lock.
+	 *
+	 * @since 2.9.0
+	 */
+	private const LOCK_TTL = 10;
+
+	/**
 	* Acquire a short-lived lock to prevent cache stampede.
 	*
-	* Prevents multiple simultaneous requests from hammering WHMCS
-	* when the cache is cold or has just been cleared.
+	* Atomic across processes:
+	*   - On sites with a persistent object cache: wp_cache_add() is an
+	*     atomic add-if-absent primitive backed by the cache server
+	*     (Redis SETNX, Memcached ADD, etc.).
+	*   - On sites without object cache: add_option() is atomic via the
+	*     UNIQUE constraint on options.option_name. If two processes call
+	*     add_option() concurrently, only one row insert succeeds.
+	*
+	* The previous implementation used get_transient() then set_transient(),
+	* which is a non-atomic check-then-set — both processes could see the
+	* slot empty and both proceed to hammer WHMCS.
 	*
 	* @since  2.3.1
+	* @since  2.9.0 Made atomic.
 	* @access private
 	* @param  string $lock_key Unique key for this lock.
 	* @return bool True if lock was acquired, false if already locked.
 	*/
 	private static function acquire_lock( string $lock_key ): bool {
-		$lock = get_transient( $lock_key );
-		if ( false !== $lock ) {
-			return false; // Already locked
+		// Persistent object cache path: atomic SETNX-equivalent with native TTL.
+		if ( wp_using_ext_object_cache() ) {
+			return (bool) wp_cache_add( $lock_key, 1, 'whmcs_price_locks', self::LOCK_TTL );
 		}
-		set_transient( $lock_key, 1, 10 ); // Lock expires after 10 seconds
-		return true;
+
+		// DB path: encode expiry timestamp in the value so we can detect
+		// stale locks left behind by crashed/timed-out processes.
+		$expires_at = time() + self::LOCK_TTL;
+		if ( add_option( $lock_key, (string) $expires_at, '', 'no' ) ) {
+			return true;
+		}
+
+		// add_option returned false → row exists. If the existing lock has
+		// expired, try to claim it. Worst case in a race here is that two
+		// processes both delete and add_option — the second add_option will
+		// return false, so only one process ends up holding the lock.
+		$existing = (int) get_option( $lock_key, 0 );
+		if ( $existing > 0 && $existing < time() ) {
+			delete_option( $lock_key );
+			return (bool) add_option( $lock_key, (string) $expires_at, '', 'no' );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check whether a lock is currently held (and not yet expired).
+	 *
+	 * @since  2.9.0
+	 * @access private
+	 * @param  string $lock_key Lock key.
+	 * @return bool             True if locked, false otherwise.
+	 */
+	private static function is_locked( string $lock_key ): bool {
+		if ( wp_using_ext_object_cache() ) {
+			return false !== wp_cache_get( $lock_key, 'whmcs_price_locks' );
+		}
+		// add_option() with autoload='no' is NOT in the alloptions cache;
+		// get_option() will hit the DB on miss. Bypass the runtime cache so
+		// we see writes from other processes immediately.
+		wp_cache_delete( $lock_key, 'options' );
+		$expires_at = (int) get_option( $lock_key, 0 );
+		return $expires_at > time();
+	}
+
+	/**
+	 * Release a held lock.
+	 *
+	 * @since  2.9.0
+	 * @access private
+	 * @param  string $lock_key Lock key.
+	 * @return void
+	 */
+	private static function release_lock( string $lock_key ): void {
+		if ( wp_using_ext_object_cache() ) {
+			wp_cache_delete( $lock_key, 'whmcs_price_locks' );
+			return;
+		}
+		delete_option( $lock_key );
 	}
 
 	/**
@@ -207,7 +443,7 @@ class WHMCS_Price_API {
 			$attempts++;
 
 			// Check if the lock was released and the cache was populated.
-			$cached = get_transient( $cache_key );
+			$cached = self::get_cache( $cache_key );
 			if ( false !== $cached ) {
 				self::debug_log( 'Data available after waiting for lock', array(
 					'cache_key' => $cache_key,
@@ -218,8 +454,7 @@ class WHMCS_Price_API {
 
 			// If the lock is also gone but cache is still empty, the other
 			// process failed — stop waiting to avoid unnecessary delay.
-			$lock = get_transient( $lock_key );
-			if ( false === $lock ) {
+			if ( ! self::is_locked( $lock_key ) ) {
 				self::debug_log( 'Lock released without cache entry — other process failed', array(
 					'cache_key' => $cache_key,
 				) );
@@ -362,7 +597,7 @@ class WHMCS_Price_API {
 			return self::$request_cache[ $cache_key ];
 		}
 
-		$cached = get_transient( $cache_key );
+		$cached = self::get_cache( $cache_key );
 
 		if ( false !== $cached ) {
 			self::debug_log( 'Product data served from cache', array(
@@ -406,7 +641,7 @@ class WHMCS_Price_API {
 				'error' => $response->get_error_message(),
 				'url'   => $url,
 			) );
-			delete_transient( $lock_key ); // Release lock on failure.
+			self::release_lock( $lock_key ); // Release lock on failure.
 			whmcs_price_notify_outage( $response->get_error_message() );
 			return 'NA';
 		}
@@ -417,7 +652,7 @@ class WHMCS_Price_API {
 				'response_code' => $response_code,
 				'url'           => $url,
 			) );
-			delete_transient( $lock_key ); // Release lock on HTTP error.
+			self::release_lock( $lock_key ); // Release lock on HTTP error.
 			/* translators: %d: HTTP response code */
 			whmcs_price_notify_outage( sprintf( __( 'HTTP %d', 'whmcs-price' ), $response_code ) );
 			return 'NA';
@@ -430,8 +665,8 @@ class WHMCS_Price_API {
 			'length'    => strlen( $data ),
 		) );
 
-		set_transient( $cache_key, $data, self::get_cache_expiry() );
-		delete_transient( $lock_key ); // Release lock after successful cache write.
+		self::set_cache( $cache_key, $data, self::get_cache_expiry() );
+		self::release_lock( $lock_key ); // Release lock after successful cache write.
 		whmcs_price_clear_outage();
 
 		/**
@@ -508,7 +743,7 @@ class WHMCS_Price_API {
 			return self::$request_cache[ $cache_key ];
 		}
 
-		$cached = get_transient( $cache_key );
+		$cached = self::get_cache( $cache_key );
 
 		if ( false !== $cached ) {
 			self::debug_log( 'Domain price served from cache', array(
@@ -553,7 +788,7 @@ class WHMCS_Price_API {
 				'error' => $response->get_error_message(),
 				'url'   => $url,
 			) );
-			delete_transient( $lock_key ); // Release lock on failure.
+			self::release_lock( $lock_key ); // Release lock on failure.
 			whmcs_price_notify_outage( $response->get_error_message() );
 			return 'NA';
 		}
@@ -564,7 +799,7 @@ class WHMCS_Price_API {
 				'response_code' => $response_code,
 				'url'           => $url,
 			) );
-			delete_transient( $lock_key ); // Release lock on HTTP error.
+			self::release_lock( $lock_key ); // Release lock on HTTP error.
 			/* translators: %d: HTTP response code */
 			whmcs_price_notify_outage( sprintf( __( 'HTTP %d', 'whmcs-price' ), $response_code ) );
 			return 'NA';
@@ -577,8 +812,8 @@ class WHMCS_Price_API {
 			'length'    => strlen( $data ),
 		) );
 
-		set_transient( $cache_key, $data, self::get_cache_expiry() );
-		delete_transient( $lock_key ); // Release lock after successful cache write.
+		self::set_cache( $cache_key, $data, self::get_cache_expiry() );
+		self::release_lock( $lock_key ); // Release lock after successful cache write.
 		whmcs_price_clear_outage();
 
 		/**
@@ -623,7 +858,7 @@ class WHMCS_Price_API {
 			return self::$request_cache[ $cache_key ];
 		}
 
-		$cached = get_transient( $cache_key );
+		$cached = self::get_cache( $cache_key );
 
 		if ( false !== $cached ) {
 			self::debug_log( 'All domain prices served from cache', array(
@@ -656,7 +891,7 @@ class WHMCS_Price_API {
 				'error' => $response->get_error_message(),
 				'url'   => $url,
 			) );
-			delete_transient( $lock_key ); // Release lock on failure.
+			self::release_lock( $lock_key ); // Release lock on failure.
 			whmcs_price_notify_outage( $response->get_error_message() );
 			return 'NA';
 		}
@@ -667,7 +902,7 @@ class WHMCS_Price_API {
 				'response_code' => $response_code,
 				'url'           => $url,
 			) );
-			delete_transient( $lock_key ); // Release lock on HTTP error.
+			self::release_lock( $lock_key ); // Release lock on HTTP error.
 			/* translators: %d: HTTP response code */
 			whmcs_price_notify_outage( sprintf( __( 'HTTP %d', 'whmcs-price' ), $response_code ) );
 			return 'NA';
@@ -681,9 +916,9 @@ class WHMCS_Price_API {
 			'length'          => strlen( $data ),
 		) );
 
-		set_transient( $cache_key, $data, self::get_cache_expiry() );
+		self::set_cache( $cache_key, $data, self::get_cache_expiry() );
 		self::$request_cache[ $cache_key ] = $data;
-		delete_transient( $lock_key ); // Release lock after successful cache write.
+		self::release_lock( $lock_key ); // Release lock after successful cache write.
 		whmcs_price_clear_outage();
 
 		return $data;
@@ -800,7 +1035,7 @@ class WHMCS_Price_API {
 			return self::$request_cache[ $result_key ];
 		}
 
-		$cached = get_transient( $cache_key );
+		$cached = self::get_cache( $cache_key );
 
 		if ( false === $cached ) {
 			$lock_key = 'lock_' . $cache_key;
@@ -830,7 +1065,7 @@ class WHMCS_Price_API {
 				self::debug_log( 'Product pricing feed request error', array(
 					'error' => $response->get_error_message(),
 				) );
-				delete_transient( $lock_key );
+				self::release_lock( $lock_key );
 				whmcs_price_notify_outage( $response->get_error_message() );
 				return '';
 			}
@@ -840,7 +1075,7 @@ class WHMCS_Price_API {
 				self::debug_log( 'Product pricing feed HTTP error', array(
 					'response_code' => $response_code,
 				) );
-				delete_transient( $lock_key );
+				self::release_lock( $lock_key );
 				/* translators: %d: HTTP response code */
 				whmcs_price_notify_outage( sprintf( __( 'HTTP %d', 'whmcs-price' ), $response_code ) );
 				return '';
@@ -853,8 +1088,8 @@ class WHMCS_Price_API {
 				'length'    => strlen( $cached ),
 			) );
 
-			set_transient( $cache_key, $cached, self::get_cache_expiry() );
-			delete_transient( $lock_key );
+			self::set_cache( $cache_key, $cached, self::get_cache_expiry() );
+			self::release_lock( $lock_key );
 			whmcs_price_clear_outage();
 		} else {
 			self::debug_log( 'Product pricing feed served from cache', array(
@@ -966,4 +1201,106 @@ class WHMCS_Price_API {
 		);
 		return $map[ $bc_internal ] ?? 1;
 	}
+	/**
+	 * Fetch all available billing cycles and prices for a product.
+	 *
+	 * Uses productpricing.php (already fetched for setup fees) to extract
+	 * every billing cycle that WHMCS has configured for this product.
+	 * Returns an associative array keyed by the WHMCS billing cycle name,
+	 * with price strings as values. Cycles with price "0.00" or missing
+	 * are excluded automatically.
+	 *
+	 * Example return value:
+	 *   [
+	 *     'monthly'     => '99 Kr',
+	 *     'annually'    => '999 Kr',
+	 *     'biennially'  => '1799 Kr',
+	 *   ]
+	 *
+	 * @since  2.9.0
+	 * @access public
+	 * @param  int $pid Product ID.
+	 * @return array<string,string> Keyed by cycle name, value is price string. Empty on failure.
+	 */
+	public static function get_all_product_cycles( int $pid ): array {
+		if ( $pid <= 0 ) {
+			return array();
+		}
+
+		$whmcs_url = self::get_url();
+		if ( empty( $whmcs_url ) ) {
+			return array();
+		}
+
+		// Reuse the productpricing.php cache — already populated by get_product_setup_fee().
+		$cache_key  = 'whmcs_pricefeed_' . md5( (string) $pid );
+		$result_key = 'whmcs_allcycles_' . md5( (string) $pid );
+
+		if ( isset( self::$request_cache[ $result_key ] ) ) {
+			return self::$request_cache[ $result_key ];
+		}
+
+		$cached = self::get_cache( $cache_key );
+
+		if ( false === $cached ) {
+			$lock_key = 'lock_' . $cache_key;
+			if ( ! self::acquire_lock( $lock_key ) ) {
+				$waited = self::wait_for_cache( $cache_key, $lock_key );
+				$cached = ( false !== $waited ) ? $waited : 'NA';
+			} else {
+				$url      = add_query_arg( array( 'pid' => $pid ), $whmcs_url . '/feeds/productpricing.php' );
+				$response = wp_remote_get( $url, self::get_request_args() );
+
+				if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+					self::release_lock( $lock_key );
+					return array();
+				}
+
+				$cached = self::unwrap_response_body( wp_remote_retrieve_body( $response ) );
+				self::set_cache( $cache_key, $cached, self::get_cache_expiry() );
+				self::release_lock( $lock_key );
+			}
+		}
+
+		if ( 'NA' === $cached || empty( $cached ) ) {
+			return array();
+		}
+
+		// Parse all <option> elements from the productpricing.php HTML.
+		// Each option value is the billing cycle name and text contains the price.
+		$cycles = array();
+		$allowed = array( 'monthly', 'quarterly', 'semiannually', 'annually', 'biennially', 'triennially' );
+
+		if ( preg_match_all(
+			'/<option[^>]+value=["\']([a-z]+)["\'](.*?)>(.*?)<\\/option>/si',
+			$cached,
+			$matches,
+			PREG_SET_ORDER
+		) ) {
+			foreach ( $matches as $m ) {
+				$cycle = strtolower( trim( $m[1] ) );
+				if ( ! in_array( $cycle, $allowed, true ) ) {
+					continue;
+				}
+
+				// Strip setup fee suffix (e.g. "99 Kr + 10 Kr") — keep only the recurring price.
+				$price_text = trim( strip_tags( $m[3] ) );
+				if ( str_contains( $price_text, ' + ' ) ) {
+					$price_text = trim( strstr( $price_text, ' + ', true ) );
+				}
+
+				// Skip cycles with a zero or empty price.
+				$numeric = preg_replace( '/[^0-9.]/', '', $price_text );
+				if ( empty( $numeric ) || (float) $numeric <= 0 ) {
+					continue;
+				}
+
+				$cycles[ $cycle ] = $price_text;
+			}
+		}
+
+		self::$request_cache[ $result_key ] = $cycles;
+		return $cycles;
+	}
+
 }

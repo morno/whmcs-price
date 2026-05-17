@@ -2,7 +2,186 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.8.0] - 2026-04-03
+## [2.9.0] - 2026-05-17
+
+### Added
+
+- **Cache purge REST endpoint**: POST /wp-json/whmcs-price/v1/purge-cache triggers a
+  cache clear from WHMCS hooks, n8n, Zapier, or any external system. Requires a secret
+  token configured under Settings -> Advanced -> Cache Purge Token. Supports optional
+  scope parameter (all, product, domain).
+
+- **Site Health integration**: Two direct checks added to Tools -> Site Health:
+  WHMCS URL configured, and WHMCS connection + feed responding.
+
+- **Object cache support**: Prices now stored in Redis/Memcached (wp_cache) in addition
+  to transients, with automatic fallback on sites without object cache. Cache clear via
+  Admin Bar, WP-CLI, dashboard widget, and REST purge endpoint all flush both layers.
+
+- **Block Variations**: Five presets in the Gutenberg block inserter:
+  Hosting Card, Pricing Grid, Monthly Table (product) and Domain Badge,
+  Domain Comparison (domain).
+
+- **Shortcode Generator**: New tab in Settings with a live UI for building [whmcs]
+  and [whmcs_cycles] shortcodes without memorising attribute names. Product and domain
+  modes, all fields, live preview, and copy button.
+
+- **Promo code notice**: Admins can configure a campaign code and text under
+  Settings -> Notifications. The notice (e.g. "Use code HOSTING20 for 20% off")
+  is displayed below prices in all rendering styles -- shortcode, Gutenberg block,
+  and Elementor widget -- for products, domains, or both. Uses {code} placeholder.
+
+- **Domain block per-period breakdown**: The domain Gutenberg block now supports the
+  perPeriod attribute (month/week/day), matching the product block and shortcode.
+
+- **Elementor domain widget per-period breakdown**: Per-Period Breakdown control added
+  to the domain Elementor widget, matching the product widget.
+
+- **Shortcode display style**: The [whmcs] shortcode now accepts a style attribute
+  (table, cards, grid) for product pricing, matching the Gutenberg block and Elementor
+  widget. Default is table for full backwards compatibility.
+
+- **[whmcs_cycles] shortcode**: New shortcode that renders all available billing cycles
+  and prices for a product in one call, without specifying each cycle manually. Uses
+  productpricing.php feed. Supports style attribute (table, cards, grid).
+
+- **WHMCS_Price_API::get_all_product_cycles()**: New public static method that parses
+  productpricing.php and returns all billing cycles with a non-zero price as an
+  associative array. Reuses the existing productpricing.php cache.
+
+- **Cache purge token revoke guidance**: Inline notice under Settings -> Advanced
+  explains how to rotate or disable a compromised purge token, with a link to the
+  GitHub wiki (REST API and FAQ pages).
+
+- **Configurable rate limiting (Settings -> Advanced)**: Admins can tune all
+  security throttles without code:
+  - Purge success cooldown (seconds between successful cache purges; default 5)
+  - Purge failed-auth limit (max wrong tokens per IP per window; default 10/60s)
+  - REST API rate limit (optional; default off) with max requests, window, and
+    optional "cache misses only" mode so cached reads stay unlimited
+
+### Security
+
+- **Cryptographically secure token generation**: The "Generate" button under
+  Settings -> Cache Purge Token now uses `crypto.getRandomValues()` instead of
+  `Math.random()`. Produces 192 bits of entropy (48 hex characters). `Math.random()`
+  is not cryptographically secure and should not be used for shared secrets.
+
+- **Minimum token length enforced (16 characters)**: The Cache Purge Token must be
+  at least 16 characters (letters, digits, hyphen, underscore). Shorter tokens are
+  rejected with a settings error rather than silently saved. Existing token is
+  preserved if a new candidate fails validation, so the endpoint cannot be
+  accidentally disabled by a bad save.
+
+- **Rate limiting on the cache purge REST endpoint**: Configurable cooldown
+  between successful purges (default 5 seconds). Returns HTTP 429 with a
+  `Retry-After` header when throttled. Also rate-limits failed token attempts
+  per IP (default 10 per 60 seconds) to block brute-force guessing. All limits
+  are adjustable under Settings -> Advanced -> Rate limiting. Filterable via
+  `whmcs_price_purge_min_interval` and `whmcs_price_security_settings`; set
+  any limit to 0 to disable.
+
+- **DNS fail-closed for WHMCS URL**: Hostnames that do not resolve (empty DNS
+  answer or `gethostbyname` failure) are now rejected. Closes an SSRF gap where
+  unresolved hosts were previously accepted.
+
+- **REST read rate limiting**: Optional per-IP limits on GET `/product` and
+  `/domain` with HTTP 429 and `Retry-After`. Configurable in admin; disabled by
+  default for backwards compatibility.
+
+- **Site Health probe now SSRF-validated**: The Tools -> Site Health connection
+  test now reaches WHMCS via `WHMCS_Price_API::get_url()`, which rejects private
+  IPs, cloud-metadata endpoints, non-443 ports, and plain HTTP. Previously the
+  probe read the raw option and bypassed this validation; an admin who set an
+  internal URL could probe internal hosts through Site Health.
+
+- **Allowlisting in the domain block render path**: `transactionType` and
+  `displayStyle` attributes are now validated against known values
+  (register/renew/transfer; table/badge/inline) before render. Defense in depth
+  against any path that bypasses the editor's attribute schema (REST insertion,
+  legacy post content). Matches the product block's existing behaviour.
+
+- **Cache Purge Token field is now `type="password"`**: With a Show/Hide toggle.
+  Protects against shoulder-surfing on the Settings page.
+
+### Fixed
+
+- **Promo code settings not saving**: Promo fields are now sanitized on the
+  Notifications tab (where they are displayed) instead of the Advanced tab.
+
+- **Purge token preserved on validation error**: When a too-short token is
+  rejected, the previously saved token is read from stored options correctly.
+
+- **Cache purge now works on persistent object cache backends**: The REST
+  endpoint, admin bar button, WP-CLI `cache clear` command, and admin bar action
+  previously enumerated transients via `SELECT FROM wp_options LIKE ...`, which
+  returns zero rows on sites with Redis or Memcached because transients live in
+  cache, not the database. Purge silently succeeded with `cleared: 0` while stale
+  prices continued to be served. Replaced with a versioned-key strategy: every
+  cache entry is prefixed with the current cache version (stored in the new
+  `whmcs_price_cache_version` option), and purge bumps the version in one atomic
+  `update_option()` call. Works identically on database transients and persistent
+  object caches; old entries become unreachable and expire naturally via their
+  TTL. No key inventory, no SQL LIKE queries, O(1) regardless of cache size.
+
+- **Atomic cache stampede lock**: `acquire_lock()` previously used
+  `get_transient()` followed by `set_transient()` -- a non-atomic check-then-set
+  that allowed two concurrent requests to both see the slot empty, both write
+  the lock, and both hammer WHMCS. Now uses `wp_cache_add()` (atomic SETNX on
+  Redis/Memcached) on sites with persistent object cache, or `add_option()`
+  (atomic via the UNIQUE constraint on `option_name`) on sites without. Stale
+  locks from crashed processes are detected and reclaimed via an `expires_at`
+  timestamp encoded in the value. Pre-existing race condition since 2.3.1.
+
+- **JS translations now load on deployed installs**: `wp_set_script_translations()`
+  was wrapped in an `is_dir($lang_dir)` check pointing at the bundled
+  `languages/` folder, but that folder is excluded from the SVN deploy (since
+  2.8.0). On every wp.org install the check failed and block editor sidebar
+  strings were never translated. The check is removed; WordPress now falls back
+  to `WP_LANG_DIR/plugins/` where wp.org language packs are installed.
+
+- **Dashboard widget no longer reports misleading zeros**: On sites with a
+  persistent object cache, the widget previously showed "0 cached entries" and
+  "No cache" regardless of actual cache state, because the SQL counts ran
+  against `wp_options` where the data does not live. Now detects
+  `wp_using_ext_object_cache()` and shows "--" with an explanatory note. SQL
+  counts also use the versioned-key prefix so they remain accurate on
+  database-only sites.
+
+- **Operational Status panel in Settings**: Same fix as the dashboard widget.
+  Distinguishes "no cache yet" from "data is in object cache, not measurable here".
+
+- **WP-CLI `cache status` on object cache sites**: Same fix; shows
+  "-- (object cache)" instead of zeros. Adds a `Cache version` row to make the
+  current version visible without inspecting the database.
+
+### Changed
+
+- **REST purge response format**: Changed from
+  `{cleared: N, message: "N cache entries cleared"}` to
+  `{purged: true, cache_version: N, scope, message}` on success. Throttled
+  requests now return HTTP 429 with
+  `{purged: false, retry_after: N, message}` and a `Retry-After` header.
+  Integrations that inspect the `cleared` field need updating. Not a regression
+  for end users since 2.9.0 has not shipped.
+
+- **`WHMCS_Price_API::get_url()` is now public**: Previously private. Allows
+  Site Health and future subsystems to reuse the SSRF-validated URL instead of
+  reading raw options.
+
+- **Lock storage moved off transients**: Cache stampede locks are no longer
+  stored via `set_transient()`. On persistent object cache sites they live in
+  the new `whmcs_price_locks` cache group with a 10-second TTL. On sites without
+  object cache they are stored as plain options named `lock_whmcs_*` (autoload
+  off) with an `expires_at` timestamp encoded in the value. Old
+  `_transient_lock_whmcs_*` entries from earlier 2.9.0 dev builds become
+  orphaned and expire within 10 seconds; no migration needed.
+
+- **`uninstall.php` cleans new state**: Removes the `whmcs_price_cache_version`
+  option, the `whmcs_price_last_purge` option (rate-limit bookkeeping), and any
+  remaining `lock_whmcs_*` options.
+
+## [2.8.0] - 2026-04-01
 
 ### Added
 

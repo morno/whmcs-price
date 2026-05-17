@@ -201,4 +201,5 @@ $whmcs_wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_att
 
 	<?php endif; ?>
 
+	<?php echo whmcs_price_promo_notice( 'product' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 </div>

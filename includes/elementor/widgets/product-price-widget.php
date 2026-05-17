@@ -311,6 +311,7 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 			echo '</div>';
 		}
 
+		echo wp_kses( whmcs_price_promo_notice( 'product' ), array( 'p' => array( 'class' => true ), 'span' => array( 'class' => true ) ) );
 		echo '</div>';
 	}
 }

@@ -53,7 +53,7 @@ class WHMCSPrice {
 	 * Active tab — read from $_GET or saved user meta.
 	 */
 	private function get_active_tab(): string {
-		$allowed = array( 'connection', 'performance', 'notifications', 'advanced' );
+		$allowed = array( 'connection', 'performance', 'notifications', 'advanced', 'generator' );
 		if ( isset( $_GET['tab'] ) && in_array( $_GET['tab'], $allowed, true ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			return sanitize_key( wp_unslash( $_GET['tab'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		}
@@ -79,6 +79,7 @@ class WHMCSPrice {
 			'performance'   => '⚡ ' . __( 'Performance', 'whmcs-price' ),
 			'notifications' => '🔔 ' . __( 'Notifications', 'whmcs-price' ),
 			'advanced'      => '🔧 ' . __( 'Advanced', 'whmcs-price' ),
+			'generator'     => '✨ ' . __( 'Shortcode Generator', 'whmcs-price' ),
 		);
 
 		$base_url = admin_url( 'options-general.php?page=whmcs_price' );
@@ -105,6 +106,9 @@ class WHMCSPrice {
 
 				<!-- Main settings form -->
 				<div style="flex:1; min-width:0;">
+					<?php if ( 'generator' === $active_tab ) : ?>
+						<?php whmcs_price_render_shortcode_generator(); ?>
+					<?php else : ?>
 					<form method="post" action="options.php">
 						<?php settings_fields( 'price_option_group' ); ?>
 						<?php settings_errors( 'whmcs_price_option' ); ?>
@@ -113,13 +117,14 @@ class WHMCSPrice {
 						switch ( $active_tab ) {
 							case 'connection':    $this->render_section_connection(); break;
 							case 'performance':   $this->render_section_performance(); break;
-							case 'notifications': $this->render_section_notifications(); break;
+							case 'notifications': $this->render_section_notifications(); $this->render_section_promo(); break;
 							case 'advanced':      $this->render_section_advanced(); break;
 						}
 						?>
 
 						<?php submit_button( __( 'Save Changes', 'whmcs-price' ) ); ?>
 					</form>
+					<?php endif; ?>
 				</div>
 
 				<!-- Sidebar -->
@@ -250,11 +255,102 @@ class WHMCSPrice {
 		<?php
 	}
 
+	private function render_section_promo(): void {
+		?>
+		<input type="hidden" name="whmcs_price_option[_tab]" value="notifications" />
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row"><label for="promo_code"><?php esc_html_e( 'Promo Code', 'whmcs-price' ); ?></label></th>
+				<td>
+					<input type="text" id="promo_code" class="regular-text"
+						name="whmcs_price_option[promo_code]"
+						value="<?php echo esc_attr( $this->options['promo_code'] ?? '' ); ?>"
+						placeholder="HOSTING20" />
+					<p class="description"><?php esc_html_e( 'Optional. Leave blank to disable the promo notice.', 'whmcs-price' ); ?></p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="promo_text"><?php esc_html_e( 'Promo Text', 'whmcs-price' ); ?></label></th>
+				<td>
+					<input type="text" id="promo_text" class="large-text"
+						name="whmcs_price_option[promo_text]"
+						value="<?php echo esc_attr( $this->options['promo_text'] ?? '' ); ?>"
+						placeholder="<?php esc_attr_e( 'Use code {code} to get 20% off your first year', 'whmcs-price' ); ?>" />
+					<p class="description">
+						<?php esc_html_e( 'Text shown below the price. Use {code} to insert the promo code.', 'whmcs-price' ); ?>
+						<?php if ( ! empty( $this->options['promo_code'] ?? '' ) && ! empty( $this->options['promo_text'] ?? '' ) ) : ?>
+							<br><strong><?php esc_html_e( 'Preview:', 'whmcs-price' ); ?></strong>
+							<?php echo esc_html( str_replace( '{code}', $this->options['promo_code'], $this->options['promo_text'] ) ); ?>
+						<?php endif; ?>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="promo_target"><?php esc_html_e( 'Show for', 'whmcs-price' ); ?></label></th>
+				<td>
+					<select id="promo_target" name="whmcs_price_option[promo_target]">
+						<option value="both" <?php selected( $this->options['promo_target'] ?? 'both', 'both' ); ?>><?php esc_html_e( 'Products and Domains', 'whmcs-price' ); ?></option>
+						<option value="product" <?php selected( $this->options['promo_target'] ?? 'both', 'product' ); ?>><?php esc_html_e( 'Products only', 'whmcs-price' ); ?></option>
+						<option value="domain" <?php selected( $this->options['promo_target'] ?? 'both', 'domain' ); ?>><?php esc_html_e( 'Domains only', 'whmcs-price' ); ?></option>
+					</select>
+				</td>
+			</tr>
+		</table>
+		<?php
+	}
+
+	/**
+	 * Inline notice: how to revoke or rotate the cache purge token.
+	 *
+	 * @since 2.9.0
+	 * @return void
+	 */
+	private function render_purge_token_revoke_notice(): void {
+		$docs_url = esc_url( self::DOCS_URL . '/FAQ#how-do-i-revoke-the-cache-purge-api-token-if-someone-unauthorized-gets-it' );
+		?>
+		<div class="notice notice-info inline" style="margin:0 0 12px;padding:8px 12px;max-width:640px;">
+			<p style="margin:0 0 6px;">
+				<strong><?php esc_html_e( 'Revoking a compromised token', 'whmcs-price' ); ?></strong>
+			</p>
+			<ul style="margin:0 0 8px 1.2em;list-style:disc;">
+				<li><?php esc_html_e( 'Click Generate (or paste a new secret), then Save Changes — the previous token stops working immediately.', 'whmcs-price' ); ?></li>
+				<li><?php esc_html_e( 'Or clear this field and save to disable the purge endpoint until you set a new token.', 'whmcs-price' ); ?></li>
+			</ul>
+			<p style="margin:0;">
+				<?php
+				echo wp_kses(
+					sprintf(
+						/* translators: %s: link to REST API wiki page (revoke section) */
+						__( 'Then update the token in WHMCS hooks, n8n, Zapier, or any other automation. %s', 'whmcs-price' ),
+						'<a href="' . $docs_url . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Full instructions in the documentation ↗', 'whmcs-price' ) . '</a>'
+					),
+					array(
+						'a' => array(
+							'href'   => true,
+							'target' => true,
+							'rel'    => true,
+						),
+					)
+				);
+				?>
+			</p>
+		</div>
+		<?php
+	}
+
 	private function render_section_advanced() {
 		$current_ua     = $this->options['custom_user_agent'] ?? '';
 		$site_url       = get_bloginfo( 'url' );
 		$plugin_version = defined( 'WHMCS_PRICE_VERSION' ) ? WHMCS_PRICE_VERSION : '';
 		$default_ua     = "WordPress ({$site_url}) whmcs-price/{$plugin_version}";
+		$sec_defaults   = whmcs_price_security_defaults();
+		$purge_interval = isset( $this->options['purge_success_interval'] ) ? (int) $this->options['purge_success_interval'] : (int) $sec_defaults['purge_success_interval'];
+		$purge_auth_lim = isset( $this->options['purge_auth_limit'] ) ? (int) $this->options['purge_auth_limit'] : (int) $sec_defaults['purge_auth_limit'];
+		$purge_auth_win = isset( $this->options['purge_auth_window'] ) ? (int) $this->options['purge_auth_window'] : (int) $sec_defaults['purge_auth_window'];
+		$rest_enabled   = isset( $this->options['rest_rate_enabled'] ) ? (string) $this->options['rest_rate_enabled'] : (string) $sec_defaults['rest_rate_enabled'];
+		$rest_limit     = isset( $this->options['rest_rate_limit'] ) ? (int) $this->options['rest_rate_limit'] : (int) $sec_defaults['rest_rate_limit'];
+		$rest_window    = isset( $this->options['rest_rate_window'] ) ? (int) $this->options['rest_rate_window'] : (int) $sec_defaults['rest_rate_window'];
+		$rest_miss_only = isset( $this->options['rest_rate_miss_only'] ) ? (string) $this->options['rest_rate_miss_only'] : (string) $sec_defaults['rest_rate_miss_only'];
 		?>
 		<input type="hidden" name="whmcs_price_option[_tab]" value="advanced" />
 		<table class="form-table" role="presentation">
@@ -270,6 +366,87 @@ class WHMCSPrice {
 					</p>
 				</td>
 			</tr>
+			<tr>
+				<th scope="row"><label for="purge_token"><?php esc_html_e( 'Cache Purge Token', 'whmcs-price' ); ?></label></th>
+				<td>
+					<?php $this->render_purge_token_revoke_notice(); ?>
+					<input type="password" id="purge_token" class="regular-text" style="direction:ltr;font-family:monospace;"
+						name="whmcs_price_option[purge_token]"
+						value="<?php echo esc_attr( $this->options['purge_token'] ?? '' ); ?>"
+						placeholder="<?php esc_attr_e( 'Leave blank to disable', 'whmcs-price' ); ?>"
+						autocomplete="off" spellcheck="false" />
+					<button type="button" class="button button-link" style="margin-left:4px;"
+						onclick="(function(b){var f=document.getElementById('purge_token');f.type=f.type==='password'?'text':'password';b.textContent=f.type==='password'?'<?php echo esc_js( __( 'Show', 'whmcs-price' ) ); ?>':'<?php echo esc_js( __( 'Hide', 'whmcs-price' ) ); ?>';})(this);"
+					><?php esc_html_e( 'Show', 'whmcs-price' ); ?></button>
+					<?php if ( empty( $this->options['purge_token'] ?? '' ) ) : ?>
+						<button type="button" class="button button-secondary" style="margin-left:6px;"
+							onclick="(function(){var b=new Uint8Array(24);(window.crypto||window.msCrypto).getRandomValues(b);document.getElementById('purge_token').value=Array.from(b,function(x){return ('0'+x.toString(16)).slice(-2);}).join('');})();"
+						><?php esc_html_e( 'Generate', 'whmcs-price' ); ?></button>
+					<?php endif; ?>
+					<p class="description">
+						<?php esc_html_e( 'Secret token required for the cache purge REST endpoint (POST /wp-json/whmcs-price/v1/purge-cache). Send it in the X-WHMCS-Price-Token header. Minimum 16 characters (letters, digits, hyphen, underscore). Leave blank to disable the endpoint.', 'whmcs-price' ); ?>
+					</p>
+					<?php if ( ! empty( $this->options['purge_token'] ?? '' ) ) : ?>
+						<p class="description" style="margin-top:6px;">
+							<strong><?php esc_html_e( 'Endpoint:', 'whmcs-price' ); ?></strong>
+							<code><?php echo esc_html( rest_url( 'whmcs-price/v1/purge-cache' ) ); ?></code>
+						</p>
+					<?php endif; ?>
+				</td>
+			</tr>
+		</table>
+
+		<h2 class="title" style="margin-top:24px;"><?php esc_html_e( 'Rate limiting', 'whmcs-price' ); ?></h2>
+		<p class="description"><?php esc_html_e( 'Protect the REST API and cache-purge endpoint from abuse. Set any limit to 0 to disable that rule. Limits apply per visitor IP address.', 'whmcs-price' ); ?></p>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row"><label for="purge_success_interval"><?php esc_html_e( 'Purge success cooldown', 'whmcs-price' ); ?></label></th>
+				<td>
+					<input type="number" id="purge_success_interval" class="small-text" min="0" max="3600" step="1"
+						name="whmcs_price_option[purge_success_interval]" value="<?php echo absint( $purge_interval ); ?>" />
+					<?php esc_html_e( 'seconds between successful cache purges', 'whmcs-price' ); ?>
+					<p class="description"><?php esc_html_e( 'Prevents accidental purge loops from webhooks or automation. Default: 5. Set to 0 to allow back-to-back purges.', 'whmcs-price' ); ?></p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="purge_auth_limit"><?php esc_html_e( 'Purge failed-auth limit', 'whmcs-price' ); ?></label></th>
+				<td>
+					<input type="number" id="purge_auth_limit" class="small-text" min="0" max="1000" step="1"
+						name="whmcs_price_option[purge_auth_limit]" value="<?php echo absint( $purge_auth_lim ); ?>" />
+					<?php esc_html_e( 'failed token attempts per', 'whmcs-price' ); ?>
+					<input type="number" id="purge_auth_window" class="small-text" min="0" max="86400" step="1"
+						name="whmcs_price_option[purge_auth_window]" value="<?php echo absint( $purge_auth_win ); ?>" />
+					<?php esc_html_e( 'seconds (per IP)', 'whmcs-price' ); ?>
+					<p class="description"><?php esc_html_e( 'Blocks brute-force guessing of the purge token. Default: 10 attempts per 60 seconds. Set either field to 0 to disable.', 'whmcs-price' ); ?></p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'REST API rate limit', 'whmcs-price' ); ?></th>
+				<td>
+					<label>
+						<input type="checkbox" name="whmcs_price_option[rest_rate_enabled]" value="1"
+							<?php checked( '1', $rest_enabled ); ?> />
+						<?php esc_html_e( 'Enable rate limiting on public GET endpoints (/product, /domain)', 'whmcs-price' ); ?>
+					</label>
+					<p style="margin:12px 0 6px;">
+						<input type="number" id="rest_rate_limit" class="small-text" min="0" max="10000" step="1"
+							name="whmcs_price_option[rest_rate_limit]" value="<?php echo absint( $rest_limit ); ?>" />
+						<?php esc_html_e( 'requests per', 'whmcs-price' ); ?>
+						<input type="number" id="rest_rate_window" class="small-text" min="0" max="86400" step="1"
+							name="whmcs_price_option[rest_rate_window]" value="<?php echo absint( $rest_window ); ?>" />
+						<?php esc_html_e( 'seconds (per IP)', 'whmcs-price' ); ?>
+					</p>
+					<label>
+						<input type="checkbox" name="whmcs_price_option[rest_rate_miss_only]" value="1"
+							<?php checked( '1', $rest_miss_only ); ?> />
+						<?php esc_html_e( 'Only count cache misses (requests that would fetch from WHMCS)', 'whmcs-price' ); ?>
+					</label>
+					<p class="description"><?php esc_html_e( 'Disabled by default so headless integrations keep working. When enabled, defaults to 60 requests per 60 seconds. Returns HTTP 429 with Retry-After when exceeded.', 'whmcs-price' ); ?></p>
+				</td>
+			</tr>
+		</table>
+
+		<table class="form-table" role="presentation">
 			<tr>
 				<th scope="row"><label for="custom_user_agent"><?php esc_html_e( 'Custom User-Agent', 'whmcs-price' ); ?></label></th>
 				<td>
@@ -305,12 +482,23 @@ class WHMCSPrice {
 		$now      = time();
 		$min_eta  = ( null !== $overview['min_timeout'] ) ? ( $overview['min_timeout'] - $now ) : 0;
 		$max_eta  = ( null !== $overview['max_timeout'] ) ? ( $overview['max_timeout'] - $now ) : 0;
+
+		// Counts are only meaningful when transients live in wp_options.
+		// On persistent object cache backends they don't, so present a
+		// clear "not applicable" indicator instead of misleading zeroes.
+		$cache_count_display = null === $overview['cache_count'] ? '—' : (string) $overview['cache_count'];
+		$lock_count_display  = null === $overview['lock_count']  ? '—' : (string) $overview['lock_count'];
 		?>
 		<div class="card" style="max-width:none; margin-bottom:16px; padding:16px;">
 			<h2 style="margin-top:0; font-size:14px;"><?php esc_html_e( 'Operational Status', 'whmcs-price' ); ?></h2>
 			<p class="description" style="margin-top:0;"><?php esc_html_e( 'Read-only diagnostics — no outbound WHMCS calls.', 'whmcs-price' ); ?></p>
-			<p><strong><?php esc_html_e( 'Cached entries', 'whmcs-price' ); ?>:</strong> <?php echo esc_html( (string) $overview['cache_count'] ); ?></p>
-			<p><strong><?php esc_html_e( 'Active locks', 'whmcs-price' ); ?>:</strong> <?php echo esc_html( (string) $overview['lock_count'] ); ?></p>
+			<?php if ( ! empty( $overview['object_cache_active'] ) ) : ?>
+				<p class="description" style="margin:0 0 8px 0;">
+					<em><?php esc_html_e( 'Persistent object cache detected — entry counts are kept in cache, not the database, so DB-based counts are unavailable.', 'whmcs-price' ); ?></em>
+				</p>
+			<?php endif; ?>
+			<p><strong><?php esc_html_e( 'Cached entries', 'whmcs-price' ); ?>:</strong> <?php echo esc_html( $cache_count_display ); ?></p>
+			<p><strong><?php esc_html_e( 'Active locks', 'whmcs-price' ); ?>:</strong> <?php echo esc_html( $lock_count_display ); ?></p>
 			<p><strong><?php esc_html_e( 'Nearest expiry', 'whmcs-price' ); ?>:</strong> <?php echo esc_html( $this->format_seconds( $min_eta ) ); ?></p>
 			<p style="margin-bottom:0;"><strong><?php esc_html_e( 'Farthest expiry', 'whmcs-price' ); ?>:</strong> <?php echo esc_html( $this->format_seconds( $max_eta ) ); ?></p>
 		</div>
@@ -389,7 +577,71 @@ class WHMCSPrice {
 		}
 
 		if ( 'advanced' === $active_tab ) {
-			// Fallback price: free-form string, sanitized as text field, max 60 chars.
+			$sec_defaults = whmcs_price_security_defaults();
+
+			$new_input['purge_success_interval'] = self::sanitize_rate_int(
+				$input['purge_success_interval'] ?? $sec_defaults['purge_success_interval'],
+				0,
+				3600,
+				(int) $sec_defaults['purge_success_interval']
+			);
+			$new_input['purge_auth_limit']  = self::sanitize_rate_int(
+				$input['purge_auth_limit'] ?? $sec_defaults['purge_auth_limit'],
+				0,
+				1000,
+				(int) $sec_defaults['purge_auth_limit']
+			);
+			$new_input['purge_auth_window'] = self::sanitize_rate_int(
+				$input['purge_auth_window'] ?? $sec_defaults['purge_auth_window'],
+				0,
+				86400,
+				(int) $sec_defaults['purge_auth_window']
+			);
+			$new_input['rest_rate_enabled']   = isset( $input['rest_rate_enabled'] ) && '1' === (string) $input['rest_rate_enabled'] ? '1' : '0';
+			$new_input['rest_rate_miss_only'] = isset( $input['rest_rate_miss_only'] ) && '1' === (string) $input['rest_rate_miss_only'] ? '1' : '0';
+			$new_input['rest_rate_limit']     = self::sanitize_rate_int(
+				$input['rest_rate_limit'] ?? $sec_defaults['rest_rate_limit'],
+				0,
+				10000,
+				(int) $sec_defaults['rest_rate_limit']
+			);
+			$new_input['rest_rate_window']    = self::sanitize_rate_int(
+				$input['rest_rate_window'] ?? $sec_defaults['rest_rate_window'],
+				0,
+				86400,
+				(int) $sec_defaults['rest_rate_window']
+			);
+
+			// Purge token: alphanumeric and common safe chars, min 16 / max 64 chars.
+			// Minimum length matters: a short token (e.g. 4 chars) is trivially
+			// brute-forceable against the REST endpoint. We reject silently
+			// short tokens with a settings error so admins can see the reason.
+			if ( ! empty( $input['purge_token'] ) ) {
+				$pt = sanitize_text_field( wp_unslash( $input['purge_token'] ) );
+				$pt = preg_replace( '/[^a-zA-Z0-9\-_]/', '', $pt );
+				$pt = substr( $pt, 0, 64 );
+
+				if ( strlen( $pt ) >= 16 ) {
+					$new_input['purge_token'] = $pt;
+				} else {
+					// Preserve existing token if a new one fails validation,
+					// to avoid accidentally disabling the endpoint.
+					if ( ! empty( $existing['purge_token'] ?? '' ) ) {
+						$new_input['purge_token'] = $existing['purge_token'];
+					} else {
+						unset( $new_input['purge_token'] );
+					}
+					add_settings_error(
+						'whmcs_price_option',
+						'whmcs_price_purge_token_too_short',
+						__( 'Cache Purge Token must be at least 16 characters (letters, digits, hyphen, underscore). Token not saved.', 'whmcs-price' ),
+						'error'
+					);
+				}
+			} else {
+				unset( $new_input['purge_token'] );
+			}
+
 			if ( ! empty( $input['fallback_price'] ) ) {
 				$fp = sanitize_text_field( wp_unslash( $input['fallback_price'] ) );
 				$new_input['fallback_price'] = substr( $fp, 0, 60 );
@@ -419,9 +671,34 @@ class WHMCSPrice {
 			} else {
 				unset( $new_input['outage_email'] );
 			}
+
+			$new_input['promo_code']   = isset( $input['promo_code'] ) ? sanitize_text_field( wp_unslash( $input['promo_code'] ) ) : '';
+			$new_input['promo_text']   = isset( $input['promo_text'] ) ? sanitize_text_field( wp_unslash( $input['promo_text'] ) ) : '';
+			$new_input['promo_target'] = isset( $input['promo_target'] ) && in_array( $input['promo_target'], array( 'both', 'product', 'domain' ), true ) ? $input['promo_target'] : 'both';
 		}
 
 		return $new_input;
+	}
+
+	/**
+	 * Sanitize a non-negative integer rate-limit setting within bounds.
+	 *
+	 * @since  2.9.0
+	 * @param  mixed $value    Raw input.
+	 * @param  int   $min      Minimum allowed value.
+	 * @param  int   $max      Maximum allowed value.
+	 * @param  int   $fallback Value when input is invalid.
+	 * @return int
+	 */
+	private static function sanitize_rate_int( $value, int $min, int $max, int $fallback ): int {
+		if ( ! is_numeric( $value ) ) {
+			return $fallback;
+		}
+		$int = (int) $value;
+		if ( $int < $min || $int > $max ) {
+			return $fallback;
+		}
+		return $int;
 	}
 
 	// =========================================================
@@ -432,18 +709,31 @@ class WHMCSPrice {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-		global $wpdb;
-		$prefixes = array(
-			$wpdb->esc_like( '_transient_whmcs_' ) . '%',
-			$wpdb->esc_like( '_transient_lock_whmcs_' ) . '%',
-		);
-		foreach ( $prefixes as $like ) {
+
+		// Invalidate every cached entry in one atomic version bump — works
+		// on both database transients and persistent object caches (Redis,
+		// Memcached). Old entries expire naturally via their existing TTL.
+		WHMCS_Price_API::bump_cache_version();
+
+		// Locks self-expire (10s TTL) so explicit cleanup is best-effort.
+		// On DB-backed sites locks are stored as plain options named
+		// `lock_whmcs_*`. On object-cache sites they're in the
+		// `whmcs_price_locks` group and don't touch the DB at all.
+		if ( ! wp_using_ext_object_cache() ) {
+			global $wpdb;
 			// phpcs:disable WordPress.DB.DirectDatabaseQuery
-			$keys = $wpdb->get_col( $wpdb->prepare( "SELECT REPLACE(option_name, '_transient_', '') FROM {$wpdb->options} WHERE option_name LIKE %s", $like ) );
+			$lock_keys = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",
+					$wpdb->esc_like( 'lock_whmcs_' ) . '%'
+				)
+			);
 			// phpcs:enable
-			foreach ( $keys as $key ) { delete_transient( $key ); }
+			foreach ( $lock_keys as $key ) {
+				delete_option( $key );
+			}
 		}
-		delete_expired_transients( true );
+
 		whmcs_price_flush_page_cache();
 	}
 
@@ -474,9 +764,27 @@ class WHMCSPrice {
 
 	private function get_cache_overview(): array {
 		global $wpdb;
-		$cache_like   = $wpdb->esc_like( '_transient_whmcs_' ) . '%';
-		$timeout_like = $wpdb->esc_like( '_transient_timeout_whmcs_' ) . '%';
-		$lock_like    = $wpdb->esc_like( '_transient_lock_whmcs_' ) . '%';
+
+		// On persistent object cache sites, transients/data live in cache
+		// (not wp_options), so SQL counts are always 0 there. Surface this
+		// rather than misleadingly reporting "no cache". The reading code
+		// in the admin page should treat null counts as "unavailable".
+		if ( wp_using_ext_object_cache() ) {
+			return array(
+				'cache_count'         => null,
+				'lock_count'          => null,
+				'min_timeout'         => null,
+				'max_timeout'         => null,
+				'object_cache_active' => true,
+			);
+		}
+
+		// Versioned-key prefix: _transient_v{N}_whmcs_*
+		$version      = (int) get_option( 'whmcs_price_cache_version', 1 );
+		$cache_like   = $wpdb->esc_like( '_transient_v' . $version . '_whmcs_' ) . '%';
+		$timeout_like = $wpdb->esc_like( '_transient_timeout_v' . $version . '_whmcs_' ) . '%';
+		$lock_like    = $wpdb->esc_like( 'lock_whmcs_' ) . '%';
+
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery
 		$cache_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s", $cache_like ) );
 		$lock_count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s", $lock_like ) );
@@ -484,10 +792,11 @@ class WHMCSPrice {
 		$max_timeout = $wpdb->get_var( $wpdb->prepare( "SELECT MAX(option_value) FROM {$wpdb->options} WHERE option_name LIKE %s", $timeout_like ) );
 		// phpcs:enable
 		return array(
-			'cache_count' => $cache_count,
-			'lock_count'  => $lock_count,
-			'min_timeout' => null !== $min_timeout ? (int) $min_timeout : null,
-			'max_timeout' => null !== $max_timeout ? (int) $max_timeout : null,
+			'cache_count'         => $cache_count,
+			'lock_count'          => $lock_count,
+			'min_timeout'         => null !== $min_timeout ? (int) $min_timeout : null,
+			'max_timeout'         => null !== $max_timeout ? (int) $max_timeout : null,
+			'object_cache_active' => false,
 		);
 	}
 

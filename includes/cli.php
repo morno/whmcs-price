@@ -89,33 +89,42 @@ class WHMCS_Price_CLI extends WP_CLI_Command {
 	private function cache_status(): void {
 		global $wpdb;
 
-		$cache_like   = $wpdb->esc_like( '_transient_whmcs_' ) . '%';
-		$lock_like    = $wpdb->esc_like( '_transient_lock_whmcs_' ) . '%';
-		$timeout_like = $wpdb->esc_like( '_transient_timeout_whmcs_' ) . '%';
+		$using_obj_cache = wp_using_ext_object_cache();
+		$version         = (int) get_option( 'whmcs_price_cache_version', 1 );
 
-		$cache_count = (int) $wpdb->get_var(
-			$wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s", $cache_like )
-		);
-		$lock_count  = (int) $wpdb->get_var(
-			$wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s", $lock_like )
-		);
-		$min_timeout = $wpdb->get_var(
-			$wpdb->prepare( "SELECT MIN(option_value) FROM {$wpdb->options} WHERE option_name LIKE %s", $timeout_like )
-		);
+		if ( $using_obj_cache ) {
+			$cache_count = '— (object cache)';
+			$lock_count  = '— (object cache)';
+			$expiry      = '— (object cache)';
+		} else {
+			$cache_like   = $wpdb->esc_like( '_transient_v' . $version . '_whmcs_' ) . '%';
+			$lock_like    = $wpdb->esc_like( 'lock_whmcs_' ) . '%';
+			$timeout_like = $wpdb->esc_like( '_transient_timeout_v' . $version . '_whmcs_' ) . '%';
 
-		$is_outage = false !== get_transient( 'whmcs_price_outage_notified' );
+			$cache_count = (int) $wpdb->get_var(
+				$wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s", $cache_like )
+			);
+			$lock_count  = (int) $wpdb->get_var(
+				$wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s", $lock_like )
+			);
+			$min_timeout = $wpdb->get_var(
+				$wpdb->prepare( "SELECT MIN(option_value) FROM {$wpdb->options} WHERE option_name LIKE %s", $timeout_like )
+			);
 
-		$expiry = 'No cache';
-		if ( $min_timeout ) {
-			$diff = (int) $min_timeout - time();
-			if ( $diff > 0 ) {
-				$hours   = floor( $diff / 3600 );
-				$minutes = floor( ( $diff % 3600 ) / 60 );
-				$expiry  = $hours > 0 ? "{$hours}h {$minutes}m" : "{$minutes} min";
-			} else {
-				$expiry = 'Expired';
+			$expiry = 'No cache';
+			if ( $min_timeout ) {
+				$diff = (int) $min_timeout - time();
+				if ( $diff > 0 ) {
+					$hours   = floor( $diff / 3600 );
+					$minutes = floor( ( $diff % 3600 ) / 60 );
+					$expiry  = $hours > 0 ? "{$hours}h {$minutes}m" : "{$minutes} min";
+				} else {
+					$expiry = 'Expired';
+				}
 			}
 		}
+
+		$is_outage = false !== get_transient( 'whmcs_price_outage_notified' );
 
 		$options   = get_option( 'whmcs_price_option', array() );
 		$whmcs_url = ! empty( $options['whmcs_url'] ) ? $options['whmcs_url'] : '(not configured)';
@@ -124,8 +133,9 @@ class WHMCS_Price_CLI extends WP_CLI_Command {
 			'table',
 			array(
 				array( 'Field' => 'WHMCS URL',        'Value' => $whmcs_url ),
-				array( 'Field' => 'Cached entries',   'Value' => $cache_count ),
-				array( 'Field' => 'Active locks',     'Value' => $lock_count ),
+				array( 'Field' => 'Cache version',    'Value' => (string) $version ),
+				array( 'Field' => 'Cached entries',   'Value' => (string) $cache_count ),
+				array( 'Field' => 'Active locks',     'Value' => (string) $lock_count ),
 				array( 'Field' => 'Earliest expiry',  'Value' => $expiry ),
 				array( 'Field' => 'Outage active',    'Value' => $is_outage ? 'Yes' : 'No' ),
 			),
@@ -148,37 +158,31 @@ class WHMCS_Price_CLI extends WP_CLI_Command {
 	private function cache_clear(): void {
 		global $wpdb;
 
-		$cache_like = $wpdb->esc_like( '_transient_whmcs_' ) . '%';
-		$lock_like  = $wpdb->esc_like( '_transient_lock_whmcs_' ) . '%';
+		// Invalidate every cached entry in one atomic version bump — works
+		// on both database transients and persistent object caches (Redis,
+		// Memcached). Old entries expire naturally via their existing TTL.
+		$new_version = WHMCS_Price_API::bump_cache_version();
 
-		$transient_keys = $wpdb->get_col(
-			$wpdb->prepare(
-				"SELECT REPLACE(option_name, '_transient_', '') FROM {$wpdb->options} WHERE option_name LIKE %s",
-				$cache_like
-			)
-		);
-
-		$count = 0;
-		foreach ( $transient_keys as $key ) {
-			delete_transient( $key );
-			$count++;
-		}
-
-		// Also clear lock transients.
-		$lock_keys = $wpdb->get_col(
-			$wpdb->prepare(
-				"SELECT REPLACE(option_name, '_transient_', '') FROM {$wpdb->options} WHERE option_name LIKE %s",
-				$lock_like
-			)
-		);
-		foreach ( $lock_keys as $key ) {
-			delete_transient( $key );
+		// Locks self-expire (10s TTL) so explicit cleanup is best-effort.
+		// On DB-backed sites they live as plain options; on object-cache
+		// sites they're in cache and don't touch the DB.
+		if ( ! wp_using_ext_object_cache() ) {
+			$lock_like = $wpdb->esc_like( 'lock_whmcs_' ) . '%';
+			$lock_keys = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",
+					$lock_like
+				)
+			);
+			foreach ( $lock_keys as $key ) {
+				delete_option( $key );
+			}
 		}
 
 		// Flush page cache plugins.
 		whmcs_price_flush_page_cache();
 
-		WP_CLI::success( "WHMCS price cache cleared. {$count} entries removed." );
+		WP_CLI::success( "WHMCS price cache invalidated (version {$new_version})." );
 	}
 
 	/**

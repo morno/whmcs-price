@@ -103,6 +103,22 @@ class WHMCS_Price_Elementor_Domain_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
+		$this->add_control(
+			'per_period',
+			array(
+				'label'       => __( 'Per-Period Breakdown', 'whmcs-price' ),
+				'type'        => \Elementor\Controls_Manager::SELECT,
+				'default'     => '',
+				'options'     => array(
+					''      => __( 'None', 'whmcs-price' ),
+					'month' => __( 'Per month', 'whmcs-price' ),
+					'week'  => __( 'Per week', 'whmcs-price' ),
+					'day'   => __( 'Per day', 'whmcs-price' ),
+				),
+				'description' => __( 'Show e.g. 239 Kr/yr (19.91 Kr/mo) next to the price.', 'whmcs-price' ),
+			)
+		);
+
 		$this->end_controls_section();
 
 		// Style Section
@@ -140,6 +156,7 @@ class WHMCS_Price_Elementor_Domain_Widget extends \Elementor\Widget_Base {
 			'regPeriod'       => sanitize_text_field( $settings['reg_period'] ?? '1y' ),
 			'showAll'         => 'yes' === $settings['show_all_types'],
 			'displayStyle'    => sanitize_text_field( $settings['display_style'] ?? 'table' ),
+			'perPeriod'       => sanitize_text_field( $settings['per_period'] ?? '' ),
 		);
 
 		$this->render_domain_pricing( $attributes );
@@ -157,8 +174,14 @@ class WHMCS_Price_Elementor_Domain_Widget extends \Elementor\Widget_Base {
 		$whmcs_reg_period_raw   = $attributes['regPeriod'];
 		$whmcs_show_all         = $attributes['showAll'];
 		$whmcs_display_style    = $attributes['displayStyle'];
+		$whmcs_per_period       = ! empty( $attributes['perPeriod'] ) ? $attributes['perPeriod'] : '';
+		$whmcs_per_period       = in_array( $whmcs_per_period, array( 'month', 'week', 'day' ), true ) ? $whmcs_per_period : '';
 
 		$whmcs_reg_period    = str_replace( 'y', '', $whmcs_reg_period_raw );
+		$whmcs_fmt           = function( string $price ) use ( $whmcs_per_period, $whmcs_reg_period ): string {
+			if ( 'NA' === $price || empty( $whmcs_per_period ) ) { return $price; }
+			return whmcs_price_format_per( $price, 'annually', (int) $whmcs_reg_period, $whmcs_per_period );
+		};
 		$whmcs_wrapper_class = 'whmcs-domain-display whmcs-domain-display--' . esc_attr( $whmcs_display_style );
 
 		echo '<div class="' . esc_attr( $whmcs_wrapper_class ) . '">';
@@ -198,7 +221,7 @@ class WHMCS_Price_Elementor_Domain_Widget extends \Elementor\Widget_Base {
 				}
 				echo '</tr></thead><tbody><tr>';
 				foreach ( array_keys( $whmcs_types ) as $type_key ) {
-					echo '<td>' . esc_html( WHMCS_Price_API::get_domain_price( $whmcs_tld, $type_key, $whmcs_reg_period ) ) . '</td>';
+					echo '<td>' . esc_html( $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $type_key, $whmcs_reg_period ) ) ) . '</td>';
 				}
 				echo '</tr></tbody></table>';
 
@@ -208,7 +231,7 @@ class WHMCS_Price_Elementor_Domain_Widget extends \Elementor\Widget_Base {
 				foreach ( $whmcs_types as $type_key => $type_label ) {
 					echo '<div class="whmcs-domain-badge">';
 					echo '<span class="whmcs-domain-badge__label">' . esc_html( $type_label ) . '</span>';
-					echo '<span class="whmcs-domain-badge__price">' . esc_html( WHMCS_Price_API::get_domain_price( $whmcs_tld, $type_key, $whmcs_reg_period ) ) . '</span>';
+					echo '<span class="whmcs-domain-badge__price">' . esc_html( $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $type_key, $whmcs_reg_period ) ) ) . '</span>';
 					echo '</div>';
 				}
 				echo '</div>';
@@ -218,7 +241,7 @@ class WHMCS_Price_Elementor_Domain_Widget extends \Elementor\Widget_Base {
 				echo '<strong class="whmcs-domain-inline__tld">.' . esc_html( $whmcs_tld ) . '</strong>';
 				foreach ( $whmcs_types as $type_key => $type_label ) {
 					echo '<span class="whmcs-domain-inline__item">';
-					echo esc_html( $type_label ) . ': <strong>' . esc_html( WHMCS_Price_API::get_domain_price( $whmcs_tld, $type_key, $whmcs_reg_period ) ) . '</strong>';
+					echo esc_html( $type_label ) . ': <strong>' . esc_html( $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $type_key, $whmcs_reg_period ) ) ) . '</strong>';
 					echo '</span>';
 				}
 				echo '</div>';
@@ -234,22 +257,23 @@ class WHMCS_Price_Elementor_Domain_Widget extends \Elementor\Widget_Base {
 				echo '<div class="whmcs-domain-badge whmcs-domain-badge--single">';
 				echo '<span class="whmcs-domain-badge__tld">.' . esc_html( $whmcs_tld ) . '</span>';
 				echo '<span class="whmcs-domain-badge__label">' . esc_html( $whmcs_type_labels[ $whmcs_transaction_type ] ?? ucfirst( $whmcs_transaction_type ) ) . '</span>';
-				echo '<span class="whmcs-domain-badge__price">' . esc_html( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) ) . '</span>';
+				echo '<span class="whmcs-domain-badge__price">' . esc_html( $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) ) ) . '</span>';
 				echo '</div>';
 
 			} elseif ( 'inline' === $whmcs_display_style ) {
 				echo '<span class="whmcs-domain-inline whmcs-domain-inline--single">';
 				echo '<strong>.' . esc_html( $whmcs_tld ) . '</strong> — ';
-				echo esc_html( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) );
+				echo esc_html( $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) ) );
 				echo '</span>';
 
 			} else {
 				echo '<div class="whmcs-price">';
-				echo esc_html( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) );
+				echo esc_html( $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) ) );
 				echo '</div>';
 			}
 		}
 
+		echo wp_kses( whmcs_price_promo_notice( 'domain' ), array( 'p' => array( 'class' => true ), 'span' => array( 'class' => true ) ) );
 		echo '</div>';
 	}
 }

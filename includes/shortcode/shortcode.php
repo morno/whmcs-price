@@ -47,17 +47,21 @@ function whmcs_price_shortcode_handler( $atts ) {
      * Set default attributes and merge with user-provided ones.
      */
     $atts = shortcode_atts([
-        'pid'  => '',
-        'bc'   => '',
-        'show' => 'name,description,price',
-        'tld'  => '',
-        'type' => '',
-        'reg'  => '',
-        'per'  => '',   // Optional: month | week | day
+        'pid'   => '',
+        'bc'    => '',
+        'show'  => 'name,description,price',
+        'tld'   => '',
+        'type'  => '',
+        'reg'   => '',
+        'per'   => '',     // Optional: month | week | day
+        'style' => 'table', // Product display style: table | cards | grid
     ], $atts, 'whmcs');
 
     // Allowlist: validate 'per' at the entry point so all downstream code receives a clean value.
     $atts['per'] = in_array( $atts['per'], array( 'month', 'week', 'day' ), true ) ? $atts['per'] : '';
+
+    // Allowlist: validate 'style'.
+    $atts['style'] = in_array( $atts['style'], array( 'table', 'cards', 'grid' ), true ) ? $atts['style'] : 'table';
 
     /**
      * 1. PRODUCT PRICING LOGIC
@@ -106,54 +110,109 @@ function whmcs_price_shortcode_handler( $atts ) {
         // Create a unique ID for the table based on PIDs to satisfy browser requirements
         $table_id = 'whmcs-table-' . md5($atts['pid'] . $atts['bc']);
 
-        // Start table output
-        $output = "<table id='" . esc_attr($table_id) . "' class='whmcs-product-table'><thead><tr>";
-        foreach ( $show as $header ) {
-            $label = $header_labels[strtolower(trim($header))] ?? ucfirst($header);
-            $output .= "<th>" . esc_html($label) . "</th>"; 
-        }
-        $output .= "</tr></thead><tbody>";
+        $display_style = $atts['style'];
+        $wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_attr( $display_style );
 
-        // Loop through each Product ID and fetch requested attributes
-        foreach ( $pids as $pid ) {
-            $output .= "<tr>";
-            foreach ( $show as $attr ) {
-                // setupfee is fetched from productpricing.php, not productsinfo.php.
-                if ( 'setupfee' === $attr ) {
-                    $val = WHMCS_Price_API::get_product_setup_fee( intval( $pid ), $bc_r );
-                    $output .= '<td>' . esc_html( wp_strip_all_tags( $val ) ) . '</td>';
-                    continue;
-                }
-
-                $val = WHMCS_Price_API::get_product_data(intval($pid), $bc_r, sanitize_text_field($attr));
-
-                if ( 'NA' === $val ) {
-                    $output .= '<td>' . whmcs_price_unavailable_html() . '</td>';
-                    continue;
-                }
-
-                // Always strip embedded setup fee suffix from price string.
-                // WHMCS may include " + AMOUNT" in the productsinfo.php price response.
-                if ( 'price' === $attr ) {
-                    $val = whmcs_price_strip_setup_fee( $val );
-                }
-
-                // If per-period is requested and this column is 'price', append divided price.
-                if ( 'price' === $attr && ! empty( $atts['per'] ) ) {
+        /**
+         * Helper: fetch and format a single product attribute value.
+         *
+         * @param int    $pid  Product ID.
+         * @param string $attr Column key (name, description, price, setupfee).
+         * @return string
+         */
+        $get_val = function( int $pid, string $attr ) use ( $bc_r, $atts ): string {
+            if ( 'setupfee' === $attr ) {
+                return WHMCS_Price_API::get_product_setup_fee( $pid, $bc_r );
+            }
+            $val = WHMCS_Price_API::get_product_data( $pid, $bc_r, $attr );
+            if ( 'NA' === $val ) { return 'NA'; }
+            if ( 'price' === $attr ) {
+                $val = whmcs_price_strip_setup_fee( $val );
+                if ( ! empty( $atts['per'] ) ) {
                     $val = whmcs_price_format_per( $val, $bc_r, (int) preg_replace( '/[^0-9]/', '', $atts['reg'] ) ?: 1, $atts['per'] );
                 }
-
-                // Only the price field may contain HTML (e.g. <span> for currency styling).
-                // Name and description are always plain text — strip tags and escape.
-                if ( 'price' === $attr ) {
-                    $output .= '<td>' . wp_kses( $val, array( 'span' => array( 'class' => true ) ) ) . '</td>';
-                } else {
-                    $output .= '<td>' . esc_html( wp_strip_all_tags( $val ) ) . '</td>';
-                }
             }
-            $output .= "</tr>";
+            return $val;
+        };
+
+        /**
+         * Helper: render a single field value safely.
+         *
+         * @param string $attr  Column key.
+         * @param string $val   Value string.
+         * @return string       Safe HTML.
+         */
+        $render_val = function( string $attr, string $val ): string {
+            if ( 'NA' === $val ) { return whmcs_price_unavailable_html(); }
+            if ( in_array( $attr, array( 'price', 'setupfee' ), true ) ) {
+                return wp_kses( $val, array( 'span' => array( 'class' => true ) ) );
+            }
+            return esc_html( wp_strip_all_tags( $val ) );
+        };
+
+        $output = '<div class="' . esc_attr( $wrapper_class ) . '">';
+
+        if ( 'cards' === $display_style ) {
+            $output .= '<div class="whmcs-product-cards">';
+            foreach ( $pids as $pid ) {
+                $output .= '<div class="whmcs-product-card">';
+                foreach ( $show as $attr ) {
+                    $val        = $get_val( $pid, $attr );
+                    $attr_clean = strtolower( trim( $attr ) );
+                    $output    .= '<div class="whmcs-product-card__' . esc_attr( $attr_clean ) . '">';
+                    if ( 'name' === $attr_clean && 'NA' !== $val ) {
+                        $output .= '<h3 class="whmcs-product-card__title">' . esc_html( $val ) . '</h3>';
+                    } elseif ( 'setupfee' === $attr_clean ) {
+                        $output .= '<span class="whmcs-product-card__setupfee-label">' . esc_html__( 'Setup Fee', 'whmcs-price' ) . ':</span>';
+                        $output .= '<span class="whmcs-product-card__setupfee-value">' . esc_html( $val ) . '</span>';
+                    } else {
+                        $output .= $render_val( $attr_clean, $val );
+                    }
+                    $output .= '</div>';
+                }
+                $output .= '</div>';
+            }
+            $output .= '</div>';
+
+        } elseif ( 'grid' === $display_style ) {
+            $output .= '<div class="whmcs-product-grid">';
+            foreach ( $pids as $pid ) {
+                $output .= '<div class="whmcs-product-grid-item">';
+                foreach ( $show as $attr ) {
+                    $val        = $get_val( $pid, $attr );
+                    $attr_clean = strtolower( trim( $attr ) );
+                    $label      = $header_labels[ $attr_clean ] ?? ucfirst( $attr );
+                    $output    .= '<div class="whmcs-product-grid-item__field">';
+                    $output    .= '<span class="whmcs-product-grid-item__label">' . esc_html( $label ) . '</span>';
+                    $output    .= '<span class="whmcs-product-grid-item__value">' . $render_val( $attr_clean, $val ) . '</span>';
+                    $output    .= '</div>';
+                }
+                $output .= '</div>';
+            }
+            $output .= '</div>';
+
+        } else {
+            // Table (default)
+            $output .= "<table id='" . esc_attr( $table_id ) . "' class='whmcs-product-table'><thead><tr>";
+            foreach ( $show as $header ) {
+                $label   = $header_labels[ strtolower( trim( $header ) ) ] ?? ucfirst( $header );
+                $output .= '<th>' . esc_html( $label ) . '</th>';
+            }
+            $output .= '</tr></thead><tbody>';
+            foreach ( $pids as $pid ) {
+                $output .= '<tr>';
+                foreach ( $show as $attr ) {
+                    $val        = $get_val( $pid, $attr );
+                    $attr_clean = strtolower( trim( $attr ) );
+                    $output    .= '<td>' . $render_val( $attr_clean, $val ) . '</td>';
+                }
+                $output .= '</tr>';
+            }
+            $output .= '</tbody></table>';
         }
-        $output .= "</tbody></table>";
+
+        $output .= '</div>';
+        $output .= whmcs_price_promo_notice( 'product' );
         return $output;
     }
 
@@ -223,7 +282,7 @@ function whmcs_price_shortcode_handler( $atts ) {
             }
 
             $domain_id = 'whmcs-price-' . esc_attr( sanitize_title( $tld ) );
-            return "<div id='{$domain_id}' class='whmcs-price'>" . wp_kses( $price, array( 'span' => array( 'class' => array() ) ) ) . '</div>';
+            return "<div id='{$domain_id}' class='whmcs-price'>" . wp_kses( $price, array( 'span' => array( 'class' => array() ) ) ) . '</div>' . whmcs_price_promo_notice( 'domain' );
         }
 
         // Multiple types: render a comparison table.
@@ -254,6 +313,7 @@ function whmcs_price_shortcode_handler( $atts ) {
             }
         }
         $output .= '</tr></tbody></table>';
+        $output .= whmcs_price_promo_notice( 'domain' );
         return $output;
     }
 
@@ -285,7 +345,106 @@ function whmcs_price_shortcode_handler( $atts ) {
  */
 add_action( 'init', function() {
     add_shortcode( 'whmcs', 'whmcs_price_shortcode_handler' );
+    add_shortcode( 'whmcs_cycles', 'whmcs_price_cycles_shortcode_handler' );
 } );
+
+/**
+ * [whmcs_cycles] shortcode handler.
+ *
+ * Renders a table of all available billing cycles and prices for a product,
+ * using the productpricing.php feed. Useful when you want to show all pricing
+ * options without hardcoding each billing cycle.
+ *
+ * Usage:
+ *   [whmcs_cycles pid="1"]
+ *   [whmcs_cycles pid="1" style="table"]   (default)
+ *   [whmcs_cycles pid="1" style="cards"]
+ *
+ * @since 2.9.0
+ * @param  array $atts Shortcode attributes.
+ * @return string      HTML output.
+ */
+function whmcs_price_cycles_shortcode_handler( $atts ): string {
+    whmcs_price_shortcode_maybe_enqueue();
+
+    if ( ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) ) {
+        return '<!-- whmcs-price-cycles -->';
+    }
+
+    $atts = shortcode_atts( array(
+        'pid'   => '',
+        'style' => 'table',
+    ), $atts, 'whmcs_cycles' );
+
+    $pid = absint( $atts['pid'] );
+    if ( $pid <= 0 ) {
+        return '';
+    }
+
+    $style = in_array( $atts['style'], array( 'table', 'cards', 'grid' ), true ) ? $atts['style'] : 'table';
+
+    $cycles = WHMCS_Price_API::get_all_product_cycles( $pid );
+    if ( empty( $cycles ) ) {
+        return '<div class="whmcs-price">' . whmcs_price_unavailable_html() . '</div>';
+    }
+
+    // Translatable cycle labels.
+    $cycle_labels = array(
+        'monthly'     => __( 'Monthly', 'whmcs-price' ),
+        'quarterly'   => __( 'Quarterly', 'whmcs-price' ),
+        'semiannually' => __( 'Semi-annually', 'whmcs-price' ),
+        'annually'    => __( 'Annually', 'whmcs-price' ),
+        'biennially'  => __( 'Biennially', 'whmcs-price' ),
+        'triennially' => __( 'Triennially', 'whmcs-price' ),
+    );
+
+    $wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_attr( $style );
+    $output        = '<div class="' . esc_attr( $wrapper_class ) . '">';
+
+    if ( 'cards' === $style ) {
+        $output .= '<div class="whmcs-product-cards">';
+        foreach ( $cycles as $cycle => $price ) {
+            $label   = $cycle_labels[ $cycle ] ?? ucfirst( $cycle );
+            $output .= '<div class="whmcs-product-card">';
+            $output .= '<div class="whmcs-product-card__name"><h3 class="whmcs-product-card__title">' . esc_html( $label ) . '</h3></div>';
+            $output .= '<div class="whmcs-product-card__price"><span class="whmcs-product-card__price-value">' . esc_html( $price ) . '</span></div>';
+            $output .= '</div>';
+        }
+        $output .= '</div>';
+
+    } elseif ( 'grid' === $style ) {
+        $output .= '<div class="whmcs-product-grid">';
+        foreach ( $cycles as $cycle => $price ) {
+            $label   = $cycle_labels[ $cycle ] ?? ucfirst( $cycle );
+            $output .= '<div class="whmcs-product-grid-item">';
+            $output .= '<div class="whmcs-product-grid-item__field">';
+            $output .= '<span class="whmcs-product-grid-item__label">' . esc_html( $label ) . '</span>';
+            $output .= '<span class="whmcs-product-grid-item__value">' . esc_html( $price ) . '</span>';
+            $output .= '</div></div>';
+        }
+        $output .= '</div>';
+
+    } else {
+        // Table (default).
+        $output .= '<table class="whmcs-product-table">';
+        $output .= '<thead><tr>';
+        $output .= '<th>' . esc_html__( 'Billing Cycle', 'whmcs-price' ) . '</th>';
+        $output .= '<th>' . esc_html__( 'Price', 'whmcs-price' ) . '</th>';
+        $output .= '</tr></thead><tbody>';
+        foreach ( $cycles as $cycle => $price ) {
+            $label   = $cycle_labels[ $cycle ] ?? ucfirst( $cycle );
+            $output .= '<tr>';
+            $output .= '<td>' . esc_html( $label ) . '</td>';
+            $output .= '<td>' . esc_html( $price ) . '</td>';
+            $output .= '</tr>';
+        }
+        $output .= '</tbody></table>';
+    }
+
+    $output .= '</div>';
+    $output .= whmcs_price_promo_notice( 'product' );
+    return $output;
+}
 
 /**
  * Register and lazily enqueue frontend CSS for the [whmcs] shortcode.

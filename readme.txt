@@ -4,7 +4,7 @@ Tags: whmcs, price, hosting, domain, billing
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 2.8.0
+Stable tag: 2.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,8 +17,6 @@ A high-performance WordPress integration for WHMCS. Display real-time prices for
 * **Performance Optimized:** Built-in caching using the WordPress Transients API.
 * **Developer Friendly:** Fully localized and translation-ready.
 
-== 100% FREE And Open Source ! ==
-
 **WHMCS Price**
 Dynamic way for extracting product & domain price from WHMCS for use on the pages of your website!
 
@@ -28,6 +26,7 @@ Plugin features:
 * Use this plugin to Show price in posts and pages.
 * Use this plugin to Show price in theme.
 
+== 100% FREE And Open Source ! ==
 == Source Code ==
 
 The full source code for this plugin is available on GitHub:

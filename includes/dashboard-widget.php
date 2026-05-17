@@ -43,22 +43,31 @@ add_action( 'wp_dashboard_setup', function() {
 function whmcs_price_dashboard_widget_render(): void {
 	global $wpdb;
 
-	// Count cached price transients.
-	$cache_like = $wpdb->esc_like( '_transient_whmcs_' ) . '%';
-	$lock_like  = $wpdb->esc_like( '_transient_lock_whmcs_' ) . '%';
+	$using_obj_cache = wp_using_ext_object_cache();
+	$version         = (int) get_option( 'whmcs_price_cache_version', 1 );
 
-	$cache_count = (int) $wpdb->get_var(
-		$wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s", $cache_like )
-	);
-	$lock_count  = (int) $wpdb->get_var(
-		$wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s", $lock_like )
-	);
+	// SQL-based counts only have meaning when transients are written to the
+	// options table. On persistent object cache backends they are stored in
+	// cache, so we surface "—" with a tooltip rather than misleading zeros.
+	if ( $using_obj_cache ) {
+		$cache_count = null;
+		$lock_count  = null;
+		$min_timeout = null;
+	} else {
+		$cache_like   = $wpdb->esc_like( '_transient_v' . $version . '_whmcs_' ) . '%';
+		$lock_like    = $wpdb->esc_like( 'lock_whmcs_' ) . '%';
+		$timeout_like = $wpdb->esc_like( '_transient_timeout_v' . $version . '_whmcs_' ) . '%';
 
-	// Earliest expiry from timeout transients.
-	$timeout_like = $wpdb->esc_like( '_transient_timeout_whmcs_' ) . '%';
-	$min_timeout  = $wpdb->get_var(
-		$wpdb->prepare( "SELECT MIN(option_value) FROM {$wpdb->options} WHERE option_name LIKE %s", $timeout_like )
-	);
+		$cache_count = (int) $wpdb->get_var(
+			$wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s", $cache_like )
+		);
+		$lock_count  = (int) $wpdb->get_var(
+			$wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s", $lock_like )
+		);
+		$min_timeout = $wpdb->get_var(
+			$wpdb->prepare( "SELECT MIN(option_value) FROM {$wpdb->options} WHERE option_name LIKE %s", $timeout_like )
+		);
+	}
 
 	$options    = get_option( 'whmcs_price_option', array() );
 	$whmcs_url  = ! empty( $options['whmcs_url'] ) ? $options['whmcs_url'] : '';
@@ -78,22 +87,30 @@ function whmcs_price_dashboard_widget_render(): void {
 		</div>
 		<?php endif; ?>
 
+		<?php if ( $using_obj_cache ) : ?>
+		<p class="description" style="margin:0;">
+			<em><?php esc_html_e( 'Using persistent object cache — entry counts unavailable.', 'whmcs-price' ); ?></em>
+		</p>
+		<?php endif; ?>
+
 		<table class="widefat striped" style="border:none;">
 			<tbody>
 				<tr>
 					<td><?php esc_html_e( 'Cached entries', 'whmcs-price' ); ?></td>
-					<td><strong><?php echo esc_html( $cache_count ); ?></strong></td>
+					<td><strong><?php echo esc_html( null === $cache_count ? '—' : (string) $cache_count ); ?></strong></td>
 				</tr>
 				<tr>
 					<td><?php esc_html_e( 'Active locks', 'whmcs-price' ); ?></td>
-					<td><strong><?php echo esc_html( $lock_count ); ?></strong></td>
+					<td><strong><?php echo esc_html( null === $lock_count ? '—' : (string) $lock_count ); ?></strong></td>
 				</tr>
 				<tr>
 					<td><?php esc_html_e( 'Earliest expiry', 'whmcs-price' ); ?></td>
 					<td>
 						<strong>
 						<?php
-						if ( $min_timeout ) {
+						if ( null === $min_timeout ) {
+							echo esc_html( '—' );
+						} elseif ( $min_timeout ) {
 							$diff = (int) $min_timeout - time();
 							if ( $diff > 0 ) {
 								$hours   = floor( $diff / 3600 );

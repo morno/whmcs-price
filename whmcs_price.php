@@ -3,7 +3,7 @@
  * Plugin Name:       Mornolink for WHMCS
  * Plugin URI:        https://github.com/morno/whmcs-price
  * Description:       A modernized and secure way to display real-time pricing for products and domains from your WHMCS instance.
- * Version:           2.8.0
+ * Version:           2.9.0
  * Requires at least: 6.4
  * Tested up to:      7.0
  * Requires PHP:      8.1
@@ -36,7 +36,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * * Used for file pathing and versioning throughout the plugin.
  * @since 2.2.0
  */
-define( 'WHMCS_PRICE_VERSION', '2.8.0' );
+define( 'WHMCS_PRICE_VERSION', '2.9.0' );
 define( 'WHMCS_PRICE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WHMCS_PRICE_URL', plugin_dir_url( __FILE__ ) );
 
@@ -62,6 +62,13 @@ require_once WHMCS_PRICE_DIR . 'includes/class-whmcs-api.php';
 require_once WHMCS_PRICE_DIR . 'includes/class-whmcs-price-helpers.php';
 
 /**
+ * Load rate-limit helpers (REST + purge protection).
+ *
+ * @since 2.9.0
+ */
+require_once WHMCS_PRICE_DIR . 'includes/rate-limit.php';
+
+/**
  * Load the Gutenberg Block Registration.
  * Handles block registration, Pattern Overrides (Block Bindings), and related hooks.
  */
@@ -84,6 +91,18 @@ require_once WHMCS_PRICE_DIR . 'includes/dashboard-widget.php';
  * Only loaded when WP-CLI is running — has no effect on web requests.
  */
 require_once WHMCS_PRICE_DIR . 'includes/cli.php';
+
+/**
+ * Load Site Health integration.
+ * Adds WHMCS Price checks to Tools → Site Health.
+ */
+require_once WHMCS_PRICE_DIR . 'includes/site-health.php';
+
+/**
+ * Load the Shortcode Generator.
+ * Provides the generator tab UI function used by settings.php.
+ */
+require_once WHMCS_PRICE_DIR . 'includes/shortcode/shortcode-generator.php';
 
 /**
  * Load the Elementor Class.
