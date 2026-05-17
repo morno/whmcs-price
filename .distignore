@@ -13,6 +13,8 @@
 
 # Dev-only docs
 CHANGELOG.md
+CODE_OF_CONDUCT.md
+SECURITY.md
 README.md
 STRUCTURE.md
 .distignore
