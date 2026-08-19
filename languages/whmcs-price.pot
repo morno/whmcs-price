@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Mornolink for WHMCS 2.9.0\n"
+"Project-Id-Version: Mornolink for WHMCS 2.9.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/whmcs-price\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-17T12:02:42+00:00\n"
+"POT-Creation-Date: 2026-08-19T16:47:00+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: whmcs-price\n"
@@ -236,12 +236,12 @@ msgid "Using persistent object cache — entry counts unavailable."
 msgstr ""
 
 #: includes/dashboard-widget.php:99
-#: includes/settings.php:500
+#: includes/settings.php:504
 msgid "Cached entries"
 msgstr ""
 
 #: includes/dashboard-widget.php:103
-#: includes/settings.php:501
+#: includes/settings.php:505
 msgid "Active locks"
 msgstr ""
 
@@ -898,179 +898,190 @@ msgstr ""
 msgid "Generate"
 msgstr ""
 
-#: includes/settings.php:387
-msgid "Secret token required for the cache purge REST endpoint (POST /wp-json/whmcs-price/v1/purge-cache). Send it in the X-WHMCS-Price-Token header. Minimum 16 characters (letters, digits, hyphen, underscore). Leave blank to disable the endpoint."
+#: includes/settings.php:388
+msgid "Clear"
 msgstr ""
 
 #: includes/settings.php:391
+msgid "Secret token required for the cache purge REST endpoint (POST /wp-json/whmcs-price/v1/purge-cache). Send it in the X-WHMCS-Price-Token header. Minimum 16 characters (letters, digits, hyphen, underscore). Leave blank to disable the endpoint."
+msgstr ""
+
+#: includes/settings.php:395
 msgid "Endpoint:"
 msgstr ""
 
-#: includes/settings.php:399
+#: includes/settings.php:403
 msgid "Rate limiting"
 msgstr ""
 
-#: includes/settings.php:400
+#: includes/settings.php:404
 msgid "Protect the REST API and cache-purge endpoint from abuse. Set any limit to 0 to disable that rule. Limits apply per visitor IP address."
 msgstr ""
 
-#: includes/settings.php:403
+#: includes/settings.php:407
 msgid "Purge success cooldown"
 msgstr ""
 
-#: includes/settings.php:407
+#: includes/settings.php:411
 msgid "seconds between successful cache purges"
 msgstr ""
 
-#: includes/settings.php:408
+#: includes/settings.php:412
 msgid "Prevents accidental purge loops from webhooks or automation. Default: 5. Set to 0 to allow back-to-back purges."
 msgstr ""
 
-#: includes/settings.php:412
+#: includes/settings.php:416
 msgid "Purge failed-auth limit"
 msgstr ""
 
-#: includes/settings.php:416
+#: includes/settings.php:420
 msgid "failed token attempts per"
 msgstr ""
 
-#: includes/settings.php:419
-#: includes/settings.php:437
+#: includes/settings.php:423
+#: includes/settings.php:441
 msgid "seconds (per IP)"
 msgstr ""
 
-#: includes/settings.php:420
+#: includes/settings.php:424
 msgid "Blocks brute-force guessing of the purge token. Default: 10 attempts per 60 seconds. Set either field to 0 to disable."
 msgstr ""
 
-#: includes/settings.php:424
+#: includes/settings.php:428
 msgid "REST API rate limit"
 msgstr ""
 
-#: includes/settings.php:429
+#: includes/settings.php:433
 msgid "Enable rate limiting on public GET endpoints (/product, /domain)"
 msgstr ""
 
-#: includes/settings.php:434
+#: includes/settings.php:438
 msgid "requests per"
 msgstr ""
 
-#: includes/settings.php:442
+#: includes/settings.php:446
 msgid "Only count cache misses (requests that would fetch from WHMCS)"
 msgstr ""
 
-#: includes/settings.php:444
+#: includes/settings.php:448
 msgid "Disabled by default so headless integrations keep working. When enabled, defaults to 60 requests per 60 seconds. Returns HTTP 429 with Retry-After when exceeded."
 msgstr ""
 
-#: includes/settings.php:451
+#: includes/settings.php:455
 msgid "Custom User-Agent"
 msgstr ""
 
 #. translators: %s: default User-Agent string
-#: includes/settings.php:463
+#: includes/settings.php:467
 #, php-format
 msgid "Override the User-Agent sent to WHMCS. Useful for firewall allow-rules. Leave blank to use the default: %s"
 msgstr ""
 
-#: includes/settings.php:493
+#: includes/settings.php:497
 msgid "Operational Status"
 msgstr ""
 
-#: includes/settings.php:494
+#: includes/settings.php:498
 msgid "Read-only diagnostics — no outbound WHMCS calls."
 msgstr ""
 
-#: includes/settings.php:497
+#: includes/settings.php:501
 msgid "Persistent object cache detected — entry counts are kept in cache, not the database, so DB-based counts are unavailable."
 msgstr ""
 
-#: includes/settings.php:502
+#: includes/settings.php:506
 msgid "Nearest expiry"
 msgstr ""
 
-#: includes/settings.php:503
+#: includes/settings.php:507
 msgid "Farthest expiry"
 msgstr ""
 
-#: includes/settings.php:511
+#: includes/settings.php:515
 msgid "Product Pricing"
 msgstr ""
 
-#: includes/settings.php:512
-#: includes/settings.php:527
+#: includes/settings.php:516
+#: includes/settings.php:531
 msgid "Click to select shortcode:"
 msgstr ""
 
-#: includes/settings.php:516
+#: includes/settings.php:520
 msgid "Billing cycles:"
 msgstr ""
 
-#: includes/settings.php:517
-#: includes/settings.php:531
+#: includes/settings.php:521
+#: includes/settings.php:535
 msgid "Show:"
 msgstr ""
 
-#: includes/settings.php:518
-#: includes/settings.php:534
+#: includes/settings.php:522
+#: includes/settings.php:538
 msgid "Full reference ↗"
 msgstr ""
 
-#: includes/settings.php:526
+#: includes/settings.php:530
 msgid "Domain Pricing"
 msgstr ""
 
-#: includes/settings.php:532
+#: includes/settings.php:536
 msgid "Period (years):"
 msgstr ""
 
-#: includes/settings.php:533
+#: includes/settings.php:537
 msgid "Leave tld empty to list all TLDs."
 msgstr ""
 
-#: includes/settings.php:563
+#: includes/settings.php:567
 msgid "WHMCS URL must use HTTPS. HTTP URLs are blocked for security reasons."
 msgstr ""
 
-#: includes/settings.php:637
+#: includes/settings.php:638
+msgid "Cache Purge Token must be at least 16 characters (letters, digits, hyphen, underscore). The previous token is still active. To remove the token entirely, clear the field completely and save."
+msgstr ""
+
+#: includes/settings.php:646
 msgid "Cache Purge Token must be at least 16 characters (letters, digits, hyphen, underscore). Token not saved."
 msgstr ""
 
-#: includes/settings.php:744
-#: includes/settings.php:746
+#: includes/settings.php:754
+#: includes/settings.php:756
 msgid "Clear WHMCS Cache"
 msgstr ""
 
-#: includes/settings.php:754
+#: includes/settings.php:764
 msgid "Unauthorized access."
 msgstr ""
 
-#: includes/settings.php:804
+#: includes/settings.php:814
 msgid "Now"
 msgstr ""
 
-#: includes/settings.php:811
+#. translators: %d: number of days
+#: includes/settings.php:823
 #, php-format
 msgid "%d day"
 msgid_plural "%d days"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/settings.php:812
+#. translators: %d: number of hours
+#: includes/settings.php:827
 #, php-format
 msgid "%d hour"
 msgid_plural "%d hours"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/settings.php:813
+#. translators: %d: number of minutes
+#: includes/settings.php:831
 #, php-format
 msgid "%d minute"
 msgid_plural "%d minutes"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/settings.php:814
+#: includes/settings.php:833
 msgid "Soon"
 msgstr ""
 
