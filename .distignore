@@ -1,37 +1,51 @@
 # ==============================================================================
 # .distignore
-# Files and directories excluded from the wp.org SVN release.
-# Format follows .gitignore syntax.
+#
+# Files and directories excluded from the wordpress.org SVN release.
+# Read by 10up/action-wordpress-plugin-deploy and equivalent tooling.
+# Syntax follows .gitignore rules.
+#
+# Anything in this list is present in the GitHub repo but stripped out before
+# the plugin is packaged for wp.org, so end users only get runtime files.
 # ==============================================================================
 
-# Version control
+# ---- Version control ---------------------------------------------------------
 .git
 .gitignore
 .gitattributes
 .github
 
-# AI agent skills (developer tooling, not runtime)
+# ---- Community health files (GitHub-only) ------------------------------------
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+SECURITY.md
+
+# ---- AI agent skills (developer tooling, not runtime) ------------------------
 .claude
 .cursor
 .agents
 skills-lock.json
 
-# Developer documentation
+# ---- Developer documentation -------------------------------------------------
+# readme.txt is the user-facing changelog on wp.org and stays.
+# CHANGELOG.md is linked from readme.txt to the GitHub copy, so exclude it.
+CHANGELOG.md
 docs
-CONTRIBUTING.md
-CODE_OF_CONDUCT.md
-SECURITY.md
-wordpress-7.1-compatibility.md
 
-# Node / build tooling
+# ---- Build tooling: Node -----------------------------------------------------
 node_modules
 package.json
 package-lock.json
 yarn.lock
+pnpm-lock.yaml
 webpack.config.js
 .babelrc
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# PHP tooling
+# ---- Build tooling: PHP ------------------------------------------------------
 composer.json
 composer.lock
 vendor
@@ -39,8 +53,9 @@ phpcs.xml
 phpcs.xml.dist
 phpstan.neon
 phpstan.neon.dist
+.phpunit.result.cache
 
-# Editor / OS
+# ---- Editor / IDE / OS -------------------------------------------------------
 .editorconfig
 .eslintrc
 .eslintrc.js
@@ -48,10 +63,30 @@ phpstan.neon.dist
 .prettierrc
 .prettierrc.js
 .prettierrc.json
+.stylelintrc
+.stylelintrc.js
+.stylelintrc.json
 .idea
 .vscode
 .DS_Store
 Thumbs.db
 
-# Distignore itself and dev-only distribution artifacts
+# ---- Local development environments -----------------------------------------
+.wp-env
+.wp-env.json
+.env
+.env.local
+.env.*.local
+
+# ---- Local secrets -----------------------------------------------------------
+webServerAPISettings.json
+
+# ---- Build scripts and release artifacts ------------------------------------
+build.sh
+build.ps1
+bin
+build_temp
+*.zip
+
+# ---- Distignore itself -------------------------------------------------------
 .distignore
