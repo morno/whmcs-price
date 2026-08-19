@@ -47,6 +47,9 @@ See [Domain Pricing](https://github.com/morno/whmcs-price/wiki/Domain-Pricing) i
 
 For the full changelog, see [CHANGELOG.md](https://github.com/morno/whmcs-price/blob/main/CHANGELOG.md).
 
+= 2.9.1 =
+* 3 bug fixes, 3 improvements
+
 = 2.9.0 =
 * 8 security fixes, 8 bug fixes, 13 new features, 4 improvements
 
