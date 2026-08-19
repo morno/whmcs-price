@@ -63,6 +63,12 @@ jobs:
           echo "Stable tag patched to $TAG_VERSION in readme.txt"
           echo "Version consistency OK."
 
+      - name: Install Subversion (SVN)
+        run: |
+          sudo sed -i 's/azure.archive.ubuntu.com/archive.ubuntu.com/g' /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null || true
+          sudo apt-get update
+          sudo apt-get install -y subversion
+
       - name: Deploy to WordPress.org SVN
         uses: 10up/action-wordpress-plugin-deploy@stable
         env:
