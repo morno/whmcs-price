@@ -28,8 +28,12 @@ skills-lock.json
 
 # ---- Developer documentation -------------------------------------------------
 # readme.txt is the user-facing changelog on wp.org and stays.
+# README.md is GitHub-flavored Markdown for developers, not needed on wp.org.
 # CHANGELOG.md is linked from readme.txt to the GitHub copy, so exclude it.
+# STRUCTURE.md is internal architecture documentation.
+README.md
 CHANGELOG.md
+STRUCTURE.md
 docs
 
 # ---- Build tooling: Node -----------------------------------------------------
