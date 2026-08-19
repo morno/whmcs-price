@@ -2,6 +2,53 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.9.1] - 2026-08-19
+
+### Fixed
+
+- **Cache Purge Token: misleading error when partially cleared**: When a token was
+  shortened below the 16-character minimum (e.g. by partially deleting the field), the
+  previous token was silently preserved and the error message read "Token not saved".
+  This made it look like the field had been cleared when the old token was in fact
+  still active. The error message now states explicitly that the previous token is
+  still active and explains how to remove it.
+
+- **Missing translator comments on plural strings**: Added `translators:` comments
+  above three `_n()` calls in `includes/settings.php` that render human-readable
+  durations ("%d day", "%d hour", "%d minute"). Resolves three
+  `WordPress.WP.I18n.MissingTranslatorsComment` errors reported by Plugin Check and
+  helps translators understand the placeholder context.
+
+- **Elementor widgets overlapped when placed in the same Container**: The wrapper
+  divs `.whmcs-product-display` and `.whmcs-domain-display` had no CSS of their own —
+  only the inner tables did. Inside a flex-based parent (Elementor Container,
+  Gutenberg group with flex layout, or any theme wrapper using `display: flex`), the
+  widgets could not shrink below their intrinsic content width and rendered on top of
+  each other. Added explicit wrapper rules (`display: block`, `width: 100%`,
+  `min-width: 0`, `box-sizing: border-box`, `overflow-x: auto`) so both widgets
+  behave as well-formed flex items. Wide tables now get a horizontal scrollbar on
+  narrow viewports instead of breaking surrounding layout. Applied to both source
+  CSS (`blocks/whmcs-price-*/styles.css`) and compiled build CSS
+  (`blocks/build/whmcs-price-*.css` and RTL variants).
+
+### Changed
+
+- **Cache Purge Token field uses `autocomplete="new-password"`**: The previous
+  `autocomplete="off"` was ignored by Chrome and Safari on password inputs, allowing
+  the browser's password manager to repopulate the field after the user cleared it.
+  `new-password` is the standardised hint browsers respect for credential-setting
+  fields.
+
+- **Clear button on Cache Purge Token**: When a token is configured, a Clear button
+  is shown alongside Show. It empties the field on click; the user still has to click
+  Save Changes to apply the removal.
+
+- **Tested up to WordPress 7.1**: Previously 7.0. Full compatibility verified against
+  the 7.1 release candidate — both Gutenberg blocks (`whmcs-price/product`,
+  `whmcs-price/domain`) already ship with `apiVersion: 3` required by the iframe-based
+  editor in block themes, and no code changes were needed. React 19 support ships with
+  7.2 (December), more testing needed for 7.2.
+
 ## [2.9.0] - 2026-05-17
 
 ### Added

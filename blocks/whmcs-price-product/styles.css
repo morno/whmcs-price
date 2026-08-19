@@ -9,6 +9,25 @@
  * @since      2.3.0
  */
 
+/* ==================== Wrapper (flex-safe container behaviour) ==================== */
+
+/**
+ * The wrapper needs explicit width and min-width handling so widgets behave correctly
+ * inside flex containers (Elementor Containers, Gutenberg group blocks with flex layout,
+ * or any theme wrapper using display: flex). Without min-width: 0 a flex item cannot
+ * shrink below its content's intrinsic width, which causes sibling widgets to overlap.
+ * overflow-x: auto ensures wide tables get a horizontal scrollbar instead of breaking
+ * the surrounding layout on narrow viewports.
+ */
+.whmcs-product-display {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+	overflow-x: auto;
+}
+
 /* ==================== Table Style (Classic) ==================== */
 
 .whmcs-product-table {

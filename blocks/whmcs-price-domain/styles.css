@@ -9,6 +9,23 @@
  * @since      2.3.0
  */
 
+/* ==================== Wrapper (flex-safe container behaviour) ==================== */
+
+/**
+ * See product-block styles.css for a detailed rationale. Same pattern here so both
+ * widgets behave correctly as flex items when placed side-by-side in an Elementor
+ * Container, a Gutenberg group block with flex layout, or any theme wrapper using
+ * display: flex.
+ */
+.whmcs-domain-display {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+	overflow-x: auto;
+}
+
 /* ==================== Table Style (Classic) ==================== */
 
 .whmcs-domain-table {

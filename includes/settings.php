@@ -374,7 +374,7 @@ class WHMCSPrice {
 						name="whmcs_price_option[purge_token]"
 						value="<?php echo esc_attr( $this->options['purge_token'] ?? '' ); ?>"
 						placeholder="<?php esc_attr_e( 'Leave blank to disable', 'whmcs-price' ); ?>"
-						autocomplete="off" spellcheck="false" />
+						autocomplete="new-password" spellcheck="false" />
 					<button type="button" class="button button-link" style="margin-left:4px;"
 						onclick="(function(b){var f=document.getElementById('purge_token');f.type=f.type==='password'?'text':'password';b.textContent=f.type==='password'?'<?php echo esc_js( __( 'Show', 'whmcs-price' ) ); ?>':'<?php echo esc_js( __( 'Hide', 'whmcs-price' ) ); ?>';})(this);"
 					><?php esc_html_e( 'Show', 'whmcs-price' ); ?></button>
@@ -382,6 +382,10 @@ class WHMCSPrice {
 						<button type="button" class="button button-secondary" style="margin-left:6px;"
 							onclick="(function(){var b=new Uint8Array(24);(window.crypto||window.msCrypto).getRandomValues(b);document.getElementById('purge_token').value=Array.from(b,function(x){return ('0'+x.toString(16)).slice(-2);}).join('');})();"
 						><?php esc_html_e( 'Generate', 'whmcs-price' ); ?></button>
+					<?php else : ?>
+						<button type="button" class="button button-link" style="margin-left:6px;color:#b32d2e;"
+							onclick="document.getElementById('purge_token').value='';"
+						><?php esc_html_e( 'Clear', 'whmcs-price' ); ?></button>
 					<?php endif; ?>
 					<p class="description">
 						<?php esc_html_e( 'Secret token required for the cache purge REST endpoint (POST /wp-json/whmcs-price/v1/purge-cache). Send it in the X-WHMCS-Price-Token header. Minimum 16 characters (letters, digits, hyphen, underscore). Leave blank to disable the endpoint.', 'whmcs-price' ); ?>
@@ -628,15 +632,21 @@ class WHMCSPrice {
 					// to avoid accidentally disabling the endpoint.
 					if ( ! empty( $existing['purge_token'] ?? '' ) ) {
 						$new_input['purge_token'] = $existing['purge_token'];
+						add_settings_error(
+							'whmcs_price_option',
+							'whmcs_price_purge_token_too_short',
+							__( 'Cache Purge Token must be at least 16 characters (letters, digits, hyphen, underscore). The previous token is still active. To remove the token entirely, clear the field completely and save.', 'whmcs-price' ),
+							'error'
+						);
 					} else {
 						unset( $new_input['purge_token'] );
+						add_settings_error(
+							'whmcs_price_option',
+							'whmcs_price_purge_token_too_short',
+							__( 'Cache Purge Token must be at least 16 characters (letters, digits, hyphen, underscore). Token not saved.', 'whmcs-price' ),
+							'error'
+						);
 					}
-					add_settings_error(
-						'whmcs_price_option',
-						'whmcs_price_purge_token_too_short',
-						__( 'Cache Purge Token must be at least 16 characters (letters, digits, hyphen, underscore). Token not saved.', 'whmcs-price' ),
-						'error'
-					);
 				}
 			} else {
 				unset( $new_input['purge_token'] );
@@ -808,9 +818,18 @@ class WHMCSPrice {
 		$seconds -= $hours * HOUR_IN_SECONDS;
 		$mins     = intdiv( $seconds, MINUTE_IN_SECONDS );
 		$parts    = array();
-		if ( $days  > 0 ) { $parts[] = sprintf( _n( '%d day',    '%d days',    $days,  'whmcs-price' ), $days ); }
-		if ( $hours > 0 ) { $parts[] = sprintf( _n( '%d hour',   '%d hours',   $hours, 'whmcs-price' ), $hours ); }
-		if ( $mins  > 0 && 0 === $days ) { $parts[] = sprintf( _n( '%d minute', '%d minutes', $mins, 'whmcs-price' ), $mins ); }
+		if ( $days > 0 ) {
+			/* translators: %d: number of days */
+			$parts[] = sprintf( _n( '%d day', '%d days', $days, 'whmcs-price' ), $days );
+		}
+		if ( $hours > 0 ) {
+			/* translators: %d: number of hours */
+			$parts[] = sprintf( _n( '%d hour', '%d hours', $hours, 'whmcs-price' ), $hours );
+		}
+		if ( $mins > 0 && 0 === $days ) {
+			/* translators: %d: number of minutes */
+			$parts[] = sprintf( _n( '%d minute', '%d minutes', $mins, 'whmcs-price' ), $mins );
+		}
 		return ! empty( $parts ) ? implode( ' ', $parts ) : __( 'Soon', 'whmcs-price' );
 	}
 }
