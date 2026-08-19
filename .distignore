@@ -1,40 +1,57 @@
-# Files and folders excluded from WordPress.org SVN deploy
-# The 10up/action-wordpress-plugin-deploy action reads this file.
-# Filename must be .distignore (with leading dot) to be detected.
+# ==============================================================================
+# .distignore
+# Files and directories excluded from the wp.org SVN release.
+# Format follows .gitignore syntax.
+# ==============================================================================
 
-# Git internals
+# Version control
 .git
 .gitignore
 .gitattributes
-
-# GitHub workflows and assets
 .github
-.wordpress-org
 
-# Dev-only docs
-CHANGELOG.md
+# AI agent skills (developer tooling, not runtime)
+.claude
+.cursor
+.agents
+skills-lock.json
+
+# Developer documentation
+docs
+CONTRIBUTING.md
 CODE_OF_CONDUCT.md
 SECURITY.md
-README.md
-STRUCTURE.md
-.distignore
+wordpress-7.1-compatibility.md
 
 # Node / build tooling
 node_modules
 package.json
 package-lock.json
+yarn.lock
 webpack.config.js
+.babelrc
 
-# Block JS/CSS source files (only compiled blocks/build/ is needed by WordPress)
-blocks/whmcs-price-product/index.js
-blocks/whmcs-price-product/edit.js
-blocks/whmcs-price-product/index.css
-blocks/whmcs-price-product/styles.css
-blocks/whmcs-price-product/package.json
-blocks/whmcs-price-domain/index.js
-blocks/whmcs-price-domain/edit.js
-blocks/whmcs-price-domain/index.css
-blocks/whmcs-price-domain/styles.css
+# PHP tooling
+composer.json
+composer.lock
+vendor
+phpcs.xml
+phpcs.xml.dist
+phpstan.neon
+phpstan.neon.dist
 
-# Translations — handled automatically by translate.wordpress.org
-languages
+# Editor / OS
+.editorconfig
+.eslintrc
+.eslintrc.js
+.eslintrc.json
+.prettierrc
+.prettierrc.js
+.prettierrc.json
+.idea
+.vscode
+.DS_Store
+Thumbs.db
+
+# Distignore itself and dev-only distribution artifacts
+.distignore
