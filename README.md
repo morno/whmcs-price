@@ -92,6 +92,12 @@ See the [Installation page](https://github.com/morno/whmcs-price/wiki/Installati
 
 Originally developed by MohammadReza Kamali. Now maintained and actively developed as the official plugin on WordPress.org.
 
+## 🤖 AI Agent Skills
+
+This project uses [WordPress agent skills](https://github.com/WordPress/agent-skills) — portable instruction bundles that help AI coding assistants (Claude Code, Cursor) follow WordPress best practices when working on this plugin. Skills are checked in under `.claude/skills/` and `.cursor/skills/` and load automatically when you open the repo in either agent.
+
+See [`docs/ai-agent-skills.md`](docs/ai-agent-skills.md) for the list of installed skills, why each was chosen, and how to update them.
+
 ---
 
 ## 📜 License
