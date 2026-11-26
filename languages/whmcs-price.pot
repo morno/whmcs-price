@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-26T21:03:02+00:00\n"
+"POT-Creation-Date: 2026-11-26T21:12:28+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: whmcs-price\n"
@@ -193,11 +193,31 @@ msgstr ""
 msgid "Unknown transaction type."
 msgstr ""
 
+#: includes/cache-warming.php:34
+msgid "Every 5 minutes"
+msgstr ""
+
+#: includes/cache-warming.php:39
+msgid "Every 15 minutes"
+msgstr ""
+
+#: includes/cache-warming.php:44
+msgid "Hourly"
+msgstr ""
+
+#: includes/cache-warming.php:102
+msgid "Every 5 minutes (WHMCS Price)"
+msgstr ""
+
+#: includes/cache-warming.php:106
+msgid "Every 15 minutes (WHMCS Price)"
+msgstr ""
+
 #. translators: %d: HTTP response code
-#: includes/class-whmcs-api.php:954
-#: includes/class-whmcs-api.php:1131
-#: includes/class-whmcs-api.php:1260
-#: includes/class-whmcs-api.php:1438
+#: includes/class-whmcs-api.php:1188
+#: includes/class-whmcs-api.php:1365
+#: includes/class-whmcs-api.php:1494
+#: includes/class-whmcs-api.php:1672
 #, php-format
 msgid "HTTP %d"
 msgstr ""
@@ -227,7 +247,7 @@ msgid "Error detail: %s"
 msgstr ""
 
 #: includes/class-whmcs-price-helpers.php:215
-#: whmcs_price.php:231
+#: whmcs_price.php:239
 msgid "(not configured)"
 msgstr ""
 
@@ -294,74 +314,95 @@ msgstr ""
 msgid "WHMCS Price — Cache Status"
 msgstr ""
 
-#: includes/dashboard-widget.php:86
+#: includes/dashboard-widget.php:88
 msgid "Active outage:"
 msgstr ""
 
-#: includes/dashboard-widget.php:87
+#: includes/dashboard-widget.php:89
 msgid "WHMCS is currently unreachable. Visitors see the fallback or unavailable message."
 msgstr ""
 
-#: includes/dashboard-widget.php:93
+#: includes/dashboard-widget.php:95
 msgid "Using persistent object cache — entry counts unavailable."
 msgstr ""
 
-#: includes/dashboard-widget.php:100
-#: includes/settings.php:504
+#: includes/dashboard-widget.php:102
+#: includes/settings.php:539
 msgid "Cached entries"
 msgstr ""
 
-#: includes/dashboard-widget.php:104
-#: includes/settings.php:505
+#: includes/dashboard-widget.php:106
+#: includes/settings.php:540
 msgid "Active locks"
 msgstr ""
 
-#: includes/dashboard-widget.php:108
+#: includes/dashboard-widget.php:110
 msgid "Earliest expiry"
 msgstr ""
 
 #. translators: 1: hours, 2: minutes
-#: includes/dashboard-widget.php:122
+#: includes/dashboard-widget.php:124
 #, php-format
 msgid "%1$dh %2$dm"
 msgstr ""
 
 #. translators: %d: minutes
-#: includes/dashboard-widget.php:124
+#: includes/dashboard-widget.php:126
 #, php-format
 msgid "%d min"
 msgstr ""
 
-#: includes/dashboard-widget.php:126
+#: includes/dashboard-widget.php:128
 msgid "Expired"
 msgstr ""
 
-#: includes/dashboard-widget.php:129
+#: includes/dashboard-widget.php:131
 msgid "No cache"
 msgstr ""
 
-#: includes/dashboard-widget.php:136
+#: includes/dashboard-widget.php:138
+msgid "Next warm-up"
+msgstr ""
+
+#: includes/dashboard-widget.php:143
+#: includes/elementor/widgets/product-price-widget.php:120
+#: blocks/build/whmcs-price-product.js:1
+#: blocks/whmcs-price-product/edit.js:48
+msgid "Disabled"
+msgstr ""
+
+#. translators: %s: human-readable time difference, e.g. "4 mins"
+#: includes/dashboard-widget.php:146
+#, php-format
+msgid "in %s"
+msgstr ""
+
+#: includes/dashboard-widget.php:148
+msgid "Not scheduled"
+msgstr ""
+
+#: includes/dashboard-widget.php:155
 msgid "Stale responses served"
 msgstr ""
 
 #. translators: %s: human-readable time difference, e.g. "5 mins"
-#: includes/dashboard-widget.php:143
+#: includes/dashboard-widget.php:162
 #, php-format
 msgid "last %s ago"
 msgstr ""
 
-#: includes/dashboard-widget.php:151
+#: includes/dashboard-widget.php:170
 #: includes/settings.php:153
-#: whmcs_price.php:222
+#: whmcs_price.php:230
 msgid "WHMCS URL"
 msgstr ""
 
-#: includes/dashboard-widget.php:160
-#: includes/settings.php:212
+#: includes/dashboard-widget.php:179
+#: includes/settings.php:247
 msgid "Clear Cache"
 msgstr ""
 
-#: includes/dashboard-widget.php:163
+#: includes/dashboard-widget.php:182
 msgid "Settings ↗"
 msgstr ""
 
@@ -374,8 +415,8 @@ msgstr ""
 #: includes/site-health.php:161
 #: includes/site-health.php:178
 #: includes/site-health.php:195
-#: whmcs_price.php:188
-#: whmcs_price.php:189
+#: whmcs_price.php:196
+#: whmcs_price.php:197
 msgid "WHMCS Price"
 msgstr ""
 
@@ -643,12 +684,6 @@ msgstr ""
 msgid "Pricing Grid"
 msgstr ""
 
-#: includes/elementor/widgets/product-price-widget.php:120
-#: blocks/build/whmcs-price-product.js:1
-#: blocks/whmcs-price-product/edit.js:48
-msgid "Disabled"
-msgstr ""
-
 #: includes/elementor/widgets/product-price-widget.php:121
 #: blocks/build/whmcs-price-product.js:1
 #: blocks/whmcs-price-product/edit.js:49
@@ -742,7 +777,7 @@ msgid "Pricing data is currently unavailable."
 msgstr ""
 
 #: includes/settings.php:38
-#: whmcs_price.php:238
+#: whmcs_price.php:246
 msgid "Settings"
 msgstr ""
 
@@ -848,298 +883,324 @@ msgstr ""
 msgid "How long prices are cached before fetching fresh data from WHMCS."
 msgstr ""
 
-#: includes/settings.php:215
+#: includes/settings.php:216
+msgid "Cache Warming"
+msgstr ""
+
+#: includes/settings.php:221
+msgid "Refresh cached prices in the background before they expire"
+msgstr ""
+
+#: includes/settings.php:223
+msgid "Uses WP-Cron. Only prices that visitors have actually viewed are refreshed, so the number of WHMCS requests stays proportional to what your site shows."
+msgstr ""
+
+#: includes/settings.php:227
+msgid "Warming Interval"
+msgstr ""
+
+#. translators: %s: human-readable time difference, e.g. "4 mins"
+#: includes/settings.php:238
+#, php-format
+msgid "Next warm-up in %s."
+msgstr ""
+
+#: includes/settings.php:240
+msgid "How often to check for prices that are about to expire."
+msgstr ""
+
+#: includes/settings.php:250
 msgid "Clear Cache Now"
 msgstr ""
 
-#: includes/settings.php:217
+#: includes/settings.php:252
 msgid "Force fresh prices to be fetched from WHMCS on the next page load. Also available from the Admin Bar."
 msgstr ""
 
-#: includes/settings.php:231
+#: includes/settings.php:266
 msgid "Active outage detected."
 msgstr ""
 
-#: includes/settings.php:232
+#: includes/settings.php:267
 msgid "WHMCS pricing data could not be fetched. Visitors are seeing the unavailability message. An e-mail notification has already been sent."
 msgstr ""
 
-#: includes/settings.php:238
+#: includes/settings.php:273
 msgid "Outage Alerts"
 msgstr ""
 
-#: includes/settings.php:242
+#: includes/settings.php:277
 msgid "Send an e-mail when WHMCS pricing data becomes unavailable"
 msgstr ""
 
-#: includes/settings.php:244
+#: includes/settings.php:279
 msgid "At most one notification is sent per outage. A fresh alert is sent if WHMCS recovers and then goes down again."
 msgstr ""
 
-#: includes/settings.php:248
+#: includes/settings.php:283
 msgid "Alert Address"
 msgstr ""
 
-#: includes/settings.php:251
+#: includes/settings.php:286
 msgid "Defaults to the site admin e-mail address."
 msgstr ""
 
-#: includes/settings.php:263
+#: includes/settings.php:298
 msgid "Promo Code"
 msgstr ""
 
-#: includes/settings.php:269
+#: includes/settings.php:304
 msgid "Optional. Leave blank to disable the promo notice."
 msgstr ""
 
-#: includes/settings.php:273
+#: includes/settings.php:308
 msgid "Promo Text"
 msgstr ""
 
-#: includes/settings.php:278
+#: includes/settings.php:313
 msgid "Use code {code} to get 20% off your first year"
 msgstr ""
 
-#: includes/settings.php:280
+#: includes/settings.php:315
 msgid "Text shown below the price. Use {code} to insert the promo code."
 msgstr ""
 
-#: includes/settings.php:282
+#: includes/settings.php:317
 msgid "Preview:"
 msgstr ""
 
-#: includes/settings.php:289
+#: includes/settings.php:324
 msgid "Show for"
 msgstr ""
 
-#: includes/settings.php:292
+#: includes/settings.php:327
 msgid "Products and Domains"
 msgstr ""
 
-#: includes/settings.php:293
+#: includes/settings.php:328
 msgid "Products only"
 msgstr ""
 
-#: includes/settings.php:294
+#: includes/settings.php:329
 msgid "Domains only"
 msgstr ""
 
-#: includes/settings.php:313
+#: includes/settings.php:348
 msgid "Revoking a compromised token"
 msgstr ""
 
-#: includes/settings.php:316
+#: includes/settings.php:351
 msgid "Click Generate (or paste a new secret), then Save Changes — the previous token stops working immediately."
 msgstr ""
 
-#: includes/settings.php:317
+#: includes/settings.php:352
 msgid "Or clear this field and save to disable the purge endpoint until you set a new token."
 msgstr ""
 
 #. translators: %s: link to REST API wiki page (revoke section)
-#: includes/settings.php:324
+#: includes/settings.php:359
 #, php-format
 msgid "Then update the token in WHMCS hooks, n8n, Zapier, or any other automation. %s"
 msgstr ""
 
-#: includes/settings.php:325
+#: includes/settings.php:360
 msgid "Full instructions in the documentation ↗"
 msgstr ""
 
-#: includes/settings.php:358
+#: includes/settings.php:393
 msgid "Fallback Price"
 msgstr ""
 
-#: includes/settings.php:363
+#: includes/settings.php:398
 msgid "e.g. from 9.99 kr/mo"
 msgstr ""
 
-#: includes/settings.php:365
+#: includes/settings.php:400
 msgid "Shown instead of \"Pricing unavailable\" when WHMCS cannot be reached. Leave blank to show the default message."
 msgstr ""
 
-#: includes/settings.php:370
+#: includes/settings.php:405
 msgid "Cache Purge Token"
 msgstr ""
 
-#: includes/settings.php:376
+#: includes/settings.php:411
 msgid "Leave blank to disable"
 msgstr ""
 
-#: includes/settings.php:379
-#: includes/settings.php:380
+#: includes/settings.php:414
+#: includes/settings.php:415
 msgid "Show"
 msgstr ""
 
-#: includes/settings.php:379
+#: includes/settings.php:414
 msgid "Hide"
 msgstr ""
 
-#: includes/settings.php:384
+#: includes/settings.php:419
 msgid "Generate"
 msgstr ""
 
-#: includes/settings.php:388
+#: includes/settings.php:423
 msgid "Clear"
 msgstr ""
 
-#: includes/settings.php:391
+#: includes/settings.php:426
 msgid "Secret token required for the cache purge REST endpoint (POST /wp-json/whmcs-price/v1/purge-cache). Send it in the X-WHMCS-Price-Token header. Minimum 16 characters (letters, digits, hyphen, underscore). Leave blank to disable the endpoint."
 msgstr ""
 
-#: includes/settings.php:395
+#: includes/settings.php:430
 msgid "Endpoint:"
 msgstr ""
 
-#: includes/settings.php:403
+#: includes/settings.php:438
 msgid "Rate limiting"
 msgstr ""
 
-#: includes/settings.php:404
+#: includes/settings.php:439
 msgid "Protect the REST API and cache-purge endpoint from abuse. Set any limit to 0 to disable that rule. Limits apply per visitor IP address."
 msgstr ""
 
-#: includes/settings.php:407
+#: includes/settings.php:442
 msgid "Purge success cooldown"
 msgstr ""
 
-#: includes/settings.php:411
+#: includes/settings.php:446
 msgid "seconds between successful cache purges"
 msgstr ""
 
-#: includes/settings.php:412
+#: includes/settings.php:447
 msgid "Prevents accidental purge loops from webhooks or automation. Default: 5. Set to 0 to allow back-to-back purges."
 msgstr ""
 
-#: includes/settings.php:416
+#: includes/settings.php:451
 msgid "Purge failed-auth limit"
 msgstr ""
 
-#: includes/settings.php:420
+#: includes/settings.php:455
 msgid "failed token attempts per"
 msgstr ""
 
-#: includes/settings.php:423
-#: includes/settings.php:441
+#: includes/settings.php:458
+#: includes/settings.php:476
 msgid "seconds (per IP)"
 msgstr ""
 
-#: includes/settings.php:424
+#: includes/settings.php:459
 msgid "Blocks brute-force guessing of the purge token. Default: 10 attempts per 60 seconds. Set either field to 0 to disable."
 msgstr ""
 
-#: includes/settings.php:428
+#: includes/settings.php:463
 msgid "REST API rate limit"
 msgstr ""
 
-#: includes/settings.php:433
+#: includes/settings.php:468
 msgid "Enable rate limiting on public GET endpoints (/product, /domain)"
 msgstr ""
 
-#: includes/settings.php:438
+#: includes/settings.php:473
 msgid "requests per"
 msgstr ""
 
-#: includes/settings.php:446
+#: includes/settings.php:481
 msgid "Only count cache misses (requests that would fetch from WHMCS)"
 msgstr ""
 
-#: includes/settings.php:448
+#: includes/settings.php:483
 msgid "Disabled by default so headless integrations keep working. When enabled, defaults to 60 requests per 60 seconds. Returns HTTP 429 with Retry-After when exceeded."
 msgstr ""
 
-#: includes/settings.php:455
+#: includes/settings.php:490
 msgid "Custom User-Agent"
 msgstr ""
 
 #. translators: %s: default User-Agent string
-#: includes/settings.php:467
+#: includes/settings.php:502
 #, php-format
 msgid "Override the User-Agent sent to WHMCS. Useful for firewall allow-rules. Leave blank to use the default: %s"
 msgstr ""
 
-#: includes/settings.php:497
+#: includes/settings.php:532
 msgid "Operational Status"
 msgstr ""
 
-#: includes/settings.php:498
+#: includes/settings.php:533
 msgid "Read-only diagnostics — no outbound WHMCS calls."
 msgstr ""
 
-#: includes/settings.php:501
+#: includes/settings.php:536
 msgid "Persistent object cache detected — entry counts are kept in cache, not the database, so DB-based counts are unavailable."
 msgstr ""
 
-#: includes/settings.php:506
+#: includes/settings.php:541
 msgid "Nearest expiry"
 msgstr ""
 
-#: includes/settings.php:507
+#: includes/settings.php:542
 msgid "Farthest expiry"
 msgstr ""
 
-#: includes/settings.php:515
+#: includes/settings.php:550
 msgid "Product Pricing"
 msgstr ""
 
-#: includes/settings.php:516
-#: includes/settings.php:531
+#: includes/settings.php:551
+#: includes/settings.php:566
 msgid "Click to select shortcode:"
 msgstr ""
 
-#: includes/settings.php:520
+#: includes/settings.php:555
 msgid "Billing cycles:"
 msgstr ""
 
-#: includes/settings.php:521
-#: includes/settings.php:535
+#: includes/settings.php:556
+#: includes/settings.php:570
 msgid "Show:"
 msgstr ""
 
-#: includes/settings.php:522
-#: includes/settings.php:538
+#: includes/settings.php:557
+#: includes/settings.php:573
 msgid "Full reference ↗"
 msgstr ""
 
-#: includes/settings.php:530
+#: includes/settings.php:565
 msgid "Domain Pricing"
 msgstr ""
 
-#: includes/settings.php:536
+#: includes/settings.php:571
 msgid "Period (years):"
 msgstr ""
 
-#: includes/settings.php:537
+#: includes/settings.php:572
 msgid "Leave tld empty to list all TLDs."
 msgstr ""
 
-#: includes/settings.php:567
+#: includes/settings.php:602
 msgid "WHMCS URL must use HTTPS. HTTP URLs are blocked for security reasons."
 msgstr ""
 
-#: includes/settings.php:638
+#: includes/settings.php:677
 msgid "Cache Purge Token must be at least 16 characters (letters, digits, hyphen, underscore). The previous token is still active. To remove the token entirely, clear the field completely and save."
 msgstr ""
 
-#: includes/settings.php:646
+#: includes/settings.php:685
 msgid "Cache Purge Token must be at least 16 characters (letters, digits, hyphen, underscore). Token not saved."
 msgstr ""
 
-#: includes/settings.php:754
-#: includes/settings.php:756
+#: includes/settings.php:793
+#: includes/settings.php:795
 msgid "Clear WHMCS Cache"
 msgstr ""
 
-#: includes/settings.php:764
+#: includes/settings.php:803
 msgid "Unauthorized access."
 msgstr ""
 
-#: includes/settings.php:814
+#: includes/settings.php:853
 msgid "Now"
 msgstr ""
 
 #. translators: %d: number of days
-#: includes/settings.php:823
+#: includes/settings.php:862
 #, php-format
 msgid "%d day"
 msgid_plural "%d days"
@@ -1147,7 +1208,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of hours
-#: includes/settings.php:827
+#: includes/settings.php:866
 #, php-format
 msgid "%d hour"
 msgid_plural "%d hours"
@@ -1155,14 +1216,14 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of minutes
-#: includes/settings.php:831
+#: includes/settings.php:870
 #, php-format
 msgid "%d minute"
 msgid_plural "%d minutes"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/settings.php:833
+#: includes/settings.php:872
 msgid "Soon"
 msgstr ""
 
@@ -1351,23 +1412,23 @@ msgstr ""
 msgid "WordPress can connect to WHMCS and the pricing feed is returning data."
 msgstr ""
 
-#: whmcs_price.php:210
+#: whmcs_price.php:218
 msgid "You do not have permission to access this page."
 msgstr ""
 
-#: whmcs_price.php:216
+#: whmcs_price.php:224
 msgid "WHMCS Price — Network Overview"
 msgstr ""
 
-#: whmcs_price.php:217
+#: whmcs_price.php:225
 msgid "Settings are configured per site. Click a site below to manage its WHMCS Price settings."
 msgstr ""
 
-#: whmcs_price.php:221
+#: whmcs_price.php:229
 msgid "Site"
 msgstr ""
 
-#: whmcs_price.php:223
+#: whmcs_price.php:231
 msgid "Actions"
 msgstr ""
 
