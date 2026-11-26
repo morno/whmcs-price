@@ -594,7 +594,7 @@ class WHMCS_Price_API {
 		// a shortcode and a Gutenberg block on the same page request the same product).
 		if ( isset( self::$request_cache[ $cache_key ] ) ) {
 			self::debug_log( 'Product data served from request cache', array( 'cache_key' => $cache_key ) );
-			return self::$request_cache[ $cache_key ];
+			return self::filter_product_data( self::$request_cache[ $cache_key ], $pid, $billing_cycle, $attribute );
 		}
 
 		$cached = self::get_cache( $cache_key );
@@ -605,7 +605,7 @@ class WHMCS_Price_API {
 				'length'    => strlen( $cached ),
 			) );
 			self::$request_cache[ $cache_key ] = $cached;
-			return $cached;
+			return self::filter_product_data( $cached, $pid, $billing_cycle, $attribute );
 		}
 
 		// Acquire a lock to prevent multiple simultaneous requests to WHMCS.
@@ -669,19 +669,41 @@ class WHMCS_Price_API {
 		self::release_lock( $lock_key ); // Release lock after successful cache write.
 		whmcs_price_clear_outage();
 
+		self::$request_cache[ $cache_key ] = $data;
+		return self::filter_product_data( $data, $pid, $billing_cycle, $attribute );
+	}
+
+	/**
+	 * Apply the whmcs_price_product_data filter to a value about to be returned.
+	 *
+	 * Runs on every return path (fresh fetch, persistent cache and request
+	 * cache) so filters behave the same whether or not the value was cached.
+	 * The unfiltered value is what gets cached, so changing a filter takes
+	 * effect immediately without a cache purge.
+	 *
+	 * @since  2.10.0
+	 * @access private
+	 * @param  string     $data          Unfiltered value.
+	 * @param  int|string $pid           WHMCS product ID.
+	 * @param  string     $billing_cycle Billing cycle.
+	 * @param  string     $attribute     Requested attribute.
+	 * @return string
+	 */
+	private static function filter_product_data( string $data, $pid, string $billing_cycle, string $attribute ): string {
 		/**
-		 * Filter the product data returned from WHMCS before it is cached and displayed.
+		 * Filter the product data returned from WHMCS before it is displayed.
+		 *
+		 * Applied on every call, including cache hits. The cached value is
+		 * always the unfiltered WHMCS response.
 		 *
 		 * @since 2.8.0
+		 * @since 2.10.0 Also applied to cached values; no longer stored filtered.
 		 * @param string $data          The raw price/name/description string from WHMCS.
 		 * @param int    $pid           The WHMCS product ID.
 		 * @param string $billing_cycle The billing cycle (e.g. 'monthly', 'annually').
 		 * @param string $attribute     The requested attribute ('name', 'description', 'price').
 		 */
-		$data = (string) apply_filters( 'whmcs_price_product_data', $data, $pid, $billing_cycle, $attribute );
-
-		self::$request_cache[ $cache_key ] = $data;
-		return $data;
+		return (string) apply_filters( 'whmcs_price_product_data', $data, (int) $pid, $billing_cycle, $attribute );
 	}
 
 	/**
@@ -740,7 +762,7 @@ class WHMCS_Price_API {
 
 		if ( isset( self::$request_cache[ $cache_key ] ) ) {
 			self::debug_log( 'Domain price served from request cache', array( 'cache_key' => $cache_key ) );
-			return self::$request_cache[ $cache_key ];
+			return self::filter_domain_price( self::$request_cache[ $cache_key ], $tld, $type, $reg_period_int );
 		}
 
 		$cached = self::get_cache( $cache_key );
@@ -751,7 +773,7 @@ class WHMCS_Price_API {
 				'length'    => strlen( $cached ),
 			) );
 			self::$request_cache[ $cache_key ] = $cached;
-			return $cached;
+			return self::filter_domain_price( $cached, $tld, $type, $reg_period_int );
 		}
 
 		// Acquire a lock to prevent multiple simultaneous requests to WHMCS.
@@ -816,19 +838,38 @@ class WHMCS_Price_API {
 		self::release_lock( $lock_key ); // Release lock after successful cache write.
 		whmcs_price_clear_outage();
 
+		self::$request_cache[ $cache_key ] = $data;
+		return self::filter_domain_price( $data, $tld, $type, $reg_period_int );
+	}
+
+	/**
+	 * Apply the whmcs_price_domain_price filter to a value about to be returned.
+	 *
+	 * See filter_product_data() for why this runs on every return path.
+	 *
+	 * @since  2.10.0
+	 * @access private
+	 * @param  string $data       Unfiltered value.
+	 * @param  string $tld        Sanitized TLD without leading dot.
+	 * @param  string $type       Transaction type.
+	 * @param  int    $reg_period Registration period in years.
+	 * @return string
+	 */
+	private static function filter_domain_price( string $data, string $tld, string $type, int $reg_period ): string {
 		/**
-		 * Filter the domain price returned from WHMCS before it is cached and displayed.
+		 * Filter the domain price returned from WHMCS before it is displayed.
+		 *
+		 * Applied on every call, including cache hits. The cached value is
+		 * always the unfiltered WHMCS response.
 		 *
 		 * @since 2.8.0
+		 * @since 2.10.0 Also applied to cached values; no longer stored filtered.
 		 * @param string $data       The raw price string from WHMCS.
 		 * @param string $tld        The domain extension (without leading dot).
 		 * @param string $type       Transaction type: 'register', 'renew', or 'transfer'.
 		 * @param int    $reg_period Registration period in years.
 		 */
-		$data = (string) apply_filters( 'whmcs_price_domain_price', $data, $tld, $type, $reg_period_int );
-
-		self::$request_cache[ $cache_key ] = $data;
-		return $data;
+		return (string) apply_filters( 'whmcs_price_domain_price', $data, $tld, $type, $reg_period );
 	}
 
 	/**

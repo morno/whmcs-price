@@ -16,7 +16,19 @@
 	],
 	"supports": {
 		"html": false,
-		"align": false
+		"align": [
+			"wide",
+			"full"
+		],
+		"color": {
+			"text": true,
+			"background": true,
+			"link": false
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
 	},
 	"attributes": {
 		"tld": {
@@ -42,6 +54,19 @@
 		"perPeriod": {
 			"type": "string",
 			"default": ""
+		},
+		"preview": {
+			"type": "boolean",
+			"default": false
+		}
+	},
+	"example": {
+		"viewportWidth": 600,
+		"attributes": {
+			"preview": true,
+			"tld": "com",
+			"showAll": true,
+			"displayStyle": "badge"
 		}
 	},
 	"textdomain": "whmcs-price",

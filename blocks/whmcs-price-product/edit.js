@@ -51,9 +51,54 @@ const PER_PERIOD_OPTIONS = [
 	{ label: __( 'Per day — e.g. $99/yr ($0.27/day)', 'whmcs-price' ),  value: 'day' },
 ];
 
+/**
+ * Static preview shown in the block inserter (block.json "example").
+ *
+ * Uses the same markup and classes as render.php's "cards" style so the
+ * frontend stylesheet applies, but with placeholder data — hovering the
+ * block in the inserter must never trigger a request to WHMCS.
+ *
+ * @since 2.10.0
+ */
+function InserterPreview() {
+	const plans = [
+		{ name: __( 'Starter', 'whmcs-price' ), price: '4.99', description: __( 'For personal sites and blogs.', 'whmcs-price' ) },
+		{ name: __( 'Business', 'whmcs-price' ), price: '9.99', description: __( 'For growing businesses.', 'whmcs-price' ) },
+		{ name: __( 'Pro', 'whmcs-price' ), price: '19.99', description: __( 'For high-traffic stores.', 'whmcs-price' ) },
+	];
+
+	return (
+		<div className="whmcs-product-display whmcs-product-display--cards">
+			<div className="whmcs-product-cards">
+				{ plans.map( ( plan ) => (
+					<div className="whmcs-product-card" key={ plan.name }>
+						<div className="whmcs-product-card__name">
+							<h3 className="whmcs-product-card__title">{ plan.name }</h3>
+						</div>
+						<div className="whmcs-product-card__price">
+							<span className="whmcs-product-card__price-value">{ plan.price }</span>
+						</div>
+						<div className="whmcs-product-card__description">
+							<p className="whmcs-product-card__description">{ plan.description }</p>
+						</div>
+					</div>
+				) ) }
+			</div>
+		</div>
+	);
+}
+
 export default function Edit( { attributes, setAttributes } ) {
-	const { pid, billingCycle, show, displayStyle, perPeriod } = attributes;
+	const { pid, billingCycle, show, displayStyle, perPeriod, preview } = attributes;
 	const blockProps = useBlockProps();
+
+	if ( preview ) {
+		return (
+			<div { ...blockProps }>
+				<InserterPreview />
+			</div>
+		);
+	}
 
 	function handleShowToggle( value, checked ) {
 		const updated = checked

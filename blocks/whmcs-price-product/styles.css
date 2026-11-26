@@ -258,3 +258,20 @@
 		grid-template-columns: 1fr;
 	}
 }
+
+/* ==================== Block design supports (2.10.0) ==================== */
+
+/**
+ * When a text colour is chosen in the block sidebar or theme.json, WordPress
+ * adds .has-text-color and an inline colour to the wrapper. The default
+ * styles above hard-code text colours on inner elements, so let those inherit
+ * the chosen colour instead. Without a chosen colour nothing changes.
+ * Header rows and the gradient price keep their own colours on purpose.
+ */
+.whmcs-product-display.has-text-color .whmcs-product-table td,
+.whmcs-product-display.has-text-color .whmcs-product-card__title,
+.whmcs-product-display.has-text-color .whmcs-product-card__description,
+.whmcs-product-display.has-text-color .whmcs-product-grid-item__label,
+.whmcs-product-display.has-text-color .whmcs-product-grid-item__value {
+	color: inherit;
+}

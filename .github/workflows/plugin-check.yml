@@ -80,7 +80,9 @@ jobs:
             --allow-root
 
           mkdir -p /tmp/wordpress/wp-content/plugins/whmcs-price
-          rsync -a --delete ./ /tmp/wordpress/wp-content/plugins/whmcs-price/
+          # Copy only what ships to wp.org, so dev files (tests, composer.json,
+          # build scripts) are not reported as plugin issues.
+          rsync -a --delete --exclude-from=.distignore ./ /tmp/wordpress/wp-content/plugins/whmcs-price/
 
           wp plugin install plugin-check --activate \
             --path=/tmp/wordpress \

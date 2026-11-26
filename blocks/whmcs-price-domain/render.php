@@ -9,6 +9,12 @@
 
 defined( 'ABSPATH' ) || exit;
 
+// Inserter preview (block.json "example") is rendered client-side in edit.js
+// with placeholder data. Never fetch live prices for it.
+if ( ! empty( $attributes['preview'] ) ) {
+	return;
+}
+
 // Skip during autosave — no need to fetch live prices for a draft save.
 if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
 	echo '<!-- whmcs-price block -->';

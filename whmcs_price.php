@@ -81,6 +81,14 @@ require_once WHMCS_PRICE_DIR . 'includes/gutenberg/blocks.php';
 require_once WHMCS_PRICE_DIR . 'includes/rest-api.php';
 
 /**
+ * Load the Abilities API integration (WordPress 6.9+).
+ * Exposes whmcs-price/get-product-price and whmcs-price/get-domain-price
+ * to AI agents, MCP clients and other plugins. No-op on older WordPress.
+ * @since 2.10.0
+ */
+require_once WHMCS_PRICE_DIR . 'includes/abilities.php';
+
+/**
  * Load the Dashboard Widget.
  * Shows cache status on the WordPress admin dashboard.
  */

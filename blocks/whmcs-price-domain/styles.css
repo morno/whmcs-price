@@ -292,3 +292,24 @@
 		padding: 8px 6px;
 	}
 }
+
+/* ==================== Block design supports (2.10.0) ==================== */
+
+/**
+ * See the product block stylesheet: inner elements inherit a text colour
+ * chosen in the block sidebar or theme.json instead of the hard-coded
+ * defaults. Header rows, badges and accent-coloured prices keep their own
+ * colours on purpose.
+ */
+.whmcs-domain-display.has-text-color .whmcs-domain-badges__tld,
+.whmcs-domain-display.has-text-color .whmcs-domain-inline__item,
+.whmcs-domain-display.has-text-color .whmcs-domain-inline--single,
+.whmcs-domain-display.has-text-color .whmcs-domain-all table td {
+	color: inherit;
+}
+
+/* Let wide/full alignment actually widen the layout. */
+.whmcs-domain-display.alignwide .whmcs-domain-table,
+.whmcs-domain-display.alignfull .whmcs-domain-table {
+	max-width: none;
+}

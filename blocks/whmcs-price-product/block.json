@@ -15,7 +15,19 @@
 	],
 	"supports": {
 		"html": false,
-		"align": false
+		"align": [
+			"wide",
+			"full"
+		],
+		"color": {
+			"text": true,
+			"background": true,
+			"link": false
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
 	},
 	"attributes": {
 		"pid": {
@@ -43,6 +55,22 @@
 		"perPeriod": {
 			"type": "string",
 			"default": ""
+		},
+		"preview": {
+			"type": "boolean",
+			"default": false
+		}
+	},
+	"example": {
+		"viewportWidth": 800,
+		"attributes": {
+			"preview": true,
+			"displayStyle": "cards",
+			"show": [
+				"name",
+				"price",
+				"description"
+			]
 		}
 	},
 	"textdomain": "whmcs-price",

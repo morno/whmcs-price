@@ -137,7 +137,7 @@ add_action( 'rest_api_init', function() {
  * @param  WP_REST_Request $request
  * @return true|WP_Error
  */
-function whmcs_price_rest_purge_permission( WP_REST_Request $request ): true|WP_Error {
+function whmcs_price_rest_purge_permission( WP_REST_Request $request ): bool|WP_Error {
 	$options  = get_option( 'whmcs_price_option', array() );
 	$token    = ! empty( $options['purge_token'] ) ? $options['purge_token'] : '';
 	$security = whmcs_price_get_security_settings();

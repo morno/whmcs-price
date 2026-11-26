@@ -1,0 +1,59 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "languages/**"
+      - "**/*.pot"
+      - "**/*.md"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  phpunit:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # 8.1 = "Requires PHP" in readme.txt, 8.3 = current mainstream,
+        # 8.6 = newest release (fully supported from WordPress 7.2).
+        php: ["8.1", "8.3", "8.6"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer
+
+      - name: Lint all PHP files
+        run: |
+          find . -path ./vendor -prune -o -path ./node_modules -prune -o -name '*.php' -print0 \
+            | xargs -0 -n1 -P4 php -l -d display_errors=1 > /tmp/lint.log 2>&1 || {
+              grep -v '^No syntax errors' /tmp/lint.log
+              exit 1
+            }
+          echo "All files passed php -l on PHP ${{ matrix.php }}"
+
+      - name: Install Composer dependencies
+        run: composer update --no-interaction --no-progress --prefer-dist
+
+      - name: Run PHPUnit
+        run: vendor/bin/phpunit

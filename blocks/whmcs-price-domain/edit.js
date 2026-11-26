@@ -46,9 +46,47 @@ const DISPLAY_STYLE_OPTIONS = [
 	{ label: __( 'Inline', 'whmcs-price' ),          value: 'inline' },
 ];
 
+/**
+ * Static preview shown in the block inserter (block.json "example").
+ *
+ * Mirrors render.php's "badge" style with placeholder prices so the
+ * inserter never triggers a request to WHMCS.
+ *
+ * @since 2.10.0
+ */
+function InserterPreview() {
+	const rows = [
+		{ label: __( 'Register', 'whmcs-price' ), price: '12.99' },
+		{ label: __( 'Renew', 'whmcs-price' ), price: '14.99' },
+		{ label: __( 'Transfer', 'whmcs-price' ), price: '12.99' },
+	];
+
+	return (
+		<div className="whmcs-domain-display whmcs-domain-display--badge">
+			<div className="whmcs-domain-badges">
+				<div className="whmcs-domain-badges__tld">.com</div>
+				{ rows.map( ( row ) => (
+					<div className="whmcs-domain-badge" key={ row.label }>
+						<span className="whmcs-domain-badge__label">{ row.label }</span>
+						<span className="whmcs-domain-badge__price">{ row.price }</span>
+					</div>
+				) ) }
+			</div>
+		</div>
+	);
+}
+
 export default function Edit( { attributes, setAttributes } ) {
-	const { tld, transactionType, regPeriod, showAll, displayStyle } = attributes;
+	const { tld, transactionType, regPeriod, showAll, displayStyle, preview } = attributes;
 	const blockProps = useBlockProps();
+
+	if ( preview ) {
+		return (
+			<div { ...blockProps }>
+				<InserterPreview />
+			</div>
+		);
+	}
 
 	return (
 		<>

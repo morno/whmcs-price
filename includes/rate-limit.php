@@ -154,7 +154,7 @@ function whmcs_price_rate_limit_status( string $bucket, int $window_seconds, str
  * @param  string $identifier      Client id.
  * @return true|WP_Error
  */
-function whmcs_price_rate_limit_check( string $bucket, int $max_attempts, int $window_seconds, string $identifier = '' ): true|WP_Error {
+function whmcs_price_rate_limit_check( string $bucket, int $max_attempts, int $window_seconds, string $identifier = '' ): bool|WP_Error {
 	if ( $max_attempts <= 0 || $window_seconds <= 0 ) {
 		return true;
 	}
@@ -186,7 +186,7 @@ function whmcs_price_rate_limit_check( string $bucket, int $max_attempts, int $w
  * @param  string $identifier      Client id.
  * @return true|WP_Error
  */
-function whmcs_price_rate_limit_enforce( string $bucket, int $max_attempts, int $window_seconds, string $identifier = '' ): true|WP_Error {
+function whmcs_price_rate_limit_enforce( string $bucket, int $max_attempts, int $window_seconds, string $identifier = '' ): bool|WP_Error {
 	if ( $max_attempts <= 0 || $window_seconds <= 0 ) {
 		return true;
 	}
@@ -237,7 +237,7 @@ function whmcs_price_rate_limit_rest_response( WP_Error $error ): WP_REST_Respon
  * @param  bool   $cache_hit Whether the response will be served from cache only.
  * @return true|WP_Error
  */
-function whmcs_price_rest_read_rate_limit( string $endpoint, bool $cache_hit = false ): true|WP_Error {
+function whmcs_price_rest_read_rate_limit( string $endpoint, bool $cache_hit = false ): bool|WP_Error {
 	$settings = whmcs_price_get_security_settings();
 
 	if ( '1' !== (string) $settings['rest_rate_enabled'] ) {

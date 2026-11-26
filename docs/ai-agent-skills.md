@@ -20,7 +20,7 @@ Skills we deliberately did **not** install:
 - `wp-block-themes`, `wp-interactivity-api`, `wpds` — not relevant to this plugin.
 - `wp-phpstan` — worth adding when we introduce PHPStan static analysis to CI.
 - `wp-playground` — worth adding when we adopt Playground for release testing.
-- `wp-abilities-api` — worth revisiting if we modernise REST authentication in v3.x.
+- `wp-abilities-api` — worth adding now that the plugin registers abilities (since 2.10.0, see [abilities-api.md](abilities-api.md)).
 
 ## How agents use skills
 
