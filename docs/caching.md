@@ -54,6 +54,50 @@ responses have been served and when the last one was. A steadily growing number
 with a recent timestamp is normal. If the number grows while prices never
 change, check that WP-Cron is running.
 
+## Cache warming (since 2.10.0)
+
+Turn on **Settings → WHMCS Price → Performance → Cache Warming** to refresh
+prices in the background *before* they expire. Visitors then always get a
+fresh cached price, and WHMCS sees a steady trickle of requests instead of
+bursts after every expiry.
+
+How it works:
+
+- The plugin keeps a list of the prices visitors have actually viewed. Only
+  those are warmed, so a site that shows three products makes three requests,
+  not hundreds.
+- A WP-Cron job runs every 5 minutes, 15 minutes or hourly (your choice) and
+  refreshes entries that expire before the next run, plus one minute of margin.
+- Entries missing from the cache, for example after **Clear cache**, are
+  fetched again by the next run.
+- A price that no visitor has caused to be fetched for 7 days drops off the list.
+  Warm-ups themselves don't count as use, so prices you remove from your pages
+  stop being fetched. A price that is still on a page is put back on the list the
+  next time it is served after expiring. With stale-while-revalidate the visitor
+  doesn't notice that.
+- At most 50 entries are refreshed per run. When more than 10 are due, requests
+  are spaced one second apart.
+- If WHMCS stops answering, the run stops after three failures in a row (or as
+  soon as an outage alert has been sent) and continues on the next run.
+
+Run it by hand with WP-CLI:
+
+```bash
+wp whmcs-price cache warm             # refresh every tracked price now
+wp whmcs-price cache warm --due-only  # only what the scheduled job would refresh
+wp whmcs-price cache status           # shows interval, next run and tracked entries
+```
+
+### Filters
+
+| Filter | Default | Purpose |
+|---|---|---|
+| `whmcs_price_warm_threshold` | interval + 60 s | Refresh entries expiring within this many seconds. |
+| `whmcs_price_warm_retention` | 7 days | Keep warming an entry this long after a visitor last caused a fetch. |
+| `whmcs_price_warm_max_per_run` | 50 | Maximum refreshes per run; the rest wait for the next run. |
+| `whmcs_price_warm_delay` | 1 s | Pause between requests when more than 10 are due. |
+| `whmcs_price_warm_registry_size` | 500 | Maximum number of tracked prices; least recently used are dropped. |
+
 ## Purging
 
 **Clear cache** (admin bar, dashboard widget, settings page, `wp whmcs-price cache clear`

@@ -75,6 +75,8 @@ abstract class TestCase extends PHPUnitTestCase {
 			'cache_version' => null,
 			'force_refresh' => false,
 			'stale_served'  => 0,
+			'registry_touched' => array(),
+			'refresh_wrote'    => false,
 		);
 		foreach ( $props as $prop => $value ) {
 			$p = $ref->getProperty( $prop );

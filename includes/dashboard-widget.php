@@ -73,6 +73,8 @@ function whmcs_price_dashboard_widget_render(): void {
 	$whmcs_url  = ! empty( $options['whmcs_url'] ) ? $options['whmcs_url'] : '';
 	$is_outage  = false !== get_transient( 'whmcs_price_outage_notified' );
 	$stale_stats = WHMCS_Price_API::get_stale_stats();
+	$warm        = whmcs_price_warm_settings();
+	$next_warm   = $warm['enabled'] ? wp_next_scheduled( WHMCS_PRICE_WARM_HOOK ) : false;
 
 	$clear_url = wp_nonce_url(
 		add_query_arg( 'whmcs_clear_cache', '1', admin_url( 'options-general.php?page=whmcs_price' ) ),
@@ -127,6 +129,23 @@ function whmcs_price_dashboard_widget_render(): void {
 							}
 						} else {
 							esc_html_e( 'No cache', 'whmcs-price' );
+						}
+						?>
+						</strong>
+					</td>
+				</tr>
+				<tr>
+					<td><?php esc_html_e( 'Next warm-up', 'whmcs-price' ); ?></td>
+					<td>
+						<strong>
+						<?php
+						if ( ! $warm['enabled'] ) {
+							esc_html_e( 'Disabled', 'whmcs-price' );
+						} elseif ( $next_warm ) {
+							/* translators: %s: human-readable time difference, e.g. "4 mins" */
+							echo esc_html( sprintf( __( 'in %s', 'whmcs-price' ), human_time_diff( $next_warm ) ) );
+						} else {
+							esc_html_e( 'Not scheduled', 'whmcs-price' );
 						}
 						?>
 						</strong>

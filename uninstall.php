@@ -22,10 +22,12 @@ function whmcs_price_uninstall_site() {
     delete_option( 'whmcs_price_option' );
     delete_option( 'whmcs_price_cache_version' );
     delete_option( 'whmcs_price_stale_stats' );
+    delete_option( 'whmcs_price_cache_registry' );
     delete_transient( 'whmcs_price_outage_notified' );
 
     // Pending stale-while-revalidate refreshes (2.10.0+).
     wp_unschedule_hook( 'whmcs_price_refresh_entry' );
+    wp_clear_scheduled_hook( 'whmcs_price_cron_warm' );
 
     // Remove per-user settings preferences.
     $user_meta_keys = array(

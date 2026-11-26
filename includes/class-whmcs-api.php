@@ -76,12 +76,38 @@ class WHMCS_Price_API {
 	private static bool $force_refresh = false;
 
 	/**
+	 * Whether the running background refresh wrote a new value.
+	 *
+	 * @since 2.10.0
+	 * @var bool
+	 */
+	private static bool $refresh_wrote = false;
+
+	/**
 	 * Stale responses served during this request, flushed at shutdown.
 	 *
 	 * @since 2.10.0
 	 * @var int
 	 */
 	private static int $stale_served = 0;
+
+	/**
+	 * Option holding the registry of cache entries visitors have used.
+	 *
+	 * Maps unversioned cache key => array( 'k' => kind, 'a' => args, 'u' => last visitor use ).
+	 * Read by the warm-up job (#16) to know which entries to refresh.
+	 *
+	 * @since 2.10.0
+	 */
+	public const REGISTRY_OPTION = 'whmcs_price_cache_registry';
+
+	/**
+	 * Registry updates collected during this request, flushed at shutdown.
+	 *
+	 * @since 2.10.0
+	 * @var array<string, array{k: string, a: array}>
+	 */
+	private static array $registry_touched = array();
 
 	/**
 	 * Return the current cache version. Lazy-loaded and request-cached.
@@ -307,6 +333,7 @@ class WHMCS_Price_API {
 		}
 
 		self::schedule_refresh( $kind, $args );
+		self::remember( $cache_key, $kind, $args );
 
 		if ( 0 === self::$stale_served && function_exists( 'add_action' ) ) {
 			add_action( 'shutdown', array( __CLASS__, 'flush_stale_stats' ) );
@@ -352,12 +379,13 @@ class WHMCS_Price_API {
 	 * @since  2.10.0
 	 * @param  string $kind Refresh kind: product, domain, domain_all, pricefeed.
 	 * @param  array  $args Arguments as scheduled by serve_stale().
-	 * @return void
+	 * @return bool         True if a new value was fetched and cached.
 	 */
-	public static function refresh_entry( $kind, $args = array() ): void {
+	public static function refresh_entry( $kind, $args = array() ): bool {
 		$args = is_array( $args ) ? array_values( $args ) : array();
 
 		self::$force_refresh = true;
+		self::$refresh_wrote = false;
 		self::$request_cache = array();
 		try {
 			switch ( (string) $kind ) {
@@ -384,6 +412,10 @@ class WHMCS_Price_API {
 			self::$force_refresh = false;
 			self::$request_cache = array();
 		}
+
+		$wrote               = self::$refresh_wrote;
+		self::$refresh_wrote = false;
+		return $wrote;
 	}
 
 	/**
@@ -421,6 +453,200 @@ class WHMCS_Price_API {
 	}
 
 	/**
+	 * Record that visitors use a cache entry, so the warm-up job keeps it fresh.
+	 *
+	 * Only visitor-driven fetches and stale serves are recorded; refreshes
+	 * run by WP-Cron are not, so entries that stop being used eventually
+	 * drop out of the registry (see warm()).
+	 *
+	 * Collected in memory and written once at shutdown.
+	 *
+	 * @since  2.10.0
+	 * @access private
+	 * @param  string $cache_key Unversioned cache key.
+	 * @param  string $kind      Refresh kind.
+	 * @param  array  $args      Refresh arguments.
+	 * @return void
+	 */
+	private static function remember( string $cache_key, string $kind, array $args ): void {
+		if ( self::$force_refresh ) {
+			return;
+		}
+		if ( empty( self::$registry_touched ) && function_exists( 'add_action' ) ) {
+			add_action( 'shutdown', array( __CLASS__, 'flush_registry' ) );
+		}
+		self::$registry_touched[ $cache_key ] = array(
+			'k' => $kind,
+			'a' => array_values( $args ),
+		);
+	}
+
+	/**
+	 * Persist registry updates collected during this request.
+	 *
+	 * @since  2.10.0
+	 * @return void
+	 */
+	public static function flush_registry(): void {
+		if ( empty( self::$registry_touched ) ) {
+			return;
+		}
+		$registry = self::get_registry();
+		$now      = time();
+		foreach ( self::$registry_touched as $cache_key => $entry ) {
+			$registry[ $cache_key ] = $entry + array( 'u' => $now );
+		}
+		self::$registry_touched = array();
+
+		/**
+		 * Filter the maximum number of cache entries tracked for warm-up.
+		 * The least recently used entries are dropped first.
+		 *
+		 * @since 2.10.0
+		 * @param int $max Default 500.
+		 */
+		$max = max( 1, (int) apply_filters( 'whmcs_price_warm_registry_size', 500 ) );
+		if ( count( $registry ) > $max ) {
+			uasort( $registry, static fn( $a, $b ) => $b['u'] <=> $a['u'] );
+			$registry = array_slice( $registry, 0, $max, true );
+		}
+
+		update_option( self::REGISTRY_OPTION, $registry, false );
+	}
+
+	/**
+	 * The warm-up registry: cache key => kind, args and last visitor use.
+	 *
+	 * @since  2.10.0
+	 * @return array<string, array{k: string, a: array, u: int}>
+	 */
+	public static function get_registry(): array {
+		$registry = get_option( self::REGISTRY_OPTION, array() );
+		if ( ! is_array( $registry ) ) {
+			return array();
+		}
+		return array_filter(
+			$registry,
+			static fn( $e ) => is_array( $e ) && isset( $e['k'], $e['u'] ) && is_string( $e['k'] ) && is_array( $e['a'] ?? null )
+		);
+	}
+
+	/**
+	 * Refresh registered cache entries that are about to expire.
+	 *
+	 * Called by the WP-Cron warm-up job and by `wp whmcs-price cache warm`.
+	 * Entries are refreshed through refresh_entry(), so locking, outage
+	 * handling and cache writes are identical to a visitor fetch.
+	 *
+	 * - Entries with more than $threshold seconds left are skipped.
+	 * - Entries missing from the cache (e.g. after a purge) are fetched.
+	 * - Entries no visitor has used for the retention period are pruned.
+	 * - Requests are spaced out when more than 10 entries are due.
+	 * - The run stops early if WHMCS becomes unreachable.
+	 *
+	 * @since  2.10.0
+	 * @param  int  $threshold Refresh entries expiring within this many seconds.
+	 * @param  bool $all       Refresh every registered entry regardless of expiry.
+	 * @return array{checked: int, refreshed: int, skipped: int, failed: int, pruned: int, deferred: int}
+	 */
+	public static function warm( int $threshold, bool $all = false ): array {
+		$stats    = array(
+			'checked'   => 0,
+			'refreshed' => 0,
+			'skipped'   => 0,
+			'failed'    => 0,
+			'pruned'    => 0,
+			'deferred'  => 0,
+		);
+		$registry = self::get_registry();
+		if ( empty( $registry ) ) {
+			return $stats;
+		}
+
+		$now = time();
+
+		/**
+		 * Filter how long an entry is kept warm after a visitor last caused it
+		 * to be fetched. Warm-ups themselves do not extend it.
+		 *
+		 * @since 2.10.0
+		 * @param int $seconds Default 7 days.
+		 */
+		$retention = (int) apply_filters( 'whmcs_price_warm_retention', 7 * DAY_IN_SECONDS );
+
+		/**
+		 * Filter the maximum number of entries refreshed in one warm-up run.
+		 *
+		 * @since 2.10.0
+		 * @param int $max Default 50.
+		 */
+		$max_per_run = max( 1, (int) apply_filters( 'whmcs_price_warm_max_per_run', 50 ) );
+
+		// Collect due entries first, so we know whether to space out requests.
+		$due = array();
+		foreach ( $registry as $cache_key => $entry ) {
+			if ( $retention > 0 && $now - (int) $entry['u'] > $retention ) {
+				unset( $registry[ $cache_key ] );
+				++$stats['pruned'];
+				continue;
+			}
+			++$stats['checked'];
+
+			$current = self::read_entry( $cache_key );
+			if ( ! $all && null !== $current && $current['expires'] - $now > $threshold ) {
+				++$stats['skipped'];
+				continue;
+			}
+			$due[ $cache_key ] = $entry;
+		}
+
+		if ( $stats['pruned'] > 0 ) {
+			update_option( self::REGISTRY_OPTION, $registry, false );
+		}
+
+		/**
+		 * Filter the pause, in seconds, between WHMCS requests when more than
+		 * 10 entries are due in one run.
+		 *
+		 * @since 2.10.0
+		 * @param int $seconds Default 1.
+		 */
+		$delay = count( $due ) > 10 ? max( 0, (int) apply_filters( 'whmcs_price_warm_delay', 1 ) ) : 0;
+
+		$done                 = 0;
+		$consecutive_failures = 0;
+		foreach ( $due as $cache_key => $entry ) {
+			if ( $done >= $max_per_run ) {
+				$stats['deferred'] = count( $due ) - $done;
+				break;
+			}
+			if ( $done > 0 && $delay > 0 ) {
+				sleep( $delay );
+			}
+			++$done;
+
+			if ( self::refresh_entry( $entry['k'], $entry['a'] ) ) {
+				++$stats['refreshed'];
+				$consecutive_failures = 0;
+				continue;
+			}
+
+			++$stats['failed'];
+			++$consecutive_failures;
+			// WHMCS looks unreachable: stop instead of hammering it for every
+			// entry. The outage flag is only set when e-mail alerts are on,
+			// so repeated failures count as well.
+			if ( false !== get_transient( 'whmcs_price_outage_notified' ) || $consecutive_failures >= 3 ) {
+				$stats['deferred'] = count( $due ) - $done;
+				break;
+			}
+		}
+
+		self::debug_log( 'Cache warm-up finished', $stats );
+		return $stats;
+	}
+
+	/**
 	 * Store a value in both object cache and transient.
 	 *
 	 * The value is wrapped in an envelope with fetch and expiry timestamps.
@@ -433,9 +659,17 @@ class WHMCS_Price_API {
 	 * @param  string $transient_key Transient key.
 	 * @param  mixed  $value         Value to cache.
 	 * @param  int    $expiry        TTL in seconds.
+	 * @param  string $kind          Refresh kind, recorded in the warm-up registry. Empty to skip.
+	 * @param  array  $args          Refresh arguments for refresh_entry().
 	 * @return void
 	 */
-	private static function set_cache( string $transient_key, mixed $value, int $expiry ): void {
+	private static function set_cache( string $transient_key, mixed $value, int $expiry, string $kind = '', array $args = array() ): void {
+		if ( '' !== $kind ) {
+			self::remember( $transient_key, $kind, $args );
+		}
+		if ( self::$force_refresh ) {
+			self::$refresh_wrote = true;
+		}
 		$key = self::versioned_key( $transient_key );
 		$now = time();
 
@@ -962,7 +1196,7 @@ class WHMCS_Price_API {
 			'length'    => strlen( $data ),
 		) );
 
-		self::set_cache( $cache_key, $data, self::get_cache_expiry() );
+		self::set_cache( $cache_key, $data, self::get_cache_expiry(), 'product', array( $pid, $billing_cycle, $attribute ) );
 		self::release_lock( $lock_key ); // Release lock after successful cache write.
 		whmcs_price_clear_outage();
 
@@ -1139,7 +1373,7 @@ class WHMCS_Price_API {
 			'length'    => strlen( $data ),
 		) );
 
-		self::set_cache( $cache_key, $data, self::get_cache_expiry() );
+		self::set_cache( $cache_key, $data, self::get_cache_expiry(), 'domain', array( $tld, $type, $reg_period ) );
 		self::release_lock( $lock_key ); // Release lock after successful cache write.
 		whmcs_price_clear_outage();
 
@@ -1269,7 +1503,7 @@ class WHMCS_Price_API {
 			'length'          => strlen( $data ),
 		) );
 
-		self::set_cache( $cache_key, $data, self::get_cache_expiry() );
+		self::set_cache( $cache_key, $data, self::get_cache_expiry(), 'domain_all', array() );
 		self::$request_cache[ $cache_key ] = $data;
 		self::release_lock( $lock_key ); // Release lock after successful cache write.
 		whmcs_price_clear_outage();
@@ -1446,7 +1680,7 @@ class WHMCS_Price_API {
 				'length'    => strlen( $cached ),
 			) );
 
-			self::set_cache( $cache_key, $cached, self::get_cache_expiry() );
+			self::set_cache( $cache_key, $cached, self::get_cache_expiry(), 'pricefeed', array( $pid ) );
 			self::release_lock( $lock_key );
 			whmcs_price_clear_outage();
 		} else {
@@ -1620,7 +1854,7 @@ class WHMCS_Price_API {
 				}
 
 				$cached = self::unwrap_response_body( wp_remote_retrieve_body( $response ) );
-				self::set_cache( $cache_key, $cached, self::get_cache_expiry() );
+				self::set_cache( $cache_key, $cached, self::get_cache_expiry(), 'pricefeed', array( $pid ) );
 				self::release_lock( $lock_key );
 			}
 		}

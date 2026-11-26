@@ -208,6 +208,41 @@ class WHMCSPrice {
 					<p class="description"><?php esc_html_e( 'How long prices are cached before fetching fresh data from WHMCS.', 'whmcs-price' ); ?></p>
 				</td>
 			</tr>
+			<?php
+			$warm      = whmcs_price_warm_settings();
+			$next_warm = wp_next_scheduled( WHMCS_PRICE_WARM_HOOK );
+			?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Cache Warming', 'whmcs-price' ); ?></th>
+				<td>
+					<input type="hidden" name="whmcs_price_option[cache_warm]" value="0" />
+					<label for="cache_warm">
+						<input type="checkbox" id="cache_warm" name="whmcs_price_option[cache_warm]" value="1" <?php checked( $warm['enabled'] ); ?> />
+						<?php esc_html_e( 'Refresh cached prices in the background before they expire', 'whmcs-price' ); ?>
+					</label>
+					<p class="description"><?php esc_html_e( 'Uses WP-Cron. Only prices that visitors have actually viewed are refreshed, so the number of WHMCS requests stays proportional to what your site shows.', 'whmcs-price' ); ?></p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="cache_warm_interval"><?php esc_html_e( 'Warming Interval', 'whmcs-price' ); ?></label></th>
+				<td>
+					<select id="cache_warm_interval" name="whmcs_price_option[cache_warm_interval]">
+						<?php foreach ( whmcs_price_warm_intervals() as $value => $interval ) : ?>
+							<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $warm['interval'], $value ); ?>><?php echo esc_html( $interval['label'] ); ?></option>
+						<?php endforeach; ?>
+					</select>
+					<p class="description">
+						<?php
+						if ( $warm['enabled'] && $next_warm ) {
+							/* translators: %s: human-readable time difference, e.g. "4 mins" */
+							echo esc_html( sprintf( __( 'Next warm-up in %s.', 'whmcs-price' ), human_time_diff( $next_warm ) ) );
+						} else {
+							esc_html_e( 'How often to check for prices that are about to expire.', 'whmcs-price' );
+						}
+						?>
+					</p>
+				</td>
+			</tr>
 			<tr>
 				<th scope="row"><?php esc_html_e( 'Clear Cache', 'whmcs-price' ); ?></th>
 				<td>
@@ -578,6 +613,10 @@ class WHMCSPrice {
 			$allowed_ttls           = array( 3600, 7200, 10800, 21600, 43200, 86400 );
 			$new_input['cache_ttl'] = ( ! empty( $input['cache_ttl'] ) && in_array( (int) $input['cache_ttl'], $allowed_ttls, true ) )
 				? (int) $input['cache_ttl'] : 3600;
+
+			$new_input['cache_warm']          = isset( $input['cache_warm'] ) && '1' === (string) $input['cache_warm'] ? '1' : '0';
+			$warm_interval                    = isset( $input['cache_warm_interval'] ) ? (string) $input['cache_warm_interval'] : '15min';
+			$new_input['cache_warm_interval'] = array_key_exists( $warm_interval, whmcs_price_warm_intervals() ) ? $warm_interval : '15min';
 		}
 
 		if ( 'advanced' === $active_tab ) {

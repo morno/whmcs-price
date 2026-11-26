@@ -69,8 +69,16 @@ register_deactivation_hook(
 	__FILE__,
 	static function (): void {
 		wp_unschedule_hook( WHMCS_Price_API::REFRESH_HOOK );
+		wp_clear_scheduled_hook( WHMCS_PRICE_WARM_HOOK );
 	}
 );
+
+/**
+ * Proactive cache warming (WP-Cron) — refreshes prices before they expire.
+ * @since 2.10.0
+ */
+require_once WHMCS_PRICE_DIR . 'includes/cache-warming.php';
+register_activation_hook( __FILE__, 'whmcs_price_warm_sync_schedule' );
 
 /**
  * Load shared rendering helpers.

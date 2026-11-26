@@ -9,6 +9,7 @@
  * Usage:
  *   wp whmcs-price cache status
  *   wp whmcs-price cache clear
+ *   wp whmcs-price cache warm [--due-only]
  *   wp whmcs-price price product <pid> [--bc=<billing_cycle>] [--attr=<attribute>]
  *   wp whmcs-price price domain <tld> [--type=<type>] [--reg=<period>]
  *
@@ -64,9 +65,58 @@ class WHMCS_Price_CLI extends WP_CLI_Command {
 			case 'clear':
 				$this->cache_clear();
 				break;
+			case 'warm':
+				$this->cache_warm( $assoc_args );
+				break;
 			default:
-				WP_CLI::error( 'Unknown subcommand. Use: status, clear' );
+				WP_CLI::error( 'Unknown subcommand. Use: status, clear, warm' );
 		}
+	}
+
+	/**
+	 * Refresh cached prices now.
+	 *
+	 * By default refreshes every price visitors have used (the warm-up
+	 * registry). With --due-only, refreshes only entries the scheduled
+	 * warm-up would refresh right now.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--due-only]
+	 * : Only refresh entries that are about to expire.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     $ wp whmcs-price cache warm
+	 *     Success: Refreshed 12 of 12 entries (0 failed, 0 pruned).
+	 *
+	 * @since 2.10.0
+	 * @param array $assoc_args Associative arguments.
+	 */
+	private function cache_warm( array $assoc_args ): void {
+		$due_only = ! empty( $assoc_args['due-only'] );
+		$stats    = WHMCS_Price_API::warm( whmcs_price_warm_threshold(), ! $due_only );
+
+		if ( 0 === $stats['checked'] && 0 === $stats['pruned'] ) {
+			WP_CLI::warning( 'No cached prices registered yet. Prices are registered when visitors view them.' );
+			return;
+		}
+
+		$message = sprintf(
+			'Refreshed %d of %d entries (%d skipped, %d failed, %d pruned%s).',
+			$stats['refreshed'],
+			$stats['checked'],
+			$stats['skipped'],
+			$stats['failed'],
+			$stats['pruned'],
+			$stats['deferred'] > 0 ? ', ' . $stats['deferred'] . ' deferred to the next run' : ''
+		);
+
+		if ( $stats['failed'] > 0 ) {
+			WP_CLI::warning( $message );
+			return;
+		}
+		WP_CLI::success( $message );
 	}
 
 	/**
@@ -83,6 +133,7 @@ class WHMCS_Price_CLI extends WP_CLI_Command {
 	 *     | Earliest expiry| 47 min|
 	 *     | Outage active  | No    |
 	 *     | Stale served   | 3     |
+	 *     | Warming        | 15min |
 	 *     +----------------+-------+
 	 *
 	 * @since 2.8.0
@@ -129,6 +180,12 @@ class WHMCS_Price_CLI extends WP_CLI_Command {
 
 		$is_outage = false !== get_transient( 'whmcs_price_outage_notified' );
 
+		$warm_settings = whmcs_price_warm_settings();
+		$next_warm     = wp_next_scheduled( WHMCS_PRICE_WARM_HOOK );
+		$warming       = $warm_settings['enabled']
+			? $warm_settings['interval'] . ( $next_warm ? ', next in ' . human_time_diff( $next_warm ) : ', not scheduled' )
+			: 'Disabled';
+
 		$stale_stats  = WHMCS_Price_API::get_stale_stats();
 		$stale_served = (string) $stale_stats['served'];
 		if ( $stale_stats['last'] > 0 ) {
@@ -148,6 +205,8 @@ class WHMCS_Price_CLI extends WP_CLI_Command {
 				array( 'Field' => 'Earliest expiry',  'Value' => $expiry ),
 				array( 'Field' => 'Outage active',    'Value' => $is_outage ? 'Yes' : 'No' ),
 				array( 'Field' => 'Stale served',     'Value' => $stale_served ),
+				array( 'Field' => 'Warming',          'Value' => $warming ),
+				array( 'Field' => 'Tracked entries',  'Value' => (string) count( WHMCS_Price_API::get_registry() ) ),
 			),
 			array( 'Field', 'Value' )
 		);
