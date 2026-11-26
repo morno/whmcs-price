@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-26T20:49:59+00:00\n"
+"POT-Creation-Date: 2026-11-26T21:03:02+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: whmcs-price\n"
@@ -194,10 +194,10 @@ msgid "Unknown transaction type."
 msgstr ""
 
 #. translators: %d: HTTP response code
-#: includes/class-whmcs-api.php:657
-#: includes/class-whmcs-api.php:826
-#: includes/class-whmcs-api.php:948
-#: includes/class-whmcs-api.php:1121
+#: includes/class-whmcs-api.php:954
+#: includes/class-whmcs-api.php:1131
+#: includes/class-whmcs-api.php:1260
+#: includes/class-whmcs-api.php:1438
 #, php-format
 msgid "HTTP %d"
 msgstr ""
@@ -227,7 +227,7 @@ msgid "Error detail: %s"
 msgstr ""
 
 #: includes/class-whmcs-price-helpers.php:215
-#: whmcs_price.php:212
+#: whmcs_price.php:231
 msgid "(not configured)"
 msgstr ""
 
@@ -294,64 +294,74 @@ msgstr ""
 msgid "WHMCS Price — Cache Status"
 msgstr ""
 
-#: includes/dashboard-widget.php:85
+#: includes/dashboard-widget.php:86
 msgid "Active outage:"
 msgstr ""
 
-#: includes/dashboard-widget.php:86
+#: includes/dashboard-widget.php:87
 msgid "WHMCS is currently unreachable. Visitors see the fallback or unavailable message."
 msgstr ""
 
-#: includes/dashboard-widget.php:92
+#: includes/dashboard-widget.php:93
 msgid "Using persistent object cache — entry counts unavailable."
 msgstr ""
 
-#: includes/dashboard-widget.php:99
+#: includes/dashboard-widget.php:100
 #: includes/settings.php:504
 msgid "Cached entries"
 msgstr ""
 
-#: includes/dashboard-widget.php:103
+#: includes/dashboard-widget.php:104
 #: includes/settings.php:505
 msgid "Active locks"
 msgstr ""
 
-#: includes/dashboard-widget.php:107
+#: includes/dashboard-widget.php:108
 msgid "Earliest expiry"
 msgstr ""
 
 #. translators: 1: hours, 2: minutes
-#: includes/dashboard-widget.php:120
+#: includes/dashboard-widget.php:122
 #, php-format
 msgid "%1$dh %2$dm"
 msgstr ""
 
 #. translators: %d: minutes
-#: includes/dashboard-widget.php:122
+#: includes/dashboard-widget.php:124
 #, php-format
 msgid "%d min"
 msgstr ""
 
-#: includes/dashboard-widget.php:124
+#: includes/dashboard-widget.php:126
 msgid "Expired"
 msgstr ""
 
-#: includes/dashboard-widget.php:127
+#: includes/dashboard-widget.php:129
 msgid "No cache"
 msgstr ""
 
-#: includes/dashboard-widget.php:135
+#: includes/dashboard-widget.php:136
+msgid "Stale responses served"
+msgstr ""
+
+#. translators: %s: human-readable time difference, e.g. "5 mins"
+#: includes/dashboard-widget.php:143
+#, php-format
+msgid "last %s ago"
+msgstr ""
+
+#: includes/dashboard-widget.php:151
 #: includes/settings.php:153
-#: whmcs_price.php:203
+#: whmcs_price.php:222
 msgid "WHMCS URL"
 msgstr ""
 
-#: includes/dashboard-widget.php:144
+#: includes/dashboard-widget.php:160
 #: includes/settings.php:212
 msgid "Clear Cache"
 msgstr ""
 
-#: includes/dashboard-widget.php:147
+#: includes/dashboard-widget.php:163
 msgid "Settings ↗"
 msgstr ""
 
@@ -364,8 +374,8 @@ msgstr ""
 #: includes/site-health.php:161
 #: includes/site-health.php:178
 #: includes/site-health.php:195
-#: whmcs_price.php:169
-#: whmcs_price.php:170
+#: whmcs_price.php:188
+#: whmcs_price.php:189
 msgid "WHMCS Price"
 msgstr ""
 
@@ -732,7 +742,7 @@ msgid "Pricing data is currently unavailable."
 msgstr ""
 
 #: includes/settings.php:38
-#: whmcs_price.php:219
+#: whmcs_price.php:238
 msgid "Settings"
 msgstr ""
 
@@ -1341,23 +1351,23 @@ msgstr ""
 msgid "WordPress can connect to WHMCS and the pricing feed is returning data."
 msgstr ""
 
-#: whmcs_price.php:191
+#: whmcs_price.php:210
 msgid "You do not have permission to access this page."
 msgstr ""
 
-#: whmcs_price.php:197
+#: whmcs_price.php:216
 msgid "WHMCS Price — Network Overview"
 msgstr ""
 
-#: whmcs_price.php:198
+#: whmcs_price.php:217
 msgid "Settings are configured per site. Click a site below to manage its WHMCS Price settings."
 msgstr ""
 
-#: whmcs_price.php:202
+#: whmcs_price.php:221
 msgid "Site"
 msgstr ""
 
-#: whmcs_price.php:204
+#: whmcs_price.php:223
 msgid "Actions"
 msgstr ""
 
