@@ -29,3 +29,9 @@ build.sh
 build.ps1
 banner-whmcs-price.svg
 create-issues-2.10.ps1
+
+# PHP dev tooling
+vendor/
+composer.lock
+.phpunit.cache/
+.phpunit.result.cache

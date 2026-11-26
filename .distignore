@@ -58,6 +58,10 @@ phpcs.xml.dist
 phpstan.neon
 phpstan.neon.dist
 .phpunit.result.cache
+.phpunit.cache
+phpunit.xml
+phpunit.xml.dist
+tests
 
 # ---- Editor / IDE / OS -------------------------------------------------------
 .editorconfig
