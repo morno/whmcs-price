@@ -54,6 +54,25 @@ define( 'WP_WHMCS_Prices_URL', WHMCS_PRICE_URL );
 require_once WHMCS_PRICE_DIR . 'includes/class-whmcs-api.php';
 
 /**
+ * Background refresh for stale-while-revalidate caching.
+ * WHMCS_Price_API schedules a one-off event when it serves an expired value;
+ * this runs the re-fetch outside the visitor's request.
+ * @since 2.10.0
+ */
+add_action( WHMCS_Price_API::REFRESH_HOOK, array( 'WHMCS_Price_API', 'refresh_entry' ), 10, 2 );
+
+/**
+ * Remove pending background refreshes when the plugin is deactivated.
+ * @since 2.10.0
+ */
+register_deactivation_hook(
+	__FILE__,
+	static function (): void {
+		wp_unschedule_hook( WHMCS_Price_API::REFRESH_HOOK );
+	}
+);
+
+/**
  * Load shared rendering helpers.
  * Functions available to all output modules: shortcodes, blocks, Elementor.
  * Add new shared formatting/rendering utilities here.

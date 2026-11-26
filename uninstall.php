@@ -20,6 +20,12 @@ function whmcs_price_uninstall_site() {
     global $wpdb;
 
     delete_option( 'whmcs_price_option' );
+    delete_option( 'whmcs_price_cache_version' );
+    delete_option( 'whmcs_price_stale_stats' );
+    delete_transient( 'whmcs_price_outage_notified' );
+
+    // Pending stale-while-revalidate refreshes (2.10.0+).
+    wp_unschedule_hook( 'whmcs_price_refresh_entry' );
 
     // Remove per-user settings preferences.
     $user_meta_keys = array(
@@ -31,9 +37,11 @@ function whmcs_price_uninstall_site() {
         // phpcs:enable
     }
 
-    // Prefixes to clean up: regular transients and lock transients.
+    // Prefixes to clean up: cache transients (legacy unversioned and the
+    // versioned "v{N}_whmcs_" keys used since 2.9.0) and legacy lock transients.
     $prefixes = array(
         $wpdb->esc_like( '_transient_whmcs_' ) . '%',
+        $wpdb->esc_like( '_transient_v' ) . '%' . $wpdb->esc_like( '_whmcs_' ) . '%',
         $wpdb->esc_like( '_transient_lock_whmcs_' ) . '%',
     );
 
@@ -50,6 +58,19 @@ function whmcs_price_uninstall_site() {
         foreach ( $transient_keys as $key ) {
             delete_transient( $key );
         }
+    }
+
+    // Fetch locks are stored as plain options since 2.9.0 (atomic add_option()).
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery
+    $lock_options = $wpdb->get_col(
+        $wpdb->prepare(
+            "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",
+            $wpdb->esc_like( 'lock_whmcs_' ) . '%'
+        )
+    );
+    // phpcs:enable
+    foreach ( $lock_options as $lock_option ) {
+        delete_option( $lock_option );
     }
 }
 

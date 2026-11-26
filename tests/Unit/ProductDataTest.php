@@ -53,8 +53,8 @@ final class ProductDataTest extends TestCase {
 		WHMCS_Price_API::get_product_data( 7, 'monthly', 'price' );
 
 		$expected_key = 'v1_whmcs_product_' . md5( '7_monthly_price' );
-		$this->assertSame( '99 kr', $this->transients[ $expected_key ] ?? null );
-		$this->assertSame( '99 kr', $this->object['whmcs_price'][ $expected_key ] ?? null );
+		$this->assertSame( '99 kr', $this->transients[ $expected_key ]['v'] ?? null );
+		$this->assertSame( '99 kr', $this->object['whmcs_price'][ $expected_key ]['v'] ?? null );
 	}
 
 	public function test_cache_key_matches_rest_cache_hit_helper(): void {
@@ -200,7 +200,7 @@ final class ProductDataTest extends TestCase {
 
 		WHMCS_Price_API::get_product_data( 1, 'monthly', 'price' );
 
-		$this->assertSame( '99 kr', $this->transients[ 'v1_whmcs_product_' . md5( '1_monthly_price' ) ] );
+		$this->assertSame( '99 kr', $this->cached_value( 'whmcs_product_' . md5( '1_monthly_price' ) ) );
 	}
 
 	public function test_uses_object_cache_lock_when_persistent_cache_is_available(): void {

@@ -82,6 +82,7 @@ class WHMCS_Price_CLI extends WP_CLI_Command {
 	 *     | Active locks   | 0     |
 	 *     | Earliest expiry| 47 min|
 	 *     | Outage active  | No    |
+	 *     | Stale served   | 3     |
 	 *     +----------------+-------+
 	 *
 	 * @since 2.8.0
@@ -113,18 +114,26 @@ class WHMCS_Price_CLI extends WP_CLI_Command {
 
 			$expiry = 'No cache';
 			if ( $min_timeout ) {
-				$diff = (int) $min_timeout - time();
+				// Transients are stored for TTL + stale window; show when the
+				// earliest entry stops being fresh, not when it is deleted.
+				$diff = (int) $min_timeout - WHMCS_Price_API::get_stale_window() - time();
 				if ( $diff > 0 ) {
 					$hours   = floor( $diff / 3600 );
 					$minutes = floor( ( $diff % 3600 ) / 60 );
 					$expiry  = $hours > 0 ? "{$hours}h {$minutes}m" : "{$minutes} min";
 				} else {
-					$expiry = 'Expired';
+					$expiry = 'Expired (served stale while refreshing)';
 				}
 			}
 		}
 
 		$is_outage = false !== get_transient( 'whmcs_price_outage_notified' );
+
+		$stale_stats  = WHMCS_Price_API::get_stale_stats();
+		$stale_served = (string) $stale_stats['served'];
+		if ( $stale_stats['last'] > 0 ) {
+			$stale_served .= ' (last ' . human_time_diff( $stale_stats['last'] ) . ' ago)';
+		}
 
 		$options   = get_option( 'whmcs_price_option', array() );
 		$whmcs_url = ! empty( $options['whmcs_url'] ) ? $options['whmcs_url'] : '(not configured)';
@@ -138,6 +147,7 @@ class WHMCS_Price_CLI extends WP_CLI_Command {
 				array( 'Field' => 'Active locks',     'Value' => (string) $lock_count ),
 				array( 'Field' => 'Earliest expiry',  'Value' => $expiry ),
 				array( 'Field' => 'Outage active',    'Value' => $is_outage ? 'Yes' : 'No' ),
+				array( 'Field' => 'Stale served',     'Value' => $stale_served ),
 			),
 			array( 'Field', 'Value' )
 		);

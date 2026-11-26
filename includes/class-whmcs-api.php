@@ -50,6 +50,40 @@ class WHMCS_Price_API {
 	private static ?int $cache_version = null;
 
 	/**
+	 * Cron hook used for background (stale-while-revalidate) refreshes.
+	 *
+	 * @since 2.10.0
+	 */
+	public const REFRESH_HOOK = 'whmcs_price_refresh_entry';
+
+	/**
+	 * Array key marking a cache envelope (value + timestamps).
+	 *
+	 * Entries written before 2.10.0 are plain strings and are treated as
+	 * fresh until their transient expires.
+	 *
+	 * @since 2.10.0
+	 */
+	private const ENVELOPE_MARKER = '__whmcs_price';
+
+	/**
+	 * When true, every cache read misses so the getters fetch from WHMCS.
+	 * Set only while a background refresh is running.
+	 *
+	 * @since 2.10.0
+	 * @var bool
+	 */
+	private static bool $force_refresh = false;
+
+	/**
+	 * Stale responses served during this request, flushed at shutdown.
+	 *
+	 * @since 2.10.0
+	 * @var int
+	 */
+	private static int $stale_served = 0;
+
+	/**
 	 * Return the current cache version. Lazy-loaded and request-cached.
 	 *
 	 * Stored in the `whmcs_price_cache_version` option. Incremented by
@@ -120,37 +154,281 @@ class WHMCS_Price_API {
 	}
 
 	/**
-	 * Retrieve a cached value — checks object cache first, then transient.
+	 * Read a raw cache entry and normalise it to an envelope.
 	 *
-	 * On sites with a persistent object cache (Redis, Memcached), the object
-	 * cache is significantly faster than a database transient lookup. This
-	 * method checks the object cache first and falls back to the transient,
-	 * keeping the two layers in sync automatically.
+	 * Checks the object cache first, then the transient. Plain (pre-2.10.0)
+	 * values are wrapped as fresh with no known expiry.
+	 *
+	 * @since  2.10.0
+	 * @access private
+	 * @param  string $transient_key Unversioned cache key.
+	 * @return array{value: mixed, fetched: int, expires: int}|null Null on miss.
+	 */
+	private static function read_entry( string $transient_key ): ?array {
+		$key = self::versioned_key( $transient_key );
+
+		$raw = wp_cache_get( $key, 'whmcs_price' );
+		if ( false === $raw ) {
+			$raw = get_transient( $key );
+		}
+		if ( false === $raw ) {
+			return null;
+		}
+
+		if ( is_array( $raw ) && isset( $raw[ self::ENVELOPE_MARKER ] ) && array_key_exists( 'v', $raw ) ) {
+			return array(
+				'value'   => $raw['v'],
+				'fetched' => (int) ( $raw['t'] ?? 0 ),
+				'expires' => (int) ( $raw['e'] ?? 0 ),
+			);
+		}
+
+		// Legacy plain value: fresh until the transient itself expires.
+		return array(
+			'value'   => $raw,
+			'fetched' => 0,
+			'expires' => PHP_INT_MAX,
+		);
+	}
+
+	/**
+	 * Retrieve a fresh cached value — checks object cache first, then transient.
+	 *
+	 * Only values that are still within the configured TTL are returned.
+	 * Expired values that are still stored (within the stale window) are
+	 * available through get_stale() instead.
 	 *
 	 * The key is automatically wrapped with the current cache version so that
 	 * bump_cache_version() invalidates every entry in one operation.
 	 *
 	 * @since  2.9.0
+	 * @since  2.10.0 Returns only fresh values; reads cache envelopes.
 	 * @access private
 	 * @param  string $transient_key Transient key (without _transient_ prefix).
-	 * @return mixed                  Cached value or false if not found.
+	 * @return mixed                  Cached value or false if missing or expired.
 	 */
 	private static function get_cache( string $transient_key ): mixed {
-		$key = self::versioned_key( $transient_key );
-
-		// Try object cache first (Redis/Memcached) — faster than DB.
-		$cached = wp_cache_get( $key, 'whmcs_price' );
-		if ( false !== $cached ) {
-			return $cached;
+		if ( self::$force_refresh ) {
+			return false;
 		}
-		// Fall back to transient (database).
-		return get_transient( $key );
+		$entry = self::read_entry( $transient_key );
+		if ( null === $entry || time() >= $entry['expires'] ) {
+			return false;
+		}
+		return $entry['value'];
+	}
+
+	/**
+	 * Retrieve an expired value that is still inside the stale window.
+	 *
+	 * @since  2.10.0
+	 * @access private
+	 * @param  string $transient_key Unversioned cache key.
+	 * @return mixed                  Stale value, or false if none is usable.
+	 */
+	private static function get_stale( string $transient_key ): mixed {
+		if ( self::$force_refresh ) {
+			return false;
+		}
+		$entry = self::read_entry( $transient_key );
+		if ( null === $entry ) {
+			return false;
+		}
+		$now = time();
+		if ( $now < $entry['expires'] ) {
+			return false; // Still fresh — get_cache() handles it.
+		}
+		if ( $entry['fetched'] + self::get_max_stale_age() <= $now ) {
+			return false; // Too old to serve.
+		}
+		return $entry['value'];
+	}
+
+	/**
+	 * Maximum age, in seconds, of a value that may still be served stale.
+	 *
+	 * Counted from when the value was fetched. Defaults to twice the cache
+	 * TTL, so a value can be served for one extra TTL period while a
+	 * background refresh runs. Never shorter than the TTL itself.
+	 *
+	 * @since  2.10.0
+	 * @return int
+	 */
+	public static function get_max_stale_age(): int {
+		$ttl = self::get_cache_expiry();
+
+		/**
+		 * Filter how old a cached price may get before it is no longer served
+		 * while a background refresh is pending.
+		 *
+		 * Return the TTL itself to disable stale serving.
+		 *
+		 * @since 2.10.0
+		 * @param int $max_age Maximum age in seconds. Default 2 × TTL.
+		 * @param int $ttl     Configured cache TTL in seconds.
+		 */
+		$max_age = (int) apply_filters( 'whmcs_price_max_stale_age', 2 * $ttl, $ttl );
+
+		return max( $ttl, $max_age );
+	}
+
+	/**
+	 * Extra time, in seconds, a cache entry stays stored after its TTL.
+	 *
+	 * Transient timeouts include this window, so admin screens subtract it
+	 * to show when entries actually stop being fresh.
+	 *
+	 * @since  2.10.0
+	 * @return int
+	 */
+	public static function get_stale_window(): int {
+		return self::get_max_stale_age() - self::get_cache_expiry();
+	}
+
+	/**
+	 * Serve a stale value (if any) and schedule a background refresh.
+	 *
+	 * Called after a fresh-cache miss. When a usable stale value exists the
+	 * visitor gets it immediately instead of waiting for WHMCS (or seeing
+	 * "NA" because another request holds the fetch lock), and WP-Cron
+	 * refreshes the entry in the background.
+	 *
+	 * @since  2.10.0
+	 * @access private
+	 * @param  string $cache_key Unversioned cache key.
+	 * @param  string $kind      Refresh kind: product, domain, domain_all, pricefeed.
+	 * @param  array  $args      Arguments for refresh_entry().
+	 * @return mixed             Stale value, or false when there is none.
+	 */
+	private static function serve_stale( string $cache_key, string $kind, array $args ): mixed {
+		$stale = self::get_stale( $cache_key );
+		if ( false === $stale ) {
+			return false;
+		}
+
+		self::schedule_refresh( $kind, $args );
+
+		if ( 0 === self::$stale_served && function_exists( 'add_action' ) ) {
+			add_action( 'shutdown', array( __CLASS__, 'flush_stale_stats' ) );
+		}
+		++self::$stale_served;
+
+		self::debug_log( 'Stale value served, background refresh scheduled', array(
+			'cache_key' => $cache_key,
+			'kind'      => $kind,
+		) );
+
+		return $stale;
+	}
+
+	/**
+	 * Schedule a one-off WP-Cron refresh for a cache entry (deduplicated).
+	 *
+	 * @since  2.10.0
+	 * @access private
+	 * @param  string $kind Refresh kind.
+	 * @param  array  $args Arguments for refresh_entry().
+	 * @return void
+	 */
+	private static function schedule_refresh( string $kind, array $args ): void {
+		if ( ! function_exists( 'wp_schedule_single_event' ) ) {
+			return;
+		}
+		$hook_args = array( $kind, array_values( $args ) );
+		if ( false !== wp_next_scheduled( self::REFRESH_HOOK, $hook_args ) ) {
+			return;
+		}
+		wp_schedule_single_event( time(), self::REFRESH_HOOK, $hook_args );
+	}
+
+	/**
+	 * WP-Cron callback: re-fetch one cache entry from WHMCS.
+	 *
+	 * Runs the normal public getter with every cache read forced to miss,
+	 * so the fetch, lock, cache write and outage handling are exactly the
+	 * same as for a visitor request. If WHMCS fails, the stale value stays
+	 * in place until its stale window ends.
+	 *
+	 * @since  2.10.0
+	 * @param  string $kind Refresh kind: product, domain, domain_all, pricefeed.
+	 * @param  array  $args Arguments as scheduled by serve_stale().
+	 * @return void
+	 */
+	public static function refresh_entry( $kind, $args = array() ): void {
+		$args = is_array( $args ) ? array_values( $args ) : array();
+
+		self::$force_refresh = true;
+		self::$request_cache = array();
+		try {
+			switch ( (string) $kind ) {
+				case 'product':
+					if ( 3 === count( $args ) ) {
+						self::get_product_data( is_scalar( $args[0] ) ? $args[0] : 0, (string) $args[1], (string) $args[2] );
+					}
+					break;
+				case 'domain':
+					if ( 3 === count( $args ) ) {
+						self::get_domain_price( (string) $args[0], (string) $args[1], is_scalar( $args[2] ) ? $args[2] : 0 );
+					}
+					break;
+				case 'domain_all':
+					self::get_all_domain_prices();
+					break;
+				case 'pricefeed':
+					if ( 1 === count( $args ) ) {
+						self::get_all_product_cycles( (int) $args[0] );
+					}
+					break;
+			}
+		} finally {
+			self::$force_refresh = false;
+			self::$request_cache = array();
+		}
+	}
+
+	/**
+	 * Persist the number of stale responses served in this request.
+	 *
+	 * Hooked to 'shutdown' only when at least one stale value was served,
+	 * so normal requests never write to the database.
+	 *
+	 * @since  2.10.0
+	 * @return void
+	 */
+	public static function flush_stale_stats(): void {
+		if ( self::$stale_served < 1 ) {
+			return;
+		}
+		$stats            = self::get_stale_stats();
+		$stats['served'] += self::$stale_served;
+		$stats['last']    = time();
+		update_option( 'whmcs_price_stale_stats', $stats, false );
+		self::$stale_served = 0;
+	}
+
+	/**
+	 * Stale-serving statistics for the dashboard widget and WP-CLI.
+	 *
+	 * @since  2.10.0
+	 * @return array{served: int, last: int} Total stale responses and the time of the last one.
+	 */
+	public static function get_stale_stats(): array {
+		$stats = get_option( 'whmcs_price_stale_stats', array() );
+		return array(
+			'served' => (int) ( is_array( $stats ) ? ( $stats['served'] ?? 0 ) : 0 ),
+			'last'   => (int) ( is_array( $stats ) ? ( $stats['last'] ?? 0 ) : 0 ),
+		);
 	}
 
 	/**
 	 * Store a value in both object cache and transient.
 	 *
+	 * The value is wrapped in an envelope with fetch and expiry timestamps.
+	 * It is kept in storage for the whole stale window so get_stale() can
+	 * still return it after the TTL has passed.
+	 *
 	 * @since  2.9.0
+	 * @since  2.10.0 Stores an envelope; storage lifetime is the stale window.
 	 * @access private
 	 * @param  string $transient_key Transient key.
 	 * @param  mixed  $value         Value to cache.
@@ -159,8 +437,18 @@ class WHMCS_Price_API {
 	 */
 	private static function set_cache( string $transient_key, mixed $value, int $expiry ): void {
 		$key = self::versioned_key( $transient_key );
-		wp_cache_set( $key, $value, 'whmcs_price', $expiry );
-		set_transient( $key, $value, $expiry );
+		$now = time();
+
+		$envelope = array(
+			self::ENVELOPE_MARKER => 1,
+			'v'                   => $value,
+			't'                   => $now,
+			'e'                   => $now + $expiry,
+		);
+		$storage_ttl = max( $expiry, self::get_max_stale_age() );
+
+		wp_cache_set( $key, $envelope, 'whmcs_price', $storage_ttl );
+		set_transient( $key, $envelope, $storage_ttl );
 	}
 
 	/**
@@ -608,6 +896,15 @@ class WHMCS_Price_API {
 			return self::filter_product_data( $cached, $pid, $billing_cycle, $attribute );
 		}
 
+		// Expired but within the stale window: serve it now, refresh in the background.
+		// Raw $pid on purpose: the cache key is built from it, so the refresh must
+		// use the same value to overwrite this exact entry.
+		$stale = self::serve_stale( $cache_key, 'product', array( $pid, $billing_cycle, $attribute ) );
+		if ( false !== $stale ) {
+			self::$request_cache[ $cache_key ] = $stale;
+			return self::filter_product_data( $stale, $pid, $billing_cycle, $attribute );
+		}
+
 		// Acquire a lock to prevent multiple simultaneous requests to WHMCS.
 		$lock_key = 'lock_' . $cache_key;
 		if ( ! self::acquire_lock( $lock_key ) ) {
@@ -776,6 +1073,14 @@ class WHMCS_Price_API {
 			return self::filter_domain_price( $cached, $tld, $type, $reg_period_int );
 		}
 
+		// Expired but within the stale window: serve it now, refresh in the background.
+		// Raw $reg_period on purpose: it is part of the cache key.
+		$stale = self::serve_stale( $cache_key, 'domain', array( $tld, $type, $reg_period ) );
+		if ( false !== $stale ) {
+			self::$request_cache[ $cache_key ] = $stale;
+			return self::filter_domain_price( $stale, $tld, $type, $reg_period_int );
+		}
+
 		// Acquire a lock to prevent multiple simultaneous requests to WHMCS.
 		$lock_key = 'lock_' . $cache_key;
 		if ( ! self::acquire_lock( $lock_key ) ) {
@@ -908,6 +1213,13 @@ class WHMCS_Price_API {
 			) );
 			self::$request_cache[ $cache_key ] = $cached;
 			return $cached;
+		}
+
+		// Expired but within the stale window: serve it now, refresh in the background.
+		$stale = self::serve_stale( $cache_key, 'domain_all', array() );
+		if ( false !== $stale ) {
+			self::$request_cache[ $cache_key ] = $stale;
+			return $stale;
 		}
 
 		// Acquire a lock to prevent multiple simultaneous requests to WHMCS.
@@ -1077,6 +1389,11 @@ class WHMCS_Price_API {
 		}
 
 		$cached = self::get_cache( $cache_key );
+
+		if ( false === $cached ) {
+			// Expired but within the stale window: use it, refresh in the background.
+			$cached = self::serve_stale( $cache_key, 'pricefeed', array( $pid ) );
+		}
 
 		if ( false === $cached ) {
 			$lock_key = 'lock_' . $cache_key;
@@ -1282,6 +1599,11 @@ class WHMCS_Price_API {
 		}
 
 		$cached = self::get_cache( $cache_key );
+
+		if ( false === $cached ) {
+			// Expired but within the stale window: use it, refresh in the background.
+			$cached = self::serve_stale( $cache_key, 'pricefeed', array( $pid ) );
+		}
 
 		if ( false === $cached ) {
 			$lock_key = 'lock_' . $cache_key;

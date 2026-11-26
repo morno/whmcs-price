@@ -34,6 +34,12 @@ abstract class TestCase extends PHPUnitTestCase {
 
 	protected bool $ext_object_cache = false;
 
+	/** @var array<string, int> Storage TTL passed to set_transient(), by key. */
+	protected array $transient_ttl = array();
+
+	/** @var array<int, array{0:int,1:string,2:array}> wp_schedule_single_event() calls. */
+	protected array $scheduled = array();
+
 	protected function setUp(): void {
 		parent::setUp();
 		Monkey\setUp();
@@ -47,6 +53,8 @@ abstract class TestCase extends PHPUnitTestCase {
 		$this->http_log   = array();
 		$this->mail_log   = array();
 		$this->ext_object_cache = false;
+		$this->transient_ttl    = array();
+		$this->scheduled        = array();
 
 		$this->reset_api_state();
 		$this->stub_wordpress();
@@ -62,7 +70,13 @@ abstract class TestCase extends PHPUnitTestCase {
 	 */
 	protected function reset_api_state(): void {
 		$ref = new \ReflectionClass( \WHMCS_Price_API::class );
-		foreach ( array( 'request_cache' => array(), 'cache_version' => null ) as $prop => $value ) {
+		$props = array(
+			'request_cache' => array(),
+			'cache_version' => null,
+			'force_refresh' => false,
+			'stale_served'  => 0,
+		);
+		foreach ( $props as $prop => $value ) {
 			$p = $ref->getProperty( $prop );
 			$p->setAccessible( true );
 			$p->setValue( null, $value );
@@ -90,6 +104,38 @@ abstract class TestCase extends PHPUnitTestCase {
 
 	protected function queue_error( string $message = 'cURL error 28: timed out' ): void {
 		$this->http_queue[] = new \WP_Error( 'http_request_failed', $message );
+	}
+
+	/**
+	 * Versioned storage key for an unversioned cache key (cache version 1).
+	 */
+	protected function storage_key( string $cache_key ): string {
+		return 'v1_' . $cache_key;
+	}
+
+	/**
+	 * The value inside a stored cache envelope, or null when absent.
+	 */
+	protected function cached_value( string $cache_key ): mixed {
+		$raw = $this->transients[ $this->storage_key( $cache_key ) ] ?? null;
+		return is_array( $raw ) && array_key_exists( 'v', $raw ) ? $raw['v'] : $raw;
+	}
+
+	/**
+	 * Move a stored entry back in time, in both the transient and object cache.
+	 */
+	protected function age_entry( string $cache_key, int $seconds ): void {
+		$key = $this->storage_key( $cache_key );
+		foreach ( array( 'transients', 'object' ) as $store ) {
+			if ( 'transients' === $store && isset( $this->transients[ $key ]['t'] ) ) {
+				$this->transients[ $key ]['t'] -= $seconds;
+				$this->transients[ $key ]['e'] -= $seconds;
+			}
+			if ( 'object' === $store && isset( $this->object['whmcs_price'][ $key ]['t'] ) ) {
+				$this->object['whmcs_price'][ $key ]['t'] -= $seconds;
+				$this->object['whmcs_price'][ $key ]['e'] -= $seconds;
+			}
+		}
 	}
 
 	protected function set_plugin_option( string $key, mixed $value ): void {
@@ -153,8 +199,9 @@ abstract class TestCase extends PHPUnitTestCase {
 			static fn( $key ) => $t->transients[ $key ] ?? false
 		);
 		Functions\when( 'set_transient' )->alias(
-			static function ( $key, $value ) use ( $t ) {
-				$t->transients[ $key ] = $value;
+			static function ( $key, $value, $expiration = 0 ) use ( $t ) {
+				$t->transients[ $key ]    = $value;
+				$t->transient_ttl[ $key ] = (int) $expiration;
 				return true;
 			}
 		);
@@ -213,6 +260,24 @@ abstract class TestCase extends PHPUnitTestCase {
 		);
 		Functions\when( 'wp_remote_retrieve_response_code' )->alias(
 			static fn( $response ) => is_array( $response ) ? (int) ( $response['response']['code'] ?? 0 ) : ''
+		);
+
+		// WP-Cron.
+		Functions\when( 'wp_next_scheduled' )->alias(
+			static function ( $hook, $args = array() ) use ( $t ) {
+				foreach ( $t->scheduled as $event ) {
+					if ( $event[1] === $hook && $event[2] === $args ) {
+						return $event[0];
+					}
+				}
+				return false;
+			}
+		);
+		Functions\when( 'wp_schedule_single_event' )->alias(
+			static function ( $timestamp, $hook, $args = array() ) use ( $t ) {
+				$t->scheduled[] = array( (int) $timestamp, $hook, $args );
+				return true;
+			}
 		);
 
 		// Mail (outage notifications).

@@ -72,6 +72,7 @@ function whmcs_price_dashboard_widget_render(): void {
 	$options    = get_option( 'whmcs_price_option', array() );
 	$whmcs_url  = ! empty( $options['whmcs_url'] ) ? $options['whmcs_url'] : '';
 	$is_outage  = false !== get_transient( 'whmcs_price_outage_notified' );
+	$stale_stats = WHMCS_Price_API::get_stale_stats();
 
 	$clear_url = wp_nonce_url(
 		add_query_arg( 'whmcs_clear_cache', '1', admin_url( 'options-general.php?page=whmcs_price' ) ),
@@ -111,7 +112,8 @@ function whmcs_price_dashboard_widget_render(): void {
 						if ( null === $min_timeout ) {
 							echo esc_html( '—' );
 						} elseif ( $min_timeout ) {
-							$diff = (int) $min_timeout - time();
+							// Stored timeout = TTL + stale window; show the end of freshness.
+							$diff = (int) $min_timeout - WHMCS_Price_API::get_stale_window() - time();
 							if ( $diff > 0 ) {
 								$hours   = floor( $diff / 3600 );
 								$minutes = floor( ( $diff % 3600 ) / 60 );
@@ -128,6 +130,20 @@ function whmcs_price_dashboard_widget_render(): void {
 						}
 						?>
 						</strong>
+					</td>
+				</tr>
+				<tr>
+					<td><?php esc_html_e( 'Stale responses served', 'whmcs-price' ); ?></td>
+					<td>
+						<strong><?php echo esc_html( number_format_i18n( $stale_stats['served'] ) ); ?></strong>
+						<?php if ( $stale_stats['last'] > 0 ) : ?>
+							<br><small>
+							<?php
+							/* translators: %s: human-readable time difference, e.g. "5 mins" */
+							echo esc_html( sprintf( __( 'last %s ago', 'whmcs-price' ), human_time_diff( $stale_stats['last'] ) ) );
+							?>
+							</small>
+						<?php endif; ?>
 					</td>
 				</tr>
 				<?php if ( $whmcs_url ) : ?>
