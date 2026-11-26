@@ -23,6 +23,13 @@
  *       Used by WHMCS hooks, n8n, Zapier, or any external system to
  *       trigger an immediate cache purge when prices change in WHMCS.
  *
+ *   POST /wp-json/whmcs-price/v1/webhook/invalidate   (requires secret token, 2.10.0+)
+ *       Header: X-WHMCS-Price-Token: <token>
+ *       Body: { "scope": "product:5" | "domain:com" | "product:5,domain:se" | "all" }
+ *       Returns: { "invalidated": true, "scope": "product:5", "entries": 7 }
+ *       Targeted invalidation for WHMCS hooks (ProductEdit,
+ *       TopLevelDomainPricingUpdate). See docs/whmcs-webhook.md.
+ *
  * All GET responses are served from the same transient cache used by
  * shortcodes and blocks — no extra WHMCS requests are made.
  *
@@ -124,6 +131,25 @@ add_action( 'rest_api_init', function() {
 			),
 		)
 	);
+
+	// Webhook for WHMCS hooks: targeted invalidation of one product or TLD.
+	register_rest_route(
+		'whmcs-price/v1',
+		'/webhook/invalidate',
+		array(
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => 'whmcs_price_rest_webhook_invalidate',
+			'permission_callback' => 'whmcs_price_rest_purge_permission',
+			'args'                => array(
+				'scope' => array(
+					'description'       => 'Comma-separated targets: "product:<pid>", "domain:<tld>" or "all". Default "all".',
+					'type'              => 'string',
+					'default'           => 'all',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+			),
+		)
+	);
 } );
 
 /**
@@ -173,25 +199,12 @@ function whmcs_price_rest_purge_permission( WP_REST_Request $request ): bool|WP_
 }
 
 /**
- * Handle POST /whmcs-price/v1/purge-cache
+ * Shared cooldown for full cache purges (/purge-cache and /webhook/invalidate).
  *
- * Invalidates all WHMCS price caches by bumping the cache version. This
- * works identically on database transients and persistent object caches
- * (Redis, Memcached) because every previously-stored key becomes
- * unreachable in one atomic option update. Old entries expire naturally
- * via their existing TTL.
- *
- * The `scope` parameter is retained for API compatibility but is no longer
- * needed for correctness — version bump invalidates everything. It is
- * recorded in the response for caller telemetry.
- *
- * @since  2.9.0
- * @param  WP_REST_Request $request
- * @return WP_REST_Response
+ * @since  2.10.0 Extracted from whmcs_price_rest_purge_cache().
+ * @return WP_REST_Response|null 429 response while cooling down, null when a purge may run.
  */
-function whmcs_price_rest_purge_cache( WP_REST_Request $request ): WP_REST_Response {
-	$scope = $request->get_param( 'scope' ) ?? 'all';
-
+function whmcs_price_purge_throttle(): ?WP_REST_Response {
 	$security     = whmcs_price_get_security_settings();
 	$min_interval = (int) $security['purge_success_interval'];
 
@@ -230,6 +243,34 @@ function whmcs_price_rest_purge_cache( WP_REST_Request $request ): WP_REST_Respo
 		}
 	}
 
+	return null;
+}
+
+/**
+ * Handle POST /whmcs-price/v1/purge-cache
+ *
+ * Invalidates all WHMCS price caches by bumping the cache version. This
+ * works identically on database transients and persistent object caches
+ * (Redis, Memcached) because every previously-stored key becomes
+ * unreachable in one atomic option update. Old entries expire naturally
+ * via their existing TTL.
+ *
+ * The `scope` parameter is retained for API compatibility but is no longer
+ * needed for correctness — version bump invalidates everything. It is
+ * recorded in the response for caller telemetry.
+ *
+ * @since  2.9.0
+ * @param  WP_REST_Request $request
+ * @return WP_REST_Response
+ */
+function whmcs_price_rest_purge_cache( WP_REST_Request $request ): WP_REST_Response {
+	$scope = $request->get_param( 'scope' ) ?? 'all';
+
+	$throttled = whmcs_price_purge_throttle();
+	if ( null !== $throttled ) {
+		return $throttled;
+	}
+
 	update_option( 'whmcs_price_last_purge', time(), false );
 
 	$version = WHMCS_Price_API::bump_cache_version();
@@ -241,6 +282,128 @@ function whmcs_price_rest_purge_cache( WP_REST_Request $request ): WP_REST_Respo
 			'scope'         => $scope,
 			'cache_version' => $version,
 			'message'       => __( 'Cache invalidated.', 'whmcs-price' ),
+		),
+		200
+	);
+}
+
+/**
+ * Handle POST /whmcs-price/v1/webhook/invalidate
+ *
+ * Called from WHMCS hooks (see docs/whmcs-webhook.md) when a product or
+ * domain price changes. Authenticated with the Cache Purge Token, same as
+ * /purge-cache.
+ *
+ * scope (comma-separated, max 50 targets):
+ *   product:<pid>   Every cached value for that product (all cycles,
+ *                   name, description, price, setup fee feed).
+ *   domain:<tld>    Every cached price for that TLD, plus the all-domains table.
+ *   all             Full purge (cache version bump), same cooldown as /purge-cache.
+ *
+ * Targeted invalidations are cheap and WHMCS can fire many in a row (bulk
+ * edits), so they use a per-client rate limit instead of the full-purge
+ * cooldown.
+ *
+ * @since  2.10.0
+ * @param  WP_REST_Request $request
+ * @return WP_REST_Response|WP_Error
+ */
+function whmcs_price_rest_webhook_invalidate( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+	$raw     = (string) ( $request->get_param( 'scope' ) ?? 'all' );
+	$targets = array_values( array_filter( array_map( 'trim', explode( ',', '' === trim( $raw ) ? 'all' : $raw ) ), 'strlen' ) );
+
+	if ( count( $targets ) > 50 ) {
+		return new WP_Error( 'whmcs_price_invalid_scope', __( 'At most 50 targets per request.', 'whmcs-price' ), array( 'status' => 400 ) );
+	}
+
+	$products = array();
+	$domains  = array();
+	$full     = false;
+	foreach ( $targets as $target ) {
+		if ( 'all' === strtolower( $target ) ) {
+			$full = true;
+			continue;
+		}
+		$parts = explode( ':', $target, 2 );
+		$kind  = strtolower( trim( $parts[0] ) );
+		$value = trim( $parts[1] ?? '' );
+
+		if ( 'product' === $kind && ctype_digit( $value ) && (int) $value > 0 ) {
+			$products[ (int) $value ] = true;
+			continue;
+		}
+		if ( 'domain' === $kind && preg_match( '/^\.?[A-Za-z0-9\-]{1,24}$/', $value ) ) {
+			$domains[ strtolower( ltrim( $value, '.' ) ) ] = true;
+			continue;
+		}
+
+		return new WP_Error(
+			'whmcs_price_invalid_scope',
+			/* translators: %s: the rejected scope value */
+			sprintf( __( 'Invalid scope "%s". Use "product:<pid>", "domain:<tld>" or "all".', 'whmcs-price' ), $target ),
+			array( 'status' => 400 )
+		);
+	}
+
+	if ( $full ) {
+		$throttled = whmcs_price_purge_throttle();
+		if ( null !== $throttled ) {
+			return $throttled;
+		}
+		update_option( 'whmcs_price_last_purge', time(), false );
+		$version = WHMCS_Price_API::bump_cache_version();
+		whmcs_price_flush_page_cache();
+
+		return new WP_REST_Response(
+			array(
+				'invalidated'   => true,
+				'scope'         => 'all',
+				'cache_version' => $version,
+				'message'       => __( 'Cache invalidated.', 'whmcs-price' ),
+			),
+			200
+		);
+	}
+
+	/**
+	 * Filter the number of targeted webhook invalidations allowed per client
+	 * per minute. 0 disables the limit.
+	 *
+	 * @since 2.10.0
+	 * @param int $limit Default 120.
+	 */
+	$limit   = (int) apply_filters( 'whmcs_price_webhook_rate_limit', 120 );
+	$limited = whmcs_price_rate_limit_enforce( 'webhook', $limit, MINUTE_IN_SECONDS );
+	if ( is_wp_error( $limited ) ) {
+		return whmcs_price_rate_limit_rest_response( $limited );
+	}
+
+	$removed = 0;
+	foreach ( array_keys( $products ) as $pid ) {
+		$removed += WHMCS_Price_API::invalidate_product( $pid );
+	}
+	foreach ( array_keys( $domains ) as $tld ) {
+		$removed += WHMCS_Price_API::invalidate_domain( $tld );
+	}
+
+	if ( $removed > 0 ) {
+		whmcs_price_flush_page_cache();
+	}
+
+	$scope = array();
+	foreach ( array_keys( $products ) as $pid ) {
+		$scope[] = 'product:' . $pid;
+	}
+	foreach ( array_keys( $domains ) as $tld ) {
+		$scope[] = 'domain:' . $tld;
+	}
+
+	return new WP_REST_Response(
+		array(
+			'invalidated' => true,
+			'scope'       => implode( ',', $scope ),
+			'entries'     => $removed,
+			'message'     => __( 'Cache invalidated.', 'whmcs-price' ),
 		),
 		200
 	);

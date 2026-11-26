@@ -98,6 +98,20 @@ wp whmcs-price cache status           # shows interval, next run and tracked ent
 | `whmcs_price_warm_delay` | 1 s | Pause between requests when more than 10 are due. |
 | `whmcs_price_warm_registry_size` | 500 | Maximum number of tracked prices; least recently used are dropped. |
 
+## Multisite
+
+On a Multisite network every site has its own WHMCS settings and its own cache:
+
+- Cached prices are transients and object-cache entries, which WordPress already
+  keeps per site (each site's own options table, and blog-prefixed cache groups).
+  Site A can never read site B's cached prices, even if both show product 5.
+- Clear cache, the cache version, the stale counter, the warm-up registry and the
+  warm-up schedule are per site too. Purging one site doesn't touch the others.
+- Since 2.10.0, code that switches sites within one request (`switch_to_blog()`,
+  e.g. network dashboards or aggregation plugins) also gets correct prices. The
+  plugin drops its in-memory request cache on every site switch, and usage and
+  stale statistics are written to the site that produced them.
+
 ## Purging
 
 **Clear cache** (admin bar, dashboard widget, settings page, `wp whmcs-price cache clear`

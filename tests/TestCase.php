@@ -74,7 +74,7 @@ abstract class TestCase extends PHPUnitTestCase {
 			'request_cache' => array(),
 			'cache_version' => null,
 			'force_refresh' => false,
-			'stale_served'  => 0,
+			'stale_served'  => array(),
 			'registry_touched' => array(),
 			'refresh_wrote'    => false,
 		);
@@ -161,6 +161,8 @@ abstract class TestCase extends PHPUnitTestCase {
 				'wp_json_encode'    => static fn( $data ) => json_encode( $data ),
 				'wp_strip_all_tags' => static fn( $s ) => trim( strip_tags( (string) $s ) ),
 				'get_bloginfo'      => 'Test Site',
+				'get_current_blog_id' => 1,
+				'is_multisite'      => false,
 				'admin_url'         => static fn( $path = '' ) => 'https://example.test/wp-admin/' . $path,
 				'is_wp_error'       => static fn( $thing ) => $thing instanceof \WP_Error,
 				'add_query_arg'     => static function ( $args, $url ) {

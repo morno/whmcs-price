@@ -62,6 +62,13 @@ require_once WHMCS_PRICE_DIR . 'includes/class-whmcs-api.php';
 add_action( WHMCS_Price_API::REFRESH_HOOK, array( 'WHMCS_Price_API', 'refresh_entry' ), 10, 2 );
 
 /**
+ * Multisite: drop in-memory caches when code switches to another site, so
+ * values from one site's WHMCS can't leak into another within one request.
+ * @since 2.10.0
+ */
+add_action( 'switch_blog', array( 'WHMCS_Price_API', 'reset_request_state' ) );
+
+/**
  * Remove pending background refreshes when the plugin is deactivated.
  * @since 2.10.0
  */

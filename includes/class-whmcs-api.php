@@ -84,12 +84,15 @@ class WHMCS_Price_API {
 	private static bool $refresh_wrote = false;
 
 	/**
-	 * Stale responses served during this request, flushed at shutdown.
+	 * Stale responses served during this request, per blog ID, flushed at shutdown.
+	 *
+	 * Keyed by blog so a request that switches sites (switch_to_blog) writes
+	 * each count to the right site.
 	 *
 	 * @since 2.10.0
-	 * @var int
+	 * @var array<int, int>
 	 */
-	private static int $stale_served = 0;
+	private static array $stale_served = array();
 
 	/**
 	 * Option holding the registry of cache entries visitors have used.
@@ -102,10 +105,10 @@ class WHMCS_Price_API {
 	public const REGISTRY_OPTION = 'whmcs_price_cache_registry';
 
 	/**
-	 * Registry updates collected during this request, flushed at shutdown.
+	 * Registry updates collected during this request, per blog ID, flushed at shutdown.
 	 *
 	 * @since 2.10.0
-	 * @var array<string, array{k: string, a: array}>
+	 * @var array<int, array<string, array{k: string, a: array}>>
 	 */
 	private static array $registry_touched = array();
 
@@ -335,10 +338,11 @@ class WHMCS_Price_API {
 		self::schedule_refresh( $kind, $args );
 		self::remember( $cache_key, $kind, $args );
 
-		if ( 0 === self::$stale_served && function_exists( 'add_action' ) ) {
+		if ( empty( self::$stale_served ) && function_exists( 'add_action' ) ) {
 			add_action( 'shutdown', array( __CLASS__, 'flush_stale_stats' ) );
 		}
-		++self::$stale_served;
+		$blog                        = self::blog_id();
+		self::$stale_served[ $blog ] = ( self::$stale_served[ $blog ] ?? 0 ) + 1;
 
 		self::debug_log( 'Stale value served, background refresh scheduled', array(
 			'cache_key' => $cache_key,
@@ -428,14 +432,23 @@ class WHMCS_Price_API {
 	 * @return void
 	 */
 	public static function flush_stale_stats(): void {
-		if ( self::$stale_served < 1 ) {
-			return;
+		$pending            = self::$stale_served;
+		self::$stale_served = array();
+
+		foreach ( $pending as $blog => $count ) {
+			if ( $count < 1 ) {
+				continue;
+			}
+			self::on_blog(
+				(int) $blog,
+				static function () use ( $count ): void {
+					$stats            = self::get_stale_stats();
+					$stats['served'] += $count;
+					$stats['last']    = time();
+					update_option( 'whmcs_price_stale_stats', $stats, false );
+				}
+			);
 		}
-		$stats            = self::get_stale_stats();
-		$stats['served'] += self::$stale_served;
-		$stats['last']    = time();
-		update_option( 'whmcs_price_stale_stats', $stats, false );
-		self::$stale_served = 0;
 	}
 
 	/**
@@ -450,6 +463,55 @@ class WHMCS_Price_API {
 			'served' => (int) ( is_array( $stats ) ? ( $stats['served'] ?? 0 ) : 0 ),
 			'last'   => (int) ( is_array( $stats ) ? ( $stats['last'] ?? 0 ) : 0 ),
 		);
+	}
+
+	/**
+	 * Current blog ID (1 on single-site installs).
+	 *
+	 * @since  2.10.0
+	 * @access private
+	 * @return int
+	 */
+	private static function blog_id(): int {
+		return function_exists( 'get_current_blog_id' ) ? (int) get_current_blog_id() : 1;
+	}
+
+	/**
+	 * Run a callback in the context of a given blog, switching only if needed.
+	 *
+	 * @since  2.10.0
+	 * @access private
+	 * @param  int      $blog_id  Blog to run on.
+	 * @param  callable $callback Work to do.
+	 * @return void
+	 */
+	private static function on_blog( int $blog_id, callable $callback ): void {
+		if ( $blog_id === self::blog_id() || ! function_exists( 'is_multisite' ) || ! is_multisite() ) {
+			$callback();
+			return;
+		}
+		switch_to_blog( $blog_id );
+		try {
+			$callback();
+		} finally {
+			restore_current_blog();
+		}
+	}
+
+	/**
+	 * Forget per-request state that belongs to the previous site.
+	 *
+	 * Hooked to 'switch_blog'. Cached values themselves live in each site's
+	 * own options table and blog-scoped object cache, but the in-memory
+	 * request cache and cache version would otherwise carry over to the
+	 * next site within the same PHP request.
+	 *
+	 * @since  2.10.0
+	 * @return void
+	 */
+	public static function reset_request_state(): void {
+		self::$request_cache = array();
+		self::$cache_version = null;
 	}
 
 	/**
@@ -475,7 +537,7 @@ class WHMCS_Price_API {
 		if ( empty( self::$registry_touched ) && function_exists( 'add_action' ) ) {
 			add_action( 'shutdown', array( __CLASS__, 'flush_registry' ) );
 		}
-		self::$registry_touched[ $cache_key ] = array(
+		self::$registry_touched[ self::blog_id() ][ $cache_key ] = array(
 			'k' => $kind,
 			'a' => array_values( $args ),
 		);
@@ -488,15 +550,33 @@ class WHMCS_Price_API {
 	 * @return void
 	 */
 	public static function flush_registry(): void {
-		if ( empty( self::$registry_touched ) ) {
-			return;
+		$pending                = self::$registry_touched;
+		self::$registry_touched = array();
+
+		foreach ( $pending as $blog => $entries ) {
+			self::on_blog(
+				(int) $blog,
+				static function () use ( $entries ): void {
+					self::write_registry( $entries );
+				}
+			);
 		}
+	}
+
+	/**
+	 * Merge touched entries into the current site's registry and save it.
+	 *
+	 * @since  2.10.0
+	 * @access private
+	 * @param  array<string, array{k: string, a: array}> $entries Touched entries.
+	 * @return void
+	 */
+	private static function write_registry( array $entries ): void {
 		$registry = self::get_registry();
 		$now      = time();
-		foreach ( self::$registry_touched as $cache_key => $entry ) {
+		foreach ( $entries as $cache_key => $entry ) {
 			$registry[ $cache_key ] = $entry + array( 'u' => $now );
 		}
-		self::$registry_touched = array();
 
 		/**
 		 * Filter the maximum number of cache entries tracked for warm-up.
@@ -644,6 +724,108 @@ class WHMCS_Price_API {
 
 		self::debug_log( 'Cache warm-up finished', $stats );
 		return $stats;
+	}
+
+	/**
+	 * Invalidate every cached value for one WHMCS product.
+	 *
+	 * Removes name, description and price for all billing cycles plus the
+	 * product pricing feed (setup fees, billing cycles), including stale
+	 * copies, so the next request cannot serve the old price. Entries
+	 * visitors use are re-fetched in the background right away.
+	 *
+	 * @since  2.10.0
+	 * @param  int $pid WHMCS product ID.
+	 * @return int      Number of cached entries removed.
+	 */
+	public static function invalidate_product( int $pid ): int {
+		if ( $pid <= 0 ) {
+			return 0;
+		}
+
+		$keys = array( 'whmcs_pricefeed_' . md5( (string) $pid ) => array( 'pricefeed', array( $pid ) ) );
+		foreach ( array( 'monthly', 'quarterly', 'semiannually', 'annually', 'biennially', 'triennially' ) as $cycle ) {
+			foreach ( array( 'name', 'description', 'price' ) as $attr ) {
+				$keys[ 'whmcs_product_' . md5( $pid . '_' . $cycle . '_' . $attr ) ] = array( 'product', array( $pid, $cycle, $attr ) );
+			}
+		}
+
+		// The registry also knows keys built from non-normalised input (e.g. "05").
+		foreach ( self::get_registry() as $cache_key => $entry ) {
+			if ( in_array( $entry['k'], array( 'product', 'pricefeed' ), true )
+				&& isset( $entry['a'][0] ) && (int) $entry['a'][0] === $pid ) {
+				$keys[ $cache_key ] = array( $entry['k'], $entry['a'] );
+			}
+		}
+
+		return self::invalidate_keys( $keys );
+	}
+
+	/**
+	 * Invalidate every cached value for one domain extension.
+	 *
+	 * Removes register/renew/transfer prices for all registration periods
+	 * and the all-domains table (which contains every TLD).
+	 *
+	 * @since  2.10.0
+	 * @param  string $tld Domain extension, with or without leading dot.
+	 * @return int         Number of cached entries removed.
+	 */
+	public static function invalidate_domain( string $tld ): int {
+		$tld = substr( (string) preg_replace( '/[^a-zA-Z0-9\-]/', '', ltrim( trim( $tld ), '.' ) ), 0, 24 );
+		if ( '' === $tld ) {
+			return 0;
+		}
+
+		$keys     = array( 'whmcs_domain_all' => array( 'domain_all', array() ) );
+		$variants = array_unique( array( $tld, strtolower( $tld ), strtoupper( $tld ) ) );
+		foreach ( $variants as $variant ) {
+			foreach ( array( 'register', 'renew', 'transfer' ) as $type ) {
+				for ( $period = 1; $period <= 10; $period++ ) {
+					$keys[ 'whmcs_domain_' . md5( $variant . '_' . $type . '_' . $period ) ] = array( 'domain', array( $variant, $type, $period ) );
+				}
+			}
+		}
+
+		foreach ( self::get_registry() as $cache_key => $entry ) {
+			if ( 'domain' === $entry['k'] && isset( $entry['a'][0] )
+				&& strtolower( (string) $entry['a'][0] ) === strtolower( $tld ) ) {
+				$keys[ $cache_key ] = array( 'domain', $entry['a'] );
+			}
+		}
+
+		return self::invalidate_keys( $keys );
+	}
+
+	/**
+	 * Delete the given cache entries and re-warm the ones visitors use.
+	 *
+	 * @since  2.10.0
+	 * @access private
+	 * @param  array<string, array{0: string, 1: array}> $keys Cache key => array( kind, args ).
+	 * @return int Number of entries that existed and were removed.
+	 */
+	private static function invalidate_keys( array $keys ): int {
+		$registry = self::get_registry();
+		$removed  = 0;
+
+		foreach ( $keys as $cache_key => $refresh ) {
+			unset( self::$request_cache[ $cache_key ] );
+			if ( null === self::read_entry( $cache_key ) ) {
+				continue;
+			}
+			self::delete_cache( $cache_key );
+			++$removed;
+
+			// Prices visitors actually view come back fresh without waiting
+			// for a visitor to pay for the fetch.
+			if ( isset( $registry[ $cache_key ] ) ) {
+				self::schedule_refresh( $registry[ $cache_key ]['k'], $registry[ $cache_key ]['a'] );
+			}
+		}
+
+		self::debug_log( 'Targeted cache invalidation', array( 'removed' => $removed ) );
+		return $removed;
 	}
 
 	/**
