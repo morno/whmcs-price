@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.9.2] - 2026-11-26
+
+### Changed
+
+- **WordPress 7.2 compatibility**: Reviewed the plugin against the WordPress 7.2
+  Field Guide (client-side media processing, `@wordpress/components` migration to
+  SCSS Modules, Abilities and Interactivity API updates, REST API changes, inline SVG
+  admin icons, jQuery Migrate 3.6 and PHP 8.6 support). No code changes were required.
+  `Tested up to` is now 7.2.
+
+- **Build tooling**: Updated `@wordpress/scripts` from 34.1.0 to 37.2.0 and rebuilt
+  the block assets in `blocks/build/`. No functional changes to the blocks.
+
+- **Version metadata**: Synced the `version` field in
+  `blocks/whmcs-price-product/package.json` (was 2.3.0) with the plugin version.
+
 ## [2.9.1] - 2026-08-19
 
 ### Fixed

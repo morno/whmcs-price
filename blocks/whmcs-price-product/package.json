@@ -1,6 +1,6 @@
 {
 	"name": "whmcs-price",
-	"version": "2.3.0",
+	"version": "2.9.2",
 	"description": "Build tooling for WHMCS Price Gutenberg blocks",
 	"private": true,
 	"scripts": {
