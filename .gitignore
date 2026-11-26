@@ -28,3 +28,4 @@ package*.json
 build.sh
 build.ps1
 banner-whmcs-price.svg
+create-issues-2.10.ps1
