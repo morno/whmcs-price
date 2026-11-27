@@ -58,6 +58,9 @@ abstract class TestCase extends PHPUnitTestCase {
 
 		$this->reset_api_state();
 		$this->stub_wordpress();
+
+		// Loaded here (not in the bootstrap) because it calls add_action() at load time.
+		require_once dirname( __DIR__ ) . '/includes/multilingual.php';
 	}
 
 	protected function tearDown(): void {

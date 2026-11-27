@@ -77,7 +77,7 @@ function InserterPreview() {
 }
 
 export default function Edit( { attributes, setAttributes } ) {
-	const { tld, transactionType, regPeriod, showAll, displayStyle, preview } = attributes;
+	const { tld, transactionType, regPeriod, showAll, displayStyle, preview, currency } = attributes;
 	const blockProps = useBlockProps();
 
 	if ( preview ) {
@@ -129,6 +129,16 @@ export default function Edit( { attributes, setAttributes } ) {
 						selected={ displayStyle }
 						options={ DISPLAY_STYLE_OPTIONS }
 						onChange={ ( val ) => setAttributes( { displayStyle: val } ) }
+					/>
+				</PanelBody>
+				<PanelBody title={ __( 'Currency', 'whmcs-price' ) } initialOpen={ false }>
+					<TextControl
+						label={ __( 'WHMCS currency ID', 'whmcs-price' ) }
+						help={ __( 'Optional. Leave empty to use the currency set for the page language, or the WHMCS default currency.', 'whmcs-price' ) }
+						type="number"
+						min={ 0 }
+						value={ currency || '' }
+						onChange={ ( val ) => setAttributes( { currency: val.replace( /[^0-9]/g, '' ) } ) }
 					/>
 				</PanelBody>
 			</InspectorControls>

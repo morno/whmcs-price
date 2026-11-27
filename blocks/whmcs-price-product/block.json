@@ -56,6 +56,10 @@
 			"type": "string",
 			"default": ""
 		},
+		"currency": {
+			"type": "string",
+			"default": ""
+		},
 		"preview": {
 			"type": "boolean",
 			"default": false

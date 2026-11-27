@@ -149,6 +149,9 @@ function whmcs_price_unavailable_html(): string {
 		 * @since 2.8.0
 		 * @param string $fallback_price The admin-configured fallback price string.
 		 */
+		if ( function_exists( 'whmcs_price_translate_option' ) ) {
+			$fallback_price = whmcs_price_translate_option( 'fallback_price', $fallback_price );
+		}
 		$fallback_price = (string) apply_filters( 'whmcs_price_fallback_price', $fallback_price );
 		return '<span class="whmcs-price-unavailable whmcs-price-fallback">'
 			. esc_html( $fallback_price )
@@ -305,6 +308,16 @@ function whmcs_price_format_per( string $price, string $bc_internal, int $reg_ye
 		default => 1.0,
 	};
 
+	// Spoken equivalents of the abbreviated suffixes, for screen readers.
+	$cycle_spoken = array(
+		'monthly'      => __( 'per month', 'whmcs-price' ),
+		'quarterly'    => __( 'per quarter', 'whmcs-price' ),
+		'semiannually' => __( 'per 6 months', 'whmcs-price' ),
+		'annually'     => __( 'per year', 'whmcs-price' ),
+		'biennially'   => __( 'per 2 years', 'whmcs-price' ),
+		'triennially'  => __( 'per 3 years', 'whmcs-price' ),
+	);
+
 	// Suffix for the original (full-period) price.
 	$cycle_suffix = array(
 		'monthly'      => __( '/mo', 'whmcs-price' ),
@@ -319,8 +332,11 @@ function whmcs_price_format_per( string $price, string $bc_internal, int $reg_ye
 	if ( $reg_years > 1 ) {
 		/* translators: %d: number of years */
 		$orig_suffix = sprintf( __( '/%dyr', 'whmcs-price' ), $reg_years );
+		/* translators: %d: number of years */
+		$orig_spoken = sprintf( __( 'per %d years', 'whmcs-price' ), $reg_years );
 	} else {
 		$orig_suffix = $cycle_suffix[ $bc_internal ] ?? '';
+		$orig_spoken = $cycle_spoken[ $bc_internal ] ?? '';
 	}
 
 	$per_suffix = match ( $per ) {
@@ -330,11 +346,95 @@ function whmcs_price_format_per( string $price, string $bc_internal, int $reg_ye
 		default => '',
 	};
 
+	$per_spoken = match ( $per ) {
+		'month' => __( 'per month', 'whmcs-price' ),
+		'week'  => __( 'per week', 'whmcs-price' ),
+		'day'   => __( 'per day', 'whmcs-price' ),
+		default => '',
+	};
+
 	$divided = WHMCS_Price_API::divide_price( $price, $divisor );
 
-	// Return HTML with two separate elements so each can be styled independently.
-	return '<span class="whmcs-price-full">' . esc_html( $price . $orig_suffix ) . '</span>'
-		. '<span class="whmcs-price-per">' . esc_html( $divided . $per_suffix ) . '</span>';
+	// Two separate elements so each can be styled independently. The visible
+	// abbreviations ("/yr", "/mo") are hidden from screen readers, which hear
+	// "959 kr per year, equivalent to 79.92 kr per month" instead.
+	return '<span class="whmcs-price-full">' . esc_html( $price ) . whmcs_price_suffix_html( $orig_suffix, $orig_spoken ) . '</span>'
+		. '<span class="whmcs-price-per">'
+		. whmcs_price_sr_text( __( 'equivalent to', 'whmcs-price' ) . ' ' )
+		. esc_html( $divided ) . whmcs_price_suffix_html( $per_suffix, $per_spoken )
+		. '</span>';
+}
+
+/**
+ * Visible abbreviation plus spoken text for screen readers.
+ *
+ * @since  2.10.0
+ * @param  string $visible Abbreviation shown on screen, e.g. "/mo".
+ * @param  string $spoken  Text read by screen readers, e.g. "per month".
+ * @return string          Safe HTML.
+ */
+function whmcs_price_suffix_html( string $visible, string $spoken ): string {
+	if ( '' === $visible ) {
+		return '';
+	}
+	if ( '' === $spoken ) {
+		return esc_html( $visible );
+	}
+	return '<span aria-hidden="true">' . esc_html( $visible ) . '</span>' . whmcs_price_sr_text( ' ' . $spoken );
+}
+
+/**
+ * Text that is read by screen readers but not shown on screen.
+ *
+ * Uses WordPress's standard .screen-reader-text class plus the plugin's own
+ * .whmcs-price-sr, which is defined in the plugin stylesheet so it also
+ * works with themes that don't style .screen-reader-text.
+ *
+ * @since  2.10.0
+ * @param  string $text Plain text.
+ * @return string       Safe HTML.
+ */
+function whmcs_price_sr_text( string $text ): string {
+	return '<span class="screen-reader-text whmcs-price-sr">' . esc_html( $text ) . '</span>';
+}
+
+/**
+ * Allowed HTML for price values (wp_kses allowlist).
+ *
+ * Price strings may contain the per-period breakdown spans, including
+ * aria-hidden abbreviations and screen-reader text.
+ *
+ * @since  2.10.0
+ * @return array
+ */
+function whmcs_price_price_kses(): array {
+	return array(
+		'span' => array(
+			'class'       => true,
+			'aria-hidden' => true,
+		),
+	);
+}
+
+/**
+ * Heading level for product card titles.
+ *
+ * Defaults to h3, which fits the common case of a pricing section with an
+ * h2 heading. Themes and page layouts with a different outline can change
+ * it to keep the heading hierarchy correct.
+ *
+ * @since  2.10.0
+ * @return string Tag name, h2-h6.
+ */
+function whmcs_price_card_heading_tag(): string {
+	/**
+	 * Filter the heading level used for product card titles.
+	 *
+	 * @since 2.10.0
+	 * @param int $level Heading level 2-6. Default 3.
+	 */
+	$level = (int) apply_filters( 'whmcs_price_card_heading_level', 3 );
+	return 'h' . min( 6, max( 2, $level ) );
 }
 
 /**
@@ -544,6 +644,10 @@ function whmcs_price_promo_notice( string $context = 'product' ): string {
 
 	if ( empty( $code ) || empty( $text ) ) {
 		return '';
+	}
+
+	if ( function_exists( 'whmcs_price_translate_option' ) ) {
+		$text = whmcs_price_translate_option( 'promo_text', $text );
 	}
 
 	if ( 'both' !== $target && $target !== $context ) {

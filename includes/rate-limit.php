@@ -277,8 +277,8 @@ function whmcs_price_rest_read_rate_limit( string $endpoint, bool $cache_hit = f
  * @param  string $attribute     name|description|price.
  * @return bool
  */
-function whmcs_price_rest_product_cache_hit( int $pid, string $billing_cycle, string $attribute ): bool {
-	$cache_key = 'whmcs_product_' . md5( $pid . '_' . $billing_cycle . '_' . $attribute );
+function whmcs_price_rest_product_cache_hit( int $pid, string $billing_cycle, string $attribute, int $currency = 0 ): bool {
+	$cache_key = 'whmcs_product_' . md5( $pid . '_' . $billing_cycle . '_' . $attribute ) . ( $currency > 0 ? '_c' . $currency : '' );
 	$version   = (int) get_option( 'whmcs_price_cache_version', 1 );
 	$key       = 'v' . max( 1, $version ) . '_' . $cache_key;
 
@@ -298,8 +298,8 @@ function whmcs_price_rest_product_cache_hit( int $pid, string $billing_cycle, st
  * @param  int    $reg_period Years.
  * @return bool
  */
-function whmcs_price_rest_domain_cache_hit( string $tld, string $type, int $reg_period ): bool {
-	$cache_key = 'whmcs_domain_' . md5( $tld . '_' . $type . '_' . $reg_period );
+function whmcs_price_rest_domain_cache_hit( string $tld, string $type, int $reg_period, int $currency = 0 ): bool {
+	$cache_key = 'whmcs_domain_' . md5( $tld . '_' . $type . '_' . $reg_period ) . ( $currency > 0 ? '_c' . $currency : '' );
 	$version   = (int) get_option( 'whmcs_price_cache_version', 1 );
 	$key       = 'v' . max( 1, $version ) . '_' . $cache_key;
 

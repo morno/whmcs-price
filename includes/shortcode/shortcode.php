@@ -55,7 +55,11 @@ function whmcs_price_shortcode_handler( $atts ) {
         'reg'   => '',
         'per'   => '',     // Optional: month | week | day
         'style' => 'table', // Product display style: table | cards | grid
+        'currency' => '',  // Optional WHMCS currency ID; empty = per language / WHMCS default (2.10.0+)
     ], $atts, 'whmcs');
+
+    // Resolve the currency once: explicit attribute, else the language mapping.
+    $currency = whmcs_price_currency_arg( $atts['currency'] );
 
     // Allowlist: validate 'per' at the entry point so all downstream code receives a clean value.
     $atts['per'] = in_array( $atts['per'], array( 'month', 'week', 'day' ), true ) ? $atts['per'] : '';
@@ -120,11 +124,11 @@ function whmcs_price_shortcode_handler( $atts ) {
          * @param string $attr Column key (name, description, price, setupfee).
          * @return string
          */
-        $get_val = function( int $pid, string $attr ) use ( $bc_r, $atts ): string {
+        $get_val = function( int $pid, string $attr ) use ( $bc_r, $atts, $currency ): string {
             if ( 'setupfee' === $attr ) {
-                return WHMCS_Price_API::get_product_setup_fee( $pid, $bc_r );
+                return WHMCS_Price_API::get_product_setup_fee( $pid, $bc_r, $currency );
             }
-            $val = WHMCS_Price_API::get_product_data( $pid, $bc_r, $attr );
+            $val = WHMCS_Price_API::get_product_data( $pid, $bc_r, $attr, $currency );
             if ( 'NA' === $val ) { return 'NA'; }
             if ( 'price' === $attr ) {
                 $val = whmcs_price_strip_setup_fee( $val );
@@ -145,7 +149,7 @@ function whmcs_price_shortcode_handler( $atts ) {
         $render_val = function( string $attr, string $val ): string {
             if ( 'NA' === $val ) { return whmcs_price_unavailable_html(); }
             if ( in_array( $attr, array( 'price', 'setupfee' ), true ) ) {
-                return wp_kses( $val, array( 'span' => array( 'class' => true ) ) );
+                return wp_kses( $val, whmcs_price_price_kses() );
             }
             return esc_html( wp_strip_all_tags( $val ) );
         };
@@ -155,13 +159,16 @@ function whmcs_price_shortcode_handler( $atts ) {
         if ( 'cards' === $display_style ) {
             $output .= '<div class="whmcs-product-cards">';
             foreach ( $pids as $pid ) {
-                $output .= '<div class="whmcs-product-card">';
+                // Each card is a self-contained article, labelled by its title.
+                $title_id = in_array( 'name', $show, true ) ? wp_unique_id( 'whmcs-product-title-' ) : '';
+                $heading  = whmcs_price_card_heading_tag();
+                $output  .= '<article class="whmcs-product-card"' . ( $title_id ? ' aria-labelledby="' . esc_attr( $title_id ) . '"' : '' ) . '>';
                 foreach ( $show as $attr ) {
                     $val        = $get_val( $pid, $attr );
                     $attr_clean = strtolower( trim( $attr ) );
                     $output    .= '<div class="whmcs-product-card__' . esc_attr( $attr_clean ) . '">';
                     if ( 'name' === $attr_clean && 'NA' !== $val ) {
-                        $output .= '<h3 class="whmcs-product-card__title">' . esc_html( $val ) . '</h3>';
+                        $output .= '<' . $heading . ' class="whmcs-product-card__title" id="' . esc_attr( $title_id ) . '">' . esc_html( $val ) . '</' . $heading . '>';
                     } elseif ( 'setupfee' === $attr_clean ) {
                         $output .= '<span class="whmcs-product-card__setupfee-label">' . esc_html__( 'Setup Fee', 'whmcs-price' ) . ':</span>';
                         $output .= '<span class="whmcs-product-card__setupfee-value">' . esc_html( $val ) . '</span>';
@@ -170,14 +177,17 @@ function whmcs_price_shortcode_handler( $atts ) {
                     }
                     $output .= '</div>';
                 }
-                $output .= '</div>';
+                $output .= '</article>';
             }
             $output .= '</div>';
 
         } elseif ( 'grid' === $display_style ) {
             $output .= '<div class="whmcs-product-grid">';
             foreach ( $pids as $pid ) {
-                $output .= '<div class="whmcs-product-grid-item">';
+                // Group each product's fields under its name for screen readers.
+                $group_label = in_array( 'name', $show, true ) ? wp_strip_all_tags( $get_val( $pid, 'name' ) ) : '';
+                $output     .= '<div class="whmcs-product-grid-item" role="group"'
+                    . ( '' !== $group_label && 'NA' !== $group_label ? ' aria-label="' . esc_attr( $group_label ) . '"' : '' ) . '>';
                 foreach ( $show as $attr ) {
                     $val        = $get_val( $pid, $attr );
                     $attr_clean = strtolower( trim( $attr ) );
@@ -196,7 +206,7 @@ function whmcs_price_shortcode_handler( $atts ) {
             $output .= "<table id='" . esc_attr( $table_id ) . "' class='whmcs-product-table'><thead><tr>";
             foreach ( $show as $header ) {
                 $label   = $header_labels[ strtolower( trim( $header ) ) ] ?? ucfirst( $header );
-                $output .= '<th>' . esc_html( $label ) . '</th>';
+                $output .= '<th scope="col">' . esc_html( $label ) . '</th>';
             }
             $output .= '</tr></thead><tbody>';
             foreach ( $pids as $pid ) {
@@ -204,7 +214,10 @@ function whmcs_price_shortcode_handler( $atts ) {
                 foreach ( $show as $attr ) {
                     $val        = $get_val( $pid, $attr );
                     $attr_clean = strtolower( trim( $attr ) );
-                    $output    .= '<td>' . $render_val( $attr_clean, $val ) . '</td>';
+                    // The product name identifies each row for screen readers.
+                    $output .= 'name' === $attr_clean
+                        ? '<th scope="row">' . $render_val( $attr_clean, $val ) . '</th>'
+                        : '<td>' . $render_val( $attr_clean, $val ) . '</td>';
                 }
                 $output .= '</tr>';
             }
@@ -271,7 +284,7 @@ function whmcs_price_shortcode_handler( $atts ) {
         // Single type: return a simple inline value (backwards compatible).
         if ( count( $show_types ) === 1 ) {
             $type      = $show_types[0];
-            $price     = WHMCS_Price_API::get_domain_price( $tld, $type, $reg_period );
+            $price     = WHMCS_Price_API::get_domain_price( $tld, $type, $reg_period, $currency );
 
             if ( 'NA' === $price ) {
                 return "<div class='whmcs-price'>" . whmcs_price_unavailable_html() . '</div>';
@@ -282,7 +295,7 @@ function whmcs_price_shortcode_handler( $atts ) {
             }
 
             $domain_id = 'whmcs-price-' . esc_attr( sanitize_title( $tld ) );
-            return "<div id='{$domain_id}' class='whmcs-price'>" . wp_kses( $price, array( 'span' => array( 'class' => array() ) ) ) . '</div>' . whmcs_price_promo_notice( 'domain' );
+            return "<div id='{$domain_id}' class='whmcs-price'>" . wp_kses( $price, whmcs_price_price_kses() ) . '</div>' . whmcs_price_promo_notice( 'domain' );
         }
 
         // Multiple types: render a comparison table.
@@ -295,21 +308,21 @@ function whmcs_price_shortcode_handler( $atts ) {
 
         $output  = "<table id='" . esc_attr( $table_id ) . "' class='whmcs-domain-table'>";
         $output .= '<thead><tr>';
-        $output .= '<th>' . esc_html__( 'TLD', 'whmcs-price' ) . '</th>';
+        $output .= '<th scope="col">' . esc_html__( 'TLD', 'whmcs-price' ) . '</th>';
         foreach ( $show_types as $type ) {
-            $output .= '<th>' . esc_html( $type_labels[ $type ] ) . '</th>';
+            $output .= '<th scope="col">' . esc_html( $type_labels[ $type ] ) . '</th>';
         }
         $output .= '</tr></thead><tbody><tr>';
-        $output .= '<td><strong>.' . esc_html( $tld ) . '</strong><br><small>' . esc_html( $period_label ) . '</small></td>';
+        $output .= '<th scope="row"><strong>.' . esc_html( $tld ) . '</strong><br><small>' . esc_html( $period_label ) . '</small></th>';
         foreach ( $show_types as $type ) {
-            $price = WHMCS_Price_API::get_domain_price( $tld, $type, $reg_period );
+            $price = WHMCS_Price_API::get_domain_price( $tld, $type, $reg_period, $currency );
             if ( 'NA' === $price ) {
                 $output .= '<td>' . whmcs_price_unavailable_html() . '</td>';
             } else {
                 if ( ! empty( $atts['per'] ) ) {
                     $price = whmcs_price_format_per( $price, 'annually', (int) $reg_period, $atts['per'] );
                 }
-                $output .= '<td>' . wp_kses( $price, array( 'span' => array( 'class' => array() ) ) ) . '</td>';
+                $output .= '<td>' . wp_kses( $price, whmcs_price_price_kses() ) . '</td>';
             }
         }
         $output .= '</tr></tbody></table>';
@@ -333,7 +346,7 @@ function whmcs_price_shortcode_handler( $atts ) {
         'ul'     => array( 'class' => true ),
         'li'     => array( 'class' => true ),
     );
-    $all_prices = WHMCS_Price_API::get_all_domain_prices();
+    $all_prices = WHMCS_Price_API::get_all_domain_prices( $currency );
     if ( 'NA' === $all_prices ) {
         return whmcs_price_unavailable_html();
     }
@@ -372,7 +385,8 @@ function whmcs_price_cycles_shortcode_handler( $atts ): string {
     }
 
     $atts = shortcode_atts( array(
-        'pid'   => '',
+        'pid'      => '',
+        'currency' => '',
         'style' => 'table',
     ), $atts, 'whmcs_cycles' );
 
@@ -383,7 +397,7 @@ function whmcs_price_cycles_shortcode_handler( $atts ): string {
 
     $style = in_array( $atts['style'], array( 'table', 'cards', 'grid' ), true ) ? $atts['style'] : 'table';
 
-    $cycles = WHMCS_Price_API::get_all_product_cycles( $pid );
+    $cycles = WHMCS_Price_API::get_all_product_cycles( $pid, whmcs_price_currency_arg( $atts['currency'] ) );
     if ( empty( $cycles ) ) {
         return '<div class="whmcs-price">' . whmcs_price_unavailable_html() . '</div>';
     }
@@ -405,10 +419,12 @@ function whmcs_price_cycles_shortcode_handler( $atts ): string {
         $output .= '<div class="whmcs-product-cards">';
         foreach ( $cycles as $cycle => $price ) {
             $label   = $cycle_labels[ $cycle ] ?? ucfirst( $cycle );
-            $output .= '<div class="whmcs-product-card">';
-            $output .= '<div class="whmcs-product-card__name"><h3 class="whmcs-product-card__title">' . esc_html( $label ) . '</h3></div>';
-            $output .= '<div class="whmcs-product-card__price"><span class="whmcs-product-card__price-value">' . esc_html( $price ) . '</span></div>';
-            $output .= '</div>';
+            $title_id = wp_unique_id( 'whmcs-cycle-title-' );
+            $heading  = whmcs_price_card_heading_tag();
+            $output  .= '<article class="whmcs-product-card" aria-labelledby="' . esc_attr( $title_id ) . '">';
+            $output  .= '<div class="whmcs-product-card__name"><' . $heading . ' class="whmcs-product-card__title" id="' . esc_attr( $title_id ) . '">' . esc_html( $label ) . '</' . $heading . '></div>';
+            $output  .= '<div class="whmcs-product-card__price"><span class="whmcs-product-card__price-value">' . esc_html( $price ) . '</span></div>';
+            $output  .= '</article>';
         }
         $output .= '</div>';
 
@@ -428,13 +444,13 @@ function whmcs_price_cycles_shortcode_handler( $atts ): string {
         // Table (default).
         $output .= '<table class="whmcs-product-table">';
         $output .= '<thead><tr>';
-        $output .= '<th>' . esc_html__( 'Billing Cycle', 'whmcs-price' ) . '</th>';
-        $output .= '<th>' . esc_html__( 'Price', 'whmcs-price' ) . '</th>';
+        $output .= '<th scope="col">' . esc_html__( 'Billing Cycle', 'whmcs-price' ) . '</th>';
+        $output .= '<th scope="col">' . esc_html__( 'Price', 'whmcs-price' ) . '</th>';
         $output .= '</tr></thead><tbody>';
         foreach ( $cycles as $cycle => $price ) {
             $label   = $cycle_labels[ $cycle ] ?? ucfirst( $cycle );
             $output .= '<tr>';
-            $output .= '<td>' . esc_html( $label ) . '</td>';
+            $output .= '<th scope="row">' . esc_html( $label ) . '</th>';
             $output .= '<td>' . esc_html( $price ) . '</td>';
             $output .= '</tr>';
         }

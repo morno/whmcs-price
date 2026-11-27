@@ -61,7 +61,7 @@ final class StaleWhileRevalidateTest extends TestCase {
 		$this->assertCount( 1, $this->http_log, 'Visitor must not wait for WHMCS.' );
 		$this->assertCount( 1, $this->scheduled );
 		$this->assertSame( WHMCS_Price_API::REFRESH_HOOK, $this->scheduled[0][1] );
-		$this->assertSame( array( 'product', array( 1, 'monthly', 'price' ) ), $this->scheduled[0][2] );
+		$this->assertSame( array( 'product', array( 1, 'monthly', 'price', 0 ) ), $this->scheduled[0][2] );
 	}
 
 	public function test_stale_value_still_passes_through_filters(): void {
@@ -172,7 +172,7 @@ final class StaleWhileRevalidateTest extends TestCase {
 		$this->reset_api_state();
 
 		$this->assertSame( '129 kr', WHMCS_Price_API::get_domain_price( 'se', 'register', 1 ) );
-		$this->assertSame( array( 'domain', array( 'se', 'register', 1 ) ), $this->scheduled[0][2] );
+		$this->assertSame( array( 'domain', array( 'se', 'register', 1, 0 ) ), $this->scheduled[0][2] );
 
 		$this->queue_response( '139 kr' );
 		WHMCS_Price_API::refresh_entry( 'domain', array( 'se', 'register', 1 ) );
@@ -187,7 +187,7 @@ final class StaleWhileRevalidateTest extends TestCase {
 		$this->reset_api_state();
 
 		$this->assertSame( '<table></table>', WHMCS_Price_API::get_all_domain_prices() );
-		$this->assertSame( array( 'domain_all', array() ), $this->scheduled[0][2] );
+		$this->assertSame( array( 'domain_all', array( 0 ) ), $this->scheduled[0][2] );
 	}
 
 	public function test_pricing_feed_is_served_stale_for_setup_fee_and_cycles(): void {
@@ -200,7 +200,7 @@ final class StaleWhileRevalidateTest extends TestCase {
 		$this->assertSame( array( 'monthly' => '99 kr' ), WHMCS_Price_API::get_all_product_cycles( 4 ) );
 		$this->assertCount( 1, $this->http_log );
 		$this->assertCount( 1, $this->scheduled, 'Both callers share one pricefeed refresh.' );
-		$this->assertSame( array( 'pricefeed', array( 4 ) ), $this->scheduled[0][2] );
+		$this->assertSame( array( 'pricefeed', array( 4, 0 ) ), $this->scheduled[0][2] );
 	}
 
 	public function test_legacy_plain_cache_value_is_treated_as_fresh(): void {

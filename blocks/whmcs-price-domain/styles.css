@@ -39,7 +39,7 @@
 }
 
 .whmcs-domain-table thead {
-	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	background: linear-gradient(135deg, #4c5fd5 0%, #764ba2 100%);
 	color: #fff;
 }
 
@@ -54,6 +54,7 @@
 
 .whmcs-domain-table tbody tr {
 	background: #fff;
+	color: #1a202c;
 }
 
 .whmcs-domain-table td {
@@ -61,12 +62,24 @@
 	text-align: center;
 	font-size: 18px;
 	font-weight: 700;
-	color: #667eea;
+	color: #4c5fd5;
 	border-right: 1px solid #e0e0e0;
 }
 
 .whmcs-domain-table td:last-child {
 	border-right: none;
+}
+
+/* TLD row header (shortcode table) looks like a regular cell. */
+.whmcs-domain-table tbody th {
+	padding: 20px;
+	text-align: center;
+	font-size: 16px;
+	font-weight: 700;
+	color: #1a202c;
+	text-transform: none;
+	letter-spacing: normal;
+	border-right: 1px solid #e0e0e0;
 }
 
 /* ==================== Badge Style (Modern Pills) ==================== */
@@ -82,7 +95,7 @@
 .whmcs-domain-badges__tld {
 	font-size: 24px;
 	font-weight: 800;
-	color: #1a202c;
+	color: inherit; /* No background of its own: follow the theme (dark themes). */
 	margin-right: 8px;
 }
 
@@ -91,7 +104,7 @@
 	flex-direction: column;
 	align-items: center;
 	gap: 4px;
-	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	background: linear-gradient(135deg, #4c5fd5 0%, #764ba2 100%);
 	color: #fff;
 	padding: 12px 24px;
 	border-radius: 24px;
@@ -153,16 +166,16 @@
 .whmcs-domain-inline__tld {
 	font-size: 20px;
 	font-weight: 800;
-	color: #667eea;
+	color: inherit;
 	margin-right: 8px;
 }
 
 .whmcs-domain-inline__item {
-	color: #4a5568;
+	color: inherit;
 }
 
 .whmcs-domain-inline__item strong {
-	color: #667eea;
+	color: inherit;
 	font-weight: 700;
 	margin-left: 4px;
 }
@@ -170,11 +183,11 @@
 /* Single inline variation */
 .whmcs-domain-inline--single {
 	font-size: 18px;
-	color: #2d3748;
+	color: inherit;
 }
 
 .whmcs-domain-inline--single strong {
-	color: #667eea;
+	color: inherit;
 	font-weight: 800;
 }
 
@@ -184,11 +197,11 @@
 	display: inline-block;
 	font-size: 24px;
 	font-weight: 700;
-	color: #667eea;
+	color: #4c5fd5;
 	padding: 12px 24px;
 	background: #f7fafc;
 	border-radius: 8px;
-	border: 2px solid #667eea;
+	border: 2px solid #4c5fd5;
 	margin: 20px 0;
 }
 
@@ -198,6 +211,7 @@
 	margin: 20px 0;
 	padding: 20px;
 	background: #fff;
+	color: #1a202c;
 	border: 1px solid #e2e8f0;
 	border-radius: 8px;
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -211,7 +225,8 @@
 	}
 
 	.whmcs-domain-table th,
-	.whmcs-domain-table td {
+	.whmcs-domain-table td,
+	.whmcs-domain-table tbody th {
 		padding: 12px 8px;
 	}
 
@@ -245,7 +260,7 @@
 }
 
 .whmcs-domain-all table thead {
-	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	background: linear-gradient(135deg, #4c5fd5 0%, #764ba2 100%);
 	color: #fff;
 }
 
@@ -279,7 +294,7 @@
 
 .whmcs-domain-all table td:first-child {
 	font-weight: 600;
-	color: #667eea;
+	color: #4c5fd5;
 }
 
 @media (max-width: 768px) {
@@ -312,4 +327,45 @@
 .whmcs-domain-display.alignwide .whmcs-domain-table,
 .whmcs-domain-display.alignfull .whmcs-domain-table {
 	max-width: none;
+}
+
+/* ==================== Accessibility (2.10.0) ==================== */
+
+/* Screen-reader-only text, e.g. "per month" behind the visible "/mo". */
+.whmcs-price-sr {
+	border: 0;
+	clip: rect(1px, 1px, 1px, 1px);
+	clip-path: inset(50%);
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	padding: 0;
+	position: absolute !important;
+	width: 1px;
+	word-wrap: normal !important;
+}
+
+/* Visible keyboard focus for links in plugin output (promo notices, etc.). */
+.whmcs-product-display a:focus-visible,
+.whmcs-domain-display a:focus-visible,
+.whmcs-price-promo a:focus-visible {
+	outline: 2px solid #4c5fd5;
+	outline-offset: 2px;
+	border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.whmcs-product-display *,
+	.whmcs-domain-display * {
+		transition: none !important;
+	}
+}
+
+/* Per-period price in contexts without a background of their own (inline) or
+   on the gradient badges: follow the surrounding text colour instead of the
+   fixed muted grey, which is unreadable on dark themes and on the gradient. */
+.whmcs-domain-inline .whmcs-price-per,
+.whmcs-domain-badge .whmcs-price-per {
+	color: inherit !important;
+	-webkit-text-fill-color: currentColor !important;
 }

@@ -97,6 +97,11 @@ function whmcs_price_register_abilities(): void {
 						'enum'        => whmcs_price_ability_billing_cycles(),
 						'default'     => 'monthly',
 					),
+					'currency'      => array(
+						'type'        => 'integer',
+						'description' => __( 'WHMCS currency ID. Omit for the currency of the site language, or the WHMCS default.', 'whmcs-price' ),
+						'minimum'     => 0,
+					),
 				),
 				'required'             => array( 'product_ids' ),
 				'additionalProperties' => false,
@@ -158,6 +163,11 @@ function whmcs_price_register_abilities(): void {
 						),
 						'minItems'    => 1,
 						'uniqueItems' => true,
+					),
+					'currency'   => array(
+						'type'        => 'integer',
+						'description' => __( 'WHMCS currency ID. Omit for the currency of the site language, or the WHMCS default.', 'whmcs-price' ),
+						'minimum'     => 0,
 					),
 				),
 				'required'             => array( 'tld' ),
@@ -234,10 +244,12 @@ function whmcs_price_ability_get_product_price( $input = null ) {
 		return new WP_Error( 'whmcs_price_invalid_input', __( 'Unknown billing cycle.', 'whmcs-price' ), array( 'status' => 400 ) );
 	}
 
+	$currency = function_exists( 'whmcs_price_currency_arg' ) ? whmcs_price_currency_arg( $input['currency'] ?? '' ) : max( 0, (int) ( $input['currency'] ?? 0 ) );
+
 	$all_cached = true;
 	foreach ( $ids as $id ) {
 		foreach ( array( 'name', 'description', 'price' ) as $attr ) {
-			$all_cached = $all_cached && whmcs_price_rest_product_cache_hit( $id, $cycle, $attr );
+			$all_cached = $all_cached && whmcs_price_rest_product_cache_hit( $id, $cycle, $attr, $currency );
 		}
 	}
 	$limited = whmcs_price_ability_rate_limit( 'product', $all_cached );
@@ -249,11 +261,11 @@ function whmcs_price_ability_get_product_price( $input = null ) {
 
 	$products = array();
 	foreach ( $ids as $id ) {
-		$name        = $to_null( wp_strip_all_tags( WHMCS_Price_API::get_product_data( $id, $cycle, 'name' ) ) );
-		$description = $to_null( wp_strip_all_tags( WHMCS_Price_API::get_product_data( $id, $cycle, 'description' ) ) );
-		$price_raw   = WHMCS_Price_API::get_product_data( $id, $cycle, 'price' );
+		$name        = $to_null( wp_strip_all_tags( WHMCS_Price_API::get_product_data( $id, $cycle, 'name', $currency ) ) );
+		$description = $to_null( wp_strip_all_tags( WHMCS_Price_API::get_product_data( $id, $cycle, 'description', $currency ) ) );
+		$price_raw   = WHMCS_Price_API::get_product_data( $id, $cycle, 'price', $currency );
 		$price       = $to_null( 'NA' === $price_raw ? 'NA' : wp_strip_all_tags( whmcs_price_strip_setup_fee( $price_raw ) ) );
-		$setup_fee   = null === $price ? null : $to_null( WHMCS_Price_API::get_product_setup_fee( $id, $cycle ) );
+		$setup_fee   = null === $price ? null : $to_null( WHMCS_Price_API::get_product_setup_fee( $id, $cycle, $currency ) );
 
 		$products[] = array(
 			'product_id'  => $id,
@@ -298,9 +310,11 @@ function whmcs_price_ability_get_domain_price( $input = null ) {
 		return new WP_Error( 'whmcs_price_invalid_input', __( 'Unknown transaction type.', 'whmcs-price' ), array( 'status' => 400 ) );
 	}
 
+	$currency = function_exists( 'whmcs_price_currency_arg' ) ? whmcs_price_currency_arg( $input['currency'] ?? '' ) : max( 0, (int) ( $input['currency'] ?? 0 ) );
+
 	$all_cached = true;
 	foreach ( $types as $type ) {
-		$all_cached = $all_cached && whmcs_price_rest_domain_cache_hit( $tld, $type, $period );
+		$all_cached = $all_cached && whmcs_price_rest_domain_cache_hit( $tld, $type, $period, $currency );
 	}
 	$limited = whmcs_price_ability_rate_limit( 'domain', $all_cached );
 	if ( is_wp_error( $limited ) ) {
@@ -310,7 +324,7 @@ function whmcs_price_ability_get_domain_price( $input = null ) {
 	$prices    = array();
 	$available = false;
 	foreach ( $types as $type ) {
-		$value           = WHMCS_Price_API::get_domain_price( $tld, $type, $period );
+		$value           = WHMCS_Price_API::get_domain_price( $tld, $type, $period, $currency );
 		$prices[ $type ] = ( 'NA' === $value || '' === trim( $value ) ) ? null : wp_strip_all_tags( $value );
 		$available       = $available || null !== $prices[ $type ];
 	}

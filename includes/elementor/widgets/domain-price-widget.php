@@ -178,9 +178,15 @@ class WHMCS_Price_Elementor_Domain_Widget extends \Elementor\Widget_Base {
 		$whmcs_per_period       = in_array( $whmcs_per_period, array( 'month', 'week', 'day' ), true ) ? $whmcs_per_period : '';
 
 		$whmcs_reg_period    = str_replace( 'y', '', $whmcs_reg_period_raw );
+		// Returns safe HTML (see the domain block's render.php for why).
 		$whmcs_fmt           = function( string $price ) use ( $whmcs_per_period, $whmcs_reg_period ): string {
-			if ( 'NA' === $price || empty( $whmcs_per_period ) ) { return $price; }
-			return whmcs_price_format_per( $price, 'annually', (int) $whmcs_reg_period, $whmcs_per_period );
+			if ( 'NA' === $price ) {
+				return whmcs_price_unavailable_html();
+			}
+			if ( empty( $whmcs_per_period ) ) {
+				return esc_html( $price );
+			}
+			return wp_kses( whmcs_price_format_per( $price, 'annually', (int) $whmcs_reg_period, $whmcs_per_period ), whmcs_price_price_kses() );
 		};
 		$whmcs_wrapper_class = 'whmcs-domain-display whmcs-domain-display--' . esc_attr( $whmcs_display_style );
 
@@ -217,21 +223,22 @@ class WHMCS_Price_Elementor_Domain_Widget extends \Elementor\Widget_Base {
 			if ( 'table' === $whmcs_display_style ) {
 				echo '<table class="whmcs-domain-table"><thead><tr>';
 				foreach ( $whmcs_types as $label ) {
-					echo '<th>' . esc_html( $label ) . '</th>';
+					echo '<th scope="col">' . esc_html( $label ) . '</th>';
 				}
 				echo '</tr></thead><tbody><tr>';
 				foreach ( array_keys( $whmcs_types ) as $type_key ) {
-					echo '<td>' . esc_html( $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $type_key, $whmcs_reg_period ) ) ) . '</td>';
+					echo '<td>' . $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $type_key, $whmcs_reg_period ) ) . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $whmcs_fmt returns escaped HTML.
 				}
 				echo '</tr></tbody></table>';
 
 			} elseif ( 'badge' === $whmcs_display_style ) {
-				echo '<div class="whmcs-domain-badges">';
-				echo '<div class="whmcs-domain-badges__tld">.' . esc_html( $whmcs_tld ) . '</div>';
+				/* translators: %s: domain extension, e.g. ".com" */
+				echo '<div class="whmcs-domain-badges" role="list" aria-label="' . esc_attr( sprintf( __( '%s domain prices', 'whmcs-price' ), '.' . $whmcs_tld ) ) . '">';
+				echo '<div class="whmcs-domain-badges__tld" aria-hidden="true">.' . esc_html( $whmcs_tld ) . '</div>';
 				foreach ( $whmcs_types as $type_key => $type_label ) {
-					echo '<div class="whmcs-domain-badge">';
+					echo '<div class="whmcs-domain-badge" role="listitem">';
 					echo '<span class="whmcs-domain-badge__label">' . esc_html( $type_label ) . '</span>';
-					echo '<span class="whmcs-domain-badge__price">' . esc_html( $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $type_key, $whmcs_reg_period ) ) ) . '</span>';
+					echo '<span class="whmcs-domain-badge__price">' . $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $type_key, $whmcs_reg_period ) ) . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $whmcs_fmt returns escaped HTML.
 					echo '</div>';
 				}
 				echo '</div>';
@@ -241,7 +248,7 @@ class WHMCS_Price_Elementor_Domain_Widget extends \Elementor\Widget_Base {
 				echo '<strong class="whmcs-domain-inline__tld">.' . esc_html( $whmcs_tld ) . '</strong>';
 				foreach ( $whmcs_types as $type_key => $type_label ) {
 					echo '<span class="whmcs-domain-inline__item">';
-					echo esc_html( $type_label ) . ': <strong>' . esc_html( $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $type_key, $whmcs_reg_period ) ) ) . '</strong>';
+					echo esc_html( $type_label ) . ': <strong>' . $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $type_key, $whmcs_reg_period ) ) . '</strong>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $whmcs_fmt returns escaped HTML.
 					echo '</span>';
 				}
 				echo '</div>';
@@ -257,18 +264,18 @@ class WHMCS_Price_Elementor_Domain_Widget extends \Elementor\Widget_Base {
 				echo '<div class="whmcs-domain-badge whmcs-domain-badge--single">';
 				echo '<span class="whmcs-domain-badge__tld">.' . esc_html( $whmcs_tld ) . '</span>';
 				echo '<span class="whmcs-domain-badge__label">' . esc_html( $whmcs_type_labels[ $whmcs_transaction_type ] ?? ucfirst( $whmcs_transaction_type ) ) . '</span>';
-				echo '<span class="whmcs-domain-badge__price">' . esc_html( $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) ) ) . '</span>';
+				echo '<span class="whmcs-domain-badge__price">' . $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) ) . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $whmcs_fmt returns escaped HTML.
 				echo '</div>';
 
 			} elseif ( 'inline' === $whmcs_display_style ) {
 				echo '<span class="whmcs-domain-inline whmcs-domain-inline--single">';
 				echo '<strong>.' . esc_html( $whmcs_tld ) . '</strong> — ';
-				echo esc_html( $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) ) );
+				echo $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $whmcs_fmt returns escaped HTML.
 				echo '</span>';
 
 			} else {
 				echo '<div class="whmcs-price">';
-				echo esc_html( $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) ) );
+				echo $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $whmcs_fmt returns escaped HTML.
 				echo '</div>';
 			}
 		}

@@ -180,6 +180,32 @@ class WHMCSPrice {
 					</p>
 				</td>
 			</tr>
+			<?php
+			$languages = whmcs_price_multilingual_languages();
+			if ( ! empty( $languages ) ) :
+				$currency_map = whmcs_price_currency_map();
+				?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Currency per Language', 'whmcs-price' ); ?></th>
+				<td>
+					<fieldset>
+						<legend class="screen-reader-text"><?php esc_html_e( 'WHMCS currency ID for each language', 'whmcs-price' ); ?></legend>
+						<?php foreach ( $languages as $code => $name ) : ?>
+							<p>
+								<label for="whmcs_currency_<?php echo esc_attr( $code ); ?>" style="display:inline-block;min-width:140px;"><?php echo esc_html( $name ); ?></label>
+								<input type="number" min="0" step="1" class="small-text" id="whmcs_currency_<?php echo esc_attr( $code ); ?>"
+									name="whmcs_price_option[currency_by_language][<?php echo esc_attr( $code ); ?>]"
+									value="<?php echo isset( $currency_map[ $code ] ) ? absint( $currency_map[ $code ] ) : ''; ?>"
+									placeholder="<?php esc_attr_e( 'default', 'whmcs-price' ); ?>" />
+							</p>
+						<?php endforeach; ?>
+					</fieldset>
+					<p class="description">
+						<?php esc_html_e( 'Show prices in a different WHMCS currency per language. Enter the currency ID from WHMCS (Configuration → System Settings → Currencies; hover a currency to see its ID). Leave empty to use the WHMCS default currency. A currency set on a block or shortcode always wins.', 'whmcs-price' ); ?>
+					</p>
+				</td>
+			</tr>
+			<?php endif; ?>
 		</table>
 		<?php
 	}
@@ -605,6 +631,18 @@ class WHMCSPrice {
 				}
 			} else {
 				unset( $new_input['whmcs_url'] );
+			}
+			// Currency per language (only submitted when WPML/Polylang is active).
+			if ( isset( $input['currency_by_language'] ) && is_array( $input['currency_by_language'] ) ) {
+				$currency_map = array();
+				foreach ( $input['currency_by_language'] as $lang => $id ) {
+					$lang = sanitize_key( (string) $lang );
+					$id   = absint( $id );
+					if ( '' !== $lang && $id > 0 ) {
+						$currency_map[ $lang ] = $id;
+					}
+				}
+				$new_input['currency_by_language'] = $currency_map;
 			}
 			$new_input['bypass_cdn_cache'] = isset( $input['bypass_cdn_cache'] ) && '1' === (string) $input['bypass_cdn_cache'] ? '1' : '0';
 		}

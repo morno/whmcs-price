@@ -76,6 +76,11 @@ add_action( 'rest_api_init', function() {
 						return in_array( $v, array( 'name', 'description', 'price' ), true );
 					},
 				),
+				'currency'      => array(
+					'description'       => 'WHMCS currency ID. Omit for the currency mapped to the request language (WPML/Polylang), else the WHMCS default.',
+					'validate_callback' => function( $v ) { return is_numeric( $v ) && (int) $v >= 0; },
+					'sanitize_callback' => 'absint',
+				),
 			),
 		)
 	);
@@ -108,6 +113,11 @@ add_action( 'rest_api_init', function() {
 					'validate_callback' => function( $v ) {
 						return is_numeric( $v ) && (int) $v >= 1 && (int) $v <= 10;
 					},
+				),
+				'currency'   => array(
+					'description'       => 'WHMCS currency ID. Omit for the currency mapped to the request language (WPML/Polylang), else the WHMCS default.',
+					'validate_callback' => function( $v ) { return is_numeric( $v ) && (int) $v >= 0; },
+					'sanitize_callback' => 'absint',
 				),
 			),
 		)
@@ -421,13 +431,14 @@ function whmcs_price_rest_product( WP_REST_Request $request ): WP_REST_Response|
 	$billing_cycle = $request->get_param( 'billing_cycle' );
 	$attribute     = $request->get_param( 'attribute' );
 
-	$cache_hit = whmcs_price_rest_product_cache_hit( (int) $pid, (string) $billing_cycle, (string) $attribute );
+	$currency  = whmcs_price_currency_arg( $request->get_param( 'currency' ) );
+	$cache_hit = whmcs_price_rest_product_cache_hit( (int) $pid, (string) $billing_cycle, (string) $attribute, $currency );
 	$limited   = whmcs_price_rest_read_rate_limit( 'product', $cache_hit );
 	if ( is_wp_error( $limited ) ) {
 		return whmcs_price_rate_limit_rest_response( $limited );
 	}
 
-	$value = WHMCS_Price_API::get_product_data( $pid, $billing_cycle, $attribute );
+	$value = WHMCS_Price_API::get_product_data( $pid, $billing_cycle, $attribute, $currency );
 
 	if ( 'NA' === $value ) {
 		return new WP_Error(
@@ -456,13 +467,14 @@ function whmcs_price_rest_domain( WP_REST_Request $request ): WP_REST_Response|W
 	$reg_period = $request->get_param( 'reg_period' );
 
 	$tld_clean = preg_replace( '/[^a-zA-Z0-9\-]/', '', ltrim( (string) $tld, '.' ) );
-	$cache_hit = whmcs_price_rest_domain_cache_hit( $tld_clean, (string) $type, (int) $reg_period );
+	$currency  = whmcs_price_currency_arg( $request->get_param( 'currency' ) );
+	$cache_hit = whmcs_price_rest_domain_cache_hit( $tld_clean, (string) $type, (int) $reg_period, $currency );
 	$limited   = whmcs_price_rest_read_rate_limit( 'domain', $cache_hit );
 	if ( is_wp_error( $limited ) ) {
 		return whmcs_price_rate_limit_rest_response( $limited );
 	}
 
-	$value = WHMCS_Price_API::get_domain_price( $tld, $type, $reg_period );
+	$value = WHMCS_Price_API::get_domain_price( $tld, $type, $reg_period, $currency );
 
 	if ( 'NA' === $value ) {
 		return new WP_Error(

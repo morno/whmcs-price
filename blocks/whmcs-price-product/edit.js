@@ -71,7 +71,7 @@ function InserterPreview() {
 		<div className="whmcs-product-display whmcs-product-display--cards">
 			<div className="whmcs-product-cards">
 				{ plans.map( ( plan ) => (
-					<div className="whmcs-product-card" key={ plan.name }>
+					<article className="whmcs-product-card" key={ plan.name }>
 						<div className="whmcs-product-card__name">
 							<h3 className="whmcs-product-card__title">{ plan.name }</h3>
 						</div>
@@ -81,7 +81,7 @@ function InserterPreview() {
 						<div className="whmcs-product-card__description">
 							<p className="whmcs-product-card__description">{ plan.description }</p>
 						</div>
-					</div>
+					</article>
 				) ) }
 			</div>
 		</div>
@@ -89,7 +89,7 @@ function InserterPreview() {
 }
 
 export default function Edit( { attributes, setAttributes } ) {
-	const { pid, billingCycle, show, displayStyle, perPeriod, preview } = attributes;
+	const { pid, billingCycle, show, displayStyle, perPeriod, preview, currency } = attributes;
 	const blockProps = useBlockProps();
 
 	if ( preview ) {
@@ -151,6 +151,16 @@ export default function Edit( { attributes, setAttributes } ) {
 						value={ perPeriod }
 						options={ PER_PERIOD_OPTIONS }
 						onChange={ ( val ) => setAttributes( { perPeriod: val } ) }
+					/>
+				</PanelBody>
+				<PanelBody title={ __( 'Currency', 'whmcs-price' ) } initialOpen={ false }>
+					<TextControl
+						label={ __( 'WHMCS currency ID', 'whmcs-price' ) }
+						help={ __( 'Optional. Leave empty to use the currency set for the page language, or the WHMCS default currency.', 'whmcs-price' ) }
+						type="number"
+						min={ 0 }
+						value={ currency || '' }
+						onChange={ ( val ) => setAttributes( { currency: val.replace( /[^0-9]/g, '' ) } ) }
 					/>
 				</PanelBody>
 			</InspectorControls>

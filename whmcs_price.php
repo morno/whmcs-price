@@ -96,6 +96,13 @@ register_activation_hook( __FILE__, 'whmcs_price_warm_sync_schedule' );
 require_once WHMCS_PRICE_DIR . 'includes/class-whmcs-price-helpers.php';
 
 /**
+ * WPML / Polylang: currency per language and translatable admin texts.
+ * No effect when neither plugin is active.
+ * @since 2.10.0
+ */
+require_once WHMCS_PRICE_DIR . 'includes/multilingual.php';
+
+/**
  * Load rate-limit helpers (REST + purge protection).
  *
  * @since 2.9.0
@@ -107,6 +114,12 @@ require_once WHMCS_PRICE_DIR . 'includes/rate-limit.php';
  * Handles block registration, Pattern Overrides (Block Bindings), and related hooks.
  */
 require_once WHMCS_PRICE_DIR . 'includes/gutenberg/blocks.php';
+
+/**
+ * Block patterns: ready-made pricing layouts in the "WHMCS Pricing" category.
+ * @since 2.10.0
+ */
+require_once WHMCS_PRICE_DIR . 'includes/patterns.php';
 
 /**
  * Load the REST API endpoints.

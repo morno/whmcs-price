@@ -393,22 +393,24 @@ class WHMCS_Price_API {
 		self::$request_cache = array();
 		try {
 			switch ( (string) $kind ) {
+				// The trailing currency argument was added in 2.10.0 (#20); events
+				// scheduled without it refresh the default currency.
 				case 'product':
-					if ( 3 === count( $args ) ) {
-						self::get_product_data( is_scalar( $args[0] ) ? $args[0] : 0, (string) $args[1], (string) $args[2] );
+					if ( in_array( count( $args ), array( 3, 4 ), true ) ) {
+						self::get_product_data( is_scalar( $args[0] ) ? $args[0] : 0, (string) $args[1], (string) $args[2], (int) ( $args[3] ?? 0 ) );
 					}
 					break;
 				case 'domain':
-					if ( 3 === count( $args ) ) {
-						self::get_domain_price( (string) $args[0], (string) $args[1], is_scalar( $args[2] ) ? $args[2] : 0 );
+					if ( in_array( count( $args ), array( 3, 4 ), true ) ) {
+						self::get_domain_price( (string) $args[0], (string) $args[1], is_scalar( $args[2] ) ? $args[2] : 0, (int) ( $args[3] ?? 0 ) );
 					}
 					break;
 				case 'domain_all':
-					self::get_all_domain_prices();
+					self::get_all_domain_prices( (int) ( $args[0] ?? 0 ) );
 					break;
 				case 'pricefeed':
-					if ( 1 === count( $args ) ) {
-						self::get_all_product_cycles( (int) $args[0] );
+					if ( in_array( count( $args ), array( 1, 2 ), true ) ) {
+						self::get_all_product_cycles( (int) $args[0], (int) ( $args[1] ?? 0 ) );
 					}
 					break;
 			}
@@ -463,6 +465,42 @@ class WHMCS_Price_API {
 			'served' => (int) ( is_array( $stats ) ? ( $stats['served'] ?? 0 ) : 0 ),
 			'last'   => (int) ( is_array( $stats ) ? ( $stats['last'] ?? 0 ) : 0 ),
 		);
+	}
+
+	/**
+	 * Normalise a currency argument to a WHMCS currency ID.
+	 *
+	 * null  = automatic: the currency mapped to the visitor's language
+	 *         (WPML/Polylang, see includes/multilingual.php), else 0.
+	 * 0     = WHMCS default currency (no currency parameter is sent).
+	 * N > 0 = that WHMCS currency ID.
+	 *
+	 * Background refreshes always pass an explicit ID, because cron has no
+	 * visitor language.
+	 *
+	 * @since  2.10.0
+	 * @access private
+	 * @param  mixed $currency Currency argument from a public getter.
+	 * @return int
+	 */
+	private static function currency( $currency ): int {
+		if ( null === $currency || '' === $currency ) {
+			$currency = function_exists( 'whmcs_price_resolve_currency' ) ? whmcs_price_resolve_currency() : 0;
+		}
+		return max( 0, (int) $currency );
+	}
+
+	/**
+	 * Cache-key suffix for a currency. Empty for the default currency, so
+	 * keys written before 2.10.0 stay valid.
+	 *
+	 * @since  2.10.0
+	 * @access private
+	 * @param  int $currency WHMCS currency ID.
+	 * @return string
+	 */
+	private static function currency_suffix( int $currency ): string {
+		return $currency > 0 ? '_c' . $currency : '';
 	}
 
 	/**
@@ -743,10 +781,14 @@ class WHMCS_Price_API {
 			return 0;
 		}
 
-		$keys = array( 'whmcs_pricefeed_' . md5( (string) $pid ) => array( 'pricefeed', array( $pid ) ) );
-		foreach ( array( 'monthly', 'quarterly', 'semiannually', 'annually', 'biennially', 'triennially' ) as $cycle ) {
-			foreach ( array( 'name', 'description', 'price' ) as $attr ) {
-				$keys[ 'whmcs_product_' . md5( $pid . '_' . $cycle . '_' . $attr ) ] = array( 'product', array( $pid, $cycle, $attr ) );
+		$keys = array();
+		foreach ( self::known_currencies() as $currency ) {
+			$suffix = self::currency_suffix( $currency );
+			$keys[ 'whmcs_pricefeed_' . md5( (string) $pid ) . $suffix ] = array( 'pricefeed', array( $pid, $currency ) );
+			foreach ( array( 'monthly', 'quarterly', 'semiannually', 'annually', 'biennially', 'triennially' ) as $cycle ) {
+				foreach ( array( 'name', 'description', 'price' ) as $attr ) {
+					$keys[ 'whmcs_product_' . md5( $pid . '_' . $cycle . '_' . $attr ) . $suffix ] = array( 'product', array( $pid, $cycle, $attr, $currency ) );
+				}
 			}
 		}
 
@@ -777,24 +819,41 @@ class WHMCS_Price_API {
 			return 0;
 		}
 
-		$keys     = array( 'whmcs_domain_all' => array( 'domain_all', array() ) );
+		$keys     = array();
 		$variants = array_unique( array( $tld, strtolower( $tld ), strtoupper( $tld ) ) );
-		foreach ( $variants as $variant ) {
-			foreach ( array( 'register', 'renew', 'transfer' ) as $type ) {
-				for ( $period = 1; $period <= 10; $period++ ) {
-					$keys[ 'whmcs_domain_' . md5( $variant . '_' . $type . '_' . $period ) ] = array( 'domain', array( $variant, $type, $period ) );
+		foreach ( self::known_currencies() as $currency ) {
+			$suffix = self::currency_suffix( $currency );
+			$keys[ 'whmcs_domain_all' . $suffix ] = array( 'domain_all', array( $currency ) );
+			foreach ( $variants as $variant ) {
+				foreach ( array( 'register', 'renew', 'transfer' ) as $type ) {
+					for ( $period = 1; $period <= 10; $period++ ) {
+						$keys[ 'whmcs_domain_' . md5( $variant . '_' . $type . '_' . $period ) . $suffix ] = array( 'domain', array( $variant, $type, $period, $currency ) );
+					}
 				}
 			}
 		}
 
 		foreach ( self::get_registry() as $cache_key => $entry ) {
-			if ( 'domain' === $entry['k'] && isset( $entry['a'][0] )
-				&& strtolower( (string) $entry['a'][0] ) === strtolower( $tld ) ) {
-				$keys[ $cache_key ] = array( 'domain', $entry['a'] );
+			if ( 'domain_all' === $entry['k']
+				|| ( 'domain' === $entry['k'] && isset( $entry['a'][0] ) && strtolower( (string) $entry['a'][0] ) === strtolower( $tld ) ) ) {
+				$keys[ $cache_key ] = array( $entry['k'], $entry['a'] );
 			}
 		}
 
 		return self::invalidate_keys( $keys );
+	}
+
+	/**
+	 * Currency IDs that may have cached entries: the default (0) plus every
+	 * currency mapped to a language.
+	 *
+	 * @since  2.10.0
+	 * @access private
+	 * @return int[]
+	 */
+	private static function known_currencies(): array {
+		$ids = function_exists( 'whmcs_price_mapped_currencies' ) ? whmcs_price_mapped_currencies() : array();
+		return array_values( array_unique( array_merge( array( 0 ), array_map( 'intval', $ids ) ) ) );
 	}
 
 	/**
@@ -1261,7 +1320,8 @@ class WHMCS_Price_API {
 	 * @param  string $attribute     The field to retrieve (e.g., name, description, price).
 	 * @return string Returns the data from WHMCS or 'NA' on failure.
 	 */
-	public static function get_product_data($pid, $billing_cycle, $attribute) {
+	public static function get_product_data( $pid, $billing_cycle, $attribute, $currency = null ) {
+		$currency  = self::currency( $currency );
 		$whmcs_url = self::get_url();
 
 		if ( empty( $whmcs_url ) ) {
@@ -1291,7 +1351,7 @@ class WHMCS_Price_API {
 			return 'NA';
 		}
 
-		$cache_key = 'whmcs_product_' . md5( $pid . '_' . $billing_cycle . '_' . $attribute );
+		$cache_key = 'whmcs_product_' . md5( $pid . '_' . $billing_cycle . '_' . $attribute ) . self::currency_suffix( $currency );
 
 		// Check the in-memory request cache first — avoids a DB round-trip when the
 		// same data is needed more than once within a single PHP request (e.g. both
@@ -1315,7 +1375,7 @@ class WHMCS_Price_API {
 		// Expired but within the stale window: serve it now, refresh in the background.
 		// Raw $pid on purpose: the cache key is built from it, so the refresh must
 		// use the same value to overwrite this exact entry.
-		$stale = self::serve_stale( $cache_key, 'product', array( $pid, $billing_cycle, $attribute ) );
+		$stale = self::serve_stale( $cache_key, 'product', array( $pid, $billing_cycle, $attribute, $currency ) );
 		if ( false !== $stale ) {
 			self::$request_cache[ $cache_key ] = $stale;
 			return self::filter_product_data( $stale, $pid, $billing_cycle, $attribute );
@@ -1332,10 +1392,13 @@ class WHMCS_Price_API {
 
 		// Use add_query_arg() to properly URL-encode all parameters and prevent query injection.
 		$url = add_query_arg(
-			array(
-				'pid'          => intval( $pid ),
-				'get'          => $attribute,
-				'billingcycle' => $billing_cycle,
+			array_filter(
+				array(
+					'pid'          => intval( $pid ),
+					'get'          => $attribute,
+					'billingcycle' => $billing_cycle,
+					'currency'     => $currency,
+				)
 			),
 			$whmcs_url . '/feeds/productsinfo.php'
 		);
@@ -1378,7 +1441,7 @@ class WHMCS_Price_API {
 			'length'    => strlen( $data ),
 		) );
 
-		self::set_cache( $cache_key, $data, self::get_cache_expiry(), 'product', array( $pid, $billing_cycle, $attribute ) );
+		self::set_cache( $cache_key, $data, self::get_cache_expiry(), 'product', array( $pid, $billing_cycle, $attribute, $currency ) );
 		self::release_lock( $lock_key ); // Release lock after successful cache write.
 		whmcs_price_clear_outage();
 
@@ -1432,7 +1495,8 @@ class WHMCS_Price_API {
 	 * @param  string $reg_period Registration period in years (e.g., 1, 2, 3).
 	 * @return string Returns the formatted price string or 'NA' on failure.
 	 */
-	public static function get_domain_price($tld, $type, $reg_period) {
+	public static function get_domain_price( $tld, $type, $reg_period, $currency = null ) {
+		$currency  = self::currency( $currency );
 		$whmcs_url = self::get_url();
 
 		if ( empty( $whmcs_url ) ) {
@@ -1471,7 +1535,7 @@ class WHMCS_Price_API {
 			return 'NA';
 		}
 
-		$cache_key = 'whmcs_domain_' . md5( $tld . '_' . $type . '_' . $reg_period );
+		$cache_key = 'whmcs_domain_' . md5( $tld . '_' . $type . '_' . $reg_period ) . self::currency_suffix( $currency );
 
 		if ( isset( self::$request_cache[ $cache_key ] ) ) {
 			self::debug_log( 'Domain price served from request cache', array( 'cache_key' => $cache_key ) );
@@ -1491,7 +1555,7 @@ class WHMCS_Price_API {
 
 		// Expired but within the stale window: serve it now, refresh in the background.
 		// Raw $reg_period on purpose: it is part of the cache key.
-		$stale = self::serve_stale( $cache_key, 'domain', array( $tld, $type, $reg_period ) );
+		$stale = self::serve_stale( $cache_key, 'domain', array( $tld, $type, $reg_period, $currency ) );
 		if ( false !== $stale ) {
 			self::$request_cache[ $cache_key ] = $stale;
 			return self::filter_domain_price( $stale, $tld, $type, $reg_period_int );
@@ -1508,11 +1572,14 @@ class WHMCS_Price_API {
 
 		// Use add_query_arg() to properly URL-encode all parameters and prevent query injection.
 		$url = add_query_arg(
-			array(
-				'tld'       => '.' . $tld,
-				'type'      => $type,
-				'regperiod' => $reg_period_int,
-				'format'    => '1',
+			array_filter(
+				array(
+					'tld'       => '.' . $tld,
+					'type'      => $type,
+					'regperiod' => $reg_period_int,
+					'format'    => '1',
+					'currency'  => $currency,
+				)
 			),
 			$whmcs_url . '/feeds/domainprice.php'
 		);
@@ -1555,7 +1622,7 @@ class WHMCS_Price_API {
 			'length'    => strlen( $data ),
 		) );
 
-		self::set_cache( $cache_key, $data, self::get_cache_expiry(), 'domain', array( $tld, $type, $reg_period ) );
+		self::set_cache( $cache_key, $data, self::get_cache_expiry(), 'domain', array( $tld, $type, $reg_period, $currency ) );
 		self::release_lock( $lock_key ); // Release lock after successful cache write.
 		whmcs_price_clear_outage();
 
@@ -1605,7 +1672,8 @@ class WHMCS_Price_API {
 	 * @access public
 	 * @return string Returns the raw domain pricing data or 'NA' on failure.
 	 */
-	public static function get_all_domain_prices() {
+	public static function get_all_domain_prices( $currency = null ) {
+		$currency  = self::currency( $currency );
 		$whmcs_url = self::get_url();
 
 		if ( empty( $whmcs_url ) ) {
@@ -1613,7 +1681,7 @@ class WHMCS_Price_API {
 			return 'NA';
 		}
 
-		$cache_key = 'whmcs_domain_all';
+		$cache_key = 'whmcs_domain_all' . self::currency_suffix( $currency );
 
 		if ( isset( self::$request_cache[ $cache_key ] ) ) {
 			self::debug_log( 'All domain prices served from request cache', array( 'cache_key' => $cache_key ) );
@@ -1632,7 +1700,7 @@ class WHMCS_Price_API {
 		}
 
 		// Expired but within the stale window: serve it now, refresh in the background.
-		$stale = self::serve_stale( $cache_key, 'domain_all', array() );
+		$stale = self::serve_stale( $cache_key, 'domain_all', array( $currency ) );
 		if ( false !== $stale ) {
 			self::$request_cache[ $cache_key ] = $stale;
 			return $stale;
@@ -1648,6 +1716,9 @@ class WHMCS_Price_API {
 		}
 
 		$url = "{$whmcs_url}/feeds/domainpricing.php";
+		if ( $currency > 0 ) {
+			$url = add_query_arg( array( 'currency' => $currency ), $url );
+		}
 
 		self::debug_log( 'Fetching all domain prices from WHMCS', array(
 			'url' => $url,
@@ -1685,7 +1756,7 @@ class WHMCS_Price_API {
 			'length'          => strlen( $data ),
 		) );
 
-		self::set_cache( $cache_key, $data, self::get_cache_expiry(), 'domain_all', array() );
+		self::set_cache( $cache_key, $data, self::get_cache_expiry(), 'domain_all', array( $currency ) );
 		self::$request_cache[ $cache_key ] = $data;
 		self::release_lock( $lock_key ); // Release lock after successful cache write.
 		whmcs_price_clear_outage();
@@ -1783,7 +1854,8 @@ class WHMCS_Price_API {
 	 * @param  string $billing_cycle The billing cycle (e.g., annually).
 	 * @return string                Formatted setup fee string, or '' if none / zero.
 	 */
-	public static function get_product_setup_fee( int $pid, string $billing_cycle ): string {
+	public static function get_product_setup_fee( int $pid, string $billing_cycle, $currency = null ): string {
+		$currency = self::currency( $currency );
 		$allowed_billing_cycles = array( 'monthly', 'quarterly', 'semiannually', 'annually', 'biennially', 'triennially' );
 		if ( ! in_array( $billing_cycle, $allowed_billing_cycles, true ) ) {
 			return '';
@@ -1795,10 +1867,10 @@ class WHMCS_Price_API {
 		}
 
 		// Cache the full pricing feed per PID — one HTTP request serves all billing cycles.
-		$cache_key = 'whmcs_pricefeed_' . md5( (string) $pid );
+		$cache_key = 'whmcs_pricefeed_' . md5( (string) $pid ) . self::currency_suffix( $currency );
 
 		// Unique key for the final setup-fee result (pid + billing cycle combination).
-		$result_key = 'whmcs_setupfee_' . md5( $pid . '_' . $billing_cycle );
+		$result_key = 'whmcs_setupfee_' . md5( $pid . '_' . $billing_cycle ) . self::currency_suffix( $currency );
 		if ( isset( self::$request_cache[ $result_key ] ) ) {
 			self::debug_log( 'Setup fee served from request cache', array( 'result_key' => $result_key ) );
 			return self::$request_cache[ $result_key ];
@@ -1808,7 +1880,7 @@ class WHMCS_Price_API {
 
 		if ( false === $cached ) {
 			// Expired but within the stale window: use it, refresh in the background.
-			$cached = self::serve_stale( $cache_key, 'pricefeed', array( $pid ) );
+			$cached = self::serve_stale( $cache_key, 'pricefeed', array( $pid, $currency ) );
 		}
 
 		if ( false === $cached ) {
@@ -1824,7 +1896,7 @@ class WHMCS_Price_API {
 			}
 
 			$url = add_query_arg(
-				array( 'pid' => $pid ),
+				array_filter( array( 'pid' => $pid, 'currency' => $currency ) ),
 				$whmcs_url . '/feeds/productpricing.php'
 			);
 
@@ -1862,7 +1934,7 @@ class WHMCS_Price_API {
 				'length'    => strlen( $cached ),
 			) );
 
-			self::set_cache( $cache_key, $cached, self::get_cache_expiry(), 'pricefeed', array( $pid ) );
+			self::set_cache( $cache_key, $cached, self::get_cache_expiry(), 'pricefeed', array( $pid, $currency ) );
 			self::release_lock( $lock_key );
 			whmcs_price_clear_outage();
 		} else {
@@ -1996,7 +2068,8 @@ class WHMCS_Price_API {
 	 * @param  int $pid Product ID.
 	 * @return array<string,string> Keyed by cycle name, value is price string. Empty on failure.
 	 */
-	public static function get_all_product_cycles( int $pid ): array {
+	public static function get_all_product_cycles( int $pid, $currency = null ): array {
+		$currency = self::currency( $currency );
 		if ( $pid <= 0 ) {
 			return array();
 		}
@@ -2007,8 +2080,8 @@ class WHMCS_Price_API {
 		}
 
 		// Reuse the productpricing.php cache — already populated by get_product_setup_fee().
-		$cache_key  = 'whmcs_pricefeed_' . md5( (string) $pid );
-		$result_key = 'whmcs_allcycles_' . md5( (string) $pid );
+		$cache_key  = 'whmcs_pricefeed_' . md5( (string) $pid ) . self::currency_suffix( $currency );
+		$result_key = 'whmcs_allcycles_' . md5( (string) $pid ) . self::currency_suffix( $currency );
 
 		if ( isset( self::$request_cache[ $result_key ] ) ) {
 			return self::$request_cache[ $result_key ];
@@ -2018,7 +2091,7 @@ class WHMCS_Price_API {
 
 		if ( false === $cached ) {
 			// Expired but within the stale window: use it, refresh in the background.
-			$cached = self::serve_stale( $cache_key, 'pricefeed', array( $pid ) );
+			$cached = self::serve_stale( $cache_key, 'pricefeed', array( $pid, $currency ) );
 		}
 
 		if ( false === $cached ) {
@@ -2027,7 +2100,7 @@ class WHMCS_Price_API {
 				$waited = self::wait_for_cache( $cache_key, $lock_key );
 				$cached = ( false !== $waited ) ? $waited : 'NA';
 			} else {
-				$url      = add_query_arg( array( 'pid' => $pid ), $whmcs_url . '/feeds/productpricing.php' );
+				$url      = add_query_arg( array_filter( array( 'pid' => $pid, 'currency' => $currency ) ), $whmcs_url . '/feeds/productpricing.php' );
 				$response = wp_remote_get( $url, self::get_request_args() );
 
 				if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
@@ -2036,7 +2109,7 @@ class WHMCS_Price_API {
 				}
 
 				$cached = self::unwrap_response_body( wp_remote_retrieve_body( $response ) );
-				self::set_cache( $cache_key, $cached, self::get_cache_expiry(), 'pricefeed', array( $pid ) );
+				self::set_cache( $cache_key, $cached, self::get_cache_expiry(), 'pricefeed', array( $pid, $currency ) );
 				self::release_lock( $lock_key );
 			}
 		}

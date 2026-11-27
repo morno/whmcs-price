@@ -93,7 +93,7 @@ final class WebhookInvalidateTest extends TestCase {
 		WHMCS_Price_API::invalidate_product( 5 );
 
 		$this->assertCount( 1, $this->scheduled );
-		$this->assertSame( array( 'product', array( 5, 'monthly', 'price' ) ), $this->scheduled[0][2] );
+		$this->assertSame( array( 'product', array( 5, 'monthly', 'price', 0 ) ), $this->scheduled[0][2] );
 	}
 
 	public function test_invalidate_product_clears_request_cache(): void {

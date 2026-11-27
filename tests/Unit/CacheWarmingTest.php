@@ -77,7 +77,7 @@ final class CacheWarmingTest extends TestCase {
 		$entry = $this->options[ WHMCS_Price_API::REGISTRY_OPTION ][ $this->product_key( 3 ) ];
 
 		$this->assertSame( 'product', $entry['k'] );
-		$this->assertSame( array( 3, 'monthly', 'price' ), $entry['a'] );
+		$this->assertSame( array( 3, 'monthly', 'price', 0 ), $entry['a'] );
 		$this->assertGreaterThan( 0, $entry['u'] );
 	}
 
