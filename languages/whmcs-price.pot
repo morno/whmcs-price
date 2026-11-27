@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-26T21:12:28+00:00\n"
+"POT-Creation-Date: 2026-11-26T21:24:28+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: whmcs-price\n"
@@ -214,10 +214,10 @@ msgid "Every 15 minutes (WHMCS Price)"
 msgstr ""
 
 #. translators: %d: HTTP response code
-#: includes/class-whmcs-api.php:1188
-#: includes/class-whmcs-api.php:1365
-#: includes/class-whmcs-api.php:1494
-#: includes/class-whmcs-api.php:1672
+#: includes/class-whmcs-api.php:1370
+#: includes/class-whmcs-api.php:1547
+#: includes/class-whmcs-api.php:1676
+#: includes/class-whmcs-api.php:1854
 #, php-format
 msgid "HTTP %d"
 msgstr ""
@@ -247,7 +247,7 @@ msgid "Error detail: %s"
 msgstr ""
 
 #: includes/class-whmcs-price-helpers.php:215
-#: whmcs_price.php:239
+#: whmcs_price.php:246
 msgid "(not configured)"
 msgstr ""
 
@@ -393,7 +393,7 @@ msgstr ""
 
 #: includes/dashboard-widget.php:170
 #: includes/settings.php:153
-#: whmcs_price.php:230
+#: whmcs_price.php:237
 msgid "WHMCS URL"
 msgstr ""
 
@@ -415,8 +415,8 @@ msgstr ""
 #: includes/site-health.php:161
 #: includes/site-health.php:178
 #: includes/site-health.php:195
-#: whmcs_price.php:196
-#: whmcs_price.php:197
+#: whmcs_price.php:203
+#: whmcs_price.php:204
 msgid "WHMCS Price"
 msgstr ""
 
@@ -753,31 +753,43 @@ msgstr ""
 msgid "Too many requests. Please try again later."
 msgstr ""
 
-#: includes/rest-api.php:148
+#: includes/rest-api.php:174
 msgid "Cache purge endpoint is disabled. Set a Purge Token under Settings → Advanced."
 msgstr ""
 
-#: includes/rest-api.php:167
+#: includes/rest-api.php:193
 msgid "Invalid or missing X-WHMCS-Price-Token header."
 msgstr ""
 
 #. translators: %d: seconds until next purge allowed
-#: includes/rest-api.php:222
+#: includes/rest-api.php:235
 #, php-format
 msgid "Purge throttled — try again in %d seconds."
 msgstr ""
 
-#: includes/rest-api.php:243
+#: includes/rest-api.php:284
+#: includes/rest-api.php:362
+#: includes/rest-api.php:406
 msgid "Cache invalidated."
 msgstr ""
 
-#: includes/rest-api.php:272
-#: includes/rest-api.php:307
+#: includes/rest-api.php:316
+msgid "At most 50 targets per request."
+msgstr ""
+
+#. translators: %s: the rejected scope value
+#: includes/rest-api.php:343
+#, php-format
+msgid "Invalid scope \"%s\". Use \"product:<pid>\", \"domain:<tld>\" or \"all\"."
+msgstr ""
+
+#: includes/rest-api.php:435
+#: includes/rest-api.php:470
 msgid "Pricing data is currently unavailable."
 msgstr ""
 
 #: includes/settings.php:38
-#: whmcs_price.php:246
+#: whmcs_price.php:253
 msgid "Settings"
 msgstr ""
 
@@ -1412,23 +1424,23 @@ msgstr ""
 msgid "WordPress can connect to WHMCS and the pricing feed is returning data."
 msgstr ""
 
-#: whmcs_price.php:218
+#: whmcs_price.php:225
 msgid "You do not have permission to access this page."
 msgstr ""
 
-#: whmcs_price.php:224
+#: whmcs_price.php:231
 msgid "WHMCS Price — Network Overview"
 msgstr ""
 
-#: whmcs_price.php:225
+#: whmcs_price.php:232
 msgid "Settings are configured per site. Click a site below to manage its WHMCS Price settings."
 msgstr ""
 
-#: whmcs_price.php:229
+#: whmcs_price.php:236
 msgid "Site"
 msgstr ""
 
-#: whmcs_price.php:231
+#: whmcs_price.php:238
 msgid "Actions"
 msgstr ""
 
