@@ -158,6 +158,7 @@ abstract class TestCase extends PHPUnitTestCase {
 				'wp_unslash'        => null,
 				'sanitize_text_field' => static fn( $s ) => trim( strip_tags( (string) $s ) ),
 				'wp_kses_no_null'   => null,
+				'wp_kses_data'      => null,
 				'sanitize_key'      => static fn( $k ) => preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $k ) ),
 				'absint'            => static fn( $v ) => abs( (int) $v ),
 				'wp_parse_url'      => static fn( $url, $component = -1 ) => parse_url( $url, $component ),

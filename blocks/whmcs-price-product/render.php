@@ -87,7 +87,7 @@ $whmcs_header_labels = array(
 $whmcs_wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_attr( $whmcs_display_style );
 
 ?>
-<div <?php echo get_block_wrapper_attributes( array( 'class' => $whmcs_wrapper_class ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped; ?>>
+<div <?php echo wp_kses_data( get_block_wrapper_attributes( array( 'class' => $whmcs_wrapper_class ) ) ); ?>>
 
 	<?php if ( 'table' === $whmcs_display_style ) : ?>
 		<?php // Table style - classic presentation. ?>

@@ -68,7 +68,7 @@ $whmcs_format_domain_price = function( string $price ) use ( $whmcs_per_period, 
 $whmcs_wrapper_class = 'whmcs-domain-display whmcs-domain-display--' . esc_attr( $whmcs_display_style );
 
 ?>
-<div <?php echo get_block_wrapper_attributes( array( 'class' => $whmcs_wrapper_class ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped; ?>>
+<div <?php echo wp_kses_data( get_block_wrapper_attributes( array( 'class' => $whmcs_wrapper_class ) ) ); ?>>
 
 	<?php if ( empty( $whmcs_tld ) ) : ?>
 		<?php
