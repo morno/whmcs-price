@@ -153,6 +153,7 @@ class WHMCS_Price_CLI extends WP_CLI_Command {
 			$lock_like    = $wpdb->esc_like( 'lock_whmcs_' ) . '%';
 			$timeout_like = $wpdb->esc_like( '_transient_timeout_v' . $version . '_whmcs_' ) . '%';
 
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- No WP API counts transients by prefix; read-only, prepared, admin-only.
 			$cache_count = (int) $wpdb->get_var(
 				$wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s", $cache_like )
 			);
@@ -162,6 +163,7 @@ class WHMCS_Price_CLI extends WP_CLI_Command {
 			$min_timeout = $wpdb->get_var(
 				$wpdb->prepare( "SELECT MIN(option_value) FROM {$wpdb->options} WHERE option_name LIKE %s", $timeout_like )
 			);
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 			$expiry = 'No cache';
 			if ( $min_timeout ) {
@@ -237,6 +239,7 @@ class WHMCS_Price_CLI extends WP_CLI_Command {
 		// sites they're in cache and don't touch the DB.
 		if ( ! wp_using_ext_object_cache() ) {
 			$lock_like = $wpdb->esc_like( 'lock_whmcs_' ) . '%';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Lock options have no shared prefix API; CLI-only.
 			$lock_keys = $wpdb->get_col(
 				$wpdb->prepare(
 					"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",

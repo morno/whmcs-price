@@ -58,6 +58,7 @@ function whmcs_price_dashboard_widget_render(): void {
 		$lock_like    = $wpdb->esc_like( 'lock_whmcs_' ) . '%';
 		$timeout_like = $wpdb->esc_like( '_transient_timeout_v' . $version . '_whmcs_' ) . '%';
 
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- No WP API counts transients by prefix; read-only, prepared, admin-only.
 		$cache_count = (int) $wpdb->get_var(
 			$wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s", $cache_like )
 		);
@@ -67,6 +68,7 @@ function whmcs_price_dashboard_widget_render(): void {
 		$min_timeout = $wpdb->get_var(
 			$wpdb->prepare( "SELECT MIN(option_value) FROM {$wpdb->options} WHERE option_name LIKE %s", $timeout_like )
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 
 	$options    = get_option( 'whmcs_price_option', array() );

@@ -34,7 +34,7 @@ function whmcs_price_uninstall_site() {
         'whmcs_price_active_tab',
     );
     foreach ( $user_meta_keys as $meta_key ) {
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- One-off cleanup on uninstall.
         $wpdb->delete( $wpdb->usermeta, array( 'meta_key' => $meta_key ) );
         // phpcs:enable
     }

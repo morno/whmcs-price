@@ -1,4 +1,5 @@
 <?php
+// phpcs:ignoreFile -- Runs inside WHMCS, not WordPress: wp_remote_post() and other WP APIs do not exist there, so cURL is used. Not part of the WordPress plugin package (docs/ is in .distignore).
 /**
  * Mornolink for WHMCS: instant price updates on your WordPress site(s).
  *

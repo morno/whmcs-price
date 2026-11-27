@@ -2136,7 +2136,7 @@ class WHMCS_Price_API {
 				}
 
 				// Strip setup fee suffix (e.g. "99 Kr + 10 Kr") — keep only the recurring price.
-				$price_text = trim( strip_tags( $m[3] ) );
+				$price_text = trim( wp_strip_all_tags( $m[3] ) );
 				if ( str_contains( $price_text, ' + ' ) ) {
 					$price_text = trim( strstr( $price_text, ' + ', true ) );
 				}
