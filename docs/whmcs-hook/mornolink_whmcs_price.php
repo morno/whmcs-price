@@ -21,8 +21,13 @@
  * @see https://github.com/morno/whmcs-price/blob/main/docs/whmcs-webhook.md
  */
 
+// Only runs inside WHMCS. Blocks direct web access, and does nothing if the
+// file is ever loaded by WordPress (e.g. by a code scanner) instead of WHMCS.
+if ( ! defined( 'WHMCS' ) && ! defined( 'ABSPATH' ) ) {
+	exit( 'This file cannot be accessed directly' );
+}
 if ( ! defined( 'WHMCS' ) ) {
-	die( 'This file cannot be accessed directly' );
+	return;
 }
 
 /**

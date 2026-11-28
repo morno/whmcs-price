@@ -2,6 +2,77 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.10.0] - 2026-11-28
+
+### Added
+
+- **Stale-while-revalidate caching**: When a cached price expires it is still served
+  for a stale window (default 2 × cache TTL) while WP-Cron fetches a fresh copy in
+  the background. Visitors no longer wait for WHMCS, no longer see "NA" while another
+  request holds the fetch lock, and keep seeing the last known price if WHMCS is down.
+  Filter `whmcs_price_max_stale_age`. (#15)
+
+- **Cache warming**: Optional WP-Cron job (Settings → Performance) that refreshes
+  prices visitors actually view before they expire, every 5 min, 15 min or hourly.
+  New `wp whmcs-price cache warm [--due-only]`; next run shown in the dashboard
+  widget. (#16)
+
+- **WHMCS webhook**: `POST /wp-json/whmcs-price/v1/webhook/invalidate` clears the
+  cache for one product (`product:5`) or TLD (`domain:se`) the moment it changes in
+  WHMCS, authenticated with the Cache Purge Token. Includes a ready-to-use WHMCS hook
+  file (`docs/whmcs-hook/mornolink_whmcs_price.php`, also attached to GitHub
+  releases). (#17)
+
+- **WPML and Polylang**: Optional WHMCS currency per language (Settings → Connection),
+  or a fixed currency per block / shortcode (`currency="2"`), REST request or
+  ability. The fallback price and promo notice text can be translated with WPML
+  String Translation or Polylang. (#20)
+
+- **Abilities API** (WordPress 6.9+): `whmcs-price/get-product-price` and
+  `whmcs-price/get-domain-price` let AI agents and other plugins read live prices. (#22)
+
+- **Block design supports**: Text and background colour, margin, padding and
+  wide/full alignment on both blocks, plus an inserter preview that doesn't call
+  WHMCS. (#23)
+
+- **Block patterns**: Six ready-made pricing layouts in a new "WHMCS Pricing" pattern
+  category. (#21)
+
+### Changed
+
+- **Accessibility (WCAG 2.1 AA)**: Table headers with `scope`, cards as labelled
+  `<article>` elements (heading level filterable via `whmcs_price_card_heading_level`),
+  named groups for the grid and domain badges, spoken text for "/mo" and "/yr", and
+  colours that meet AA contrast on light and dark themes. (#19)
+
+- **Plugin header**: "Tested up to" is now declared only in readme.txt, as required
+  by Plugin Check.
+
+- **Developer tooling**: PHPUnit test suite, and CI that lints and tests on PHP 8.1,
+  8.3 and 8.6. (#24, #25)
+
+### Fixed
+
+- **PHP 8.1**: Fatal error on PHP 8.1 caused by a `true` return type (only valid
+  from PHP 8.2), although the plugin requires PHP 8.1.
+
+- **Price filters on cached values**: `whmcs_price_product_data` and
+  `whmcs_price_domain_price` now also run when the price comes from cache, not only
+  right after a fetch.
+
+- **Domain block per-period display**: With "per period" enabled the domain block and
+  Elementor domain widget printed the HTML tags as text, and showed "NA" instead of
+  the unavailable message when WHMCS was down.
+
+- **Uninstall**: Cached prices, fetch locks and the cache version option were left in
+  the database since 2.9.0. They are now removed.
+
+- **Multisite**: Code that switches between sites within one request could show one
+  site's prices on another. (#18)
+
+- **Plugin Check**: Block wrapper attributes are escaped, and other coding-standard
+  findings are resolved.
+
 ## [2.9.2] - 2026-11-26
 
 ### Changed

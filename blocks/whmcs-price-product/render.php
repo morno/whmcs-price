@@ -135,11 +135,11 @@ $whmcs_wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_att
 		<?php
 		// Reorder: setupfee always renders before description for consistent card layout.
 		$whmcs_show_cards = $whmcs_show;
-		$sf_pos   = array_search( 'setupfee', $whmcs_show_cards, true );
-		$desc_pos = array_search( 'description', $whmcs_show_cards, true );
-		if ( false !== $sf_pos && false !== $desc_pos && $sf_pos > $desc_pos ) {
-			unset( $whmcs_show_cards[ $sf_pos ] );
-			array_splice( $whmcs_show_cards, $desc_pos, 0, array( 'setupfee' ) );
+		$whmcs_sf_pos   = array_search( 'setupfee', $whmcs_show_cards, true );
+		$whmcs_desc_pos = array_search( 'description', $whmcs_show_cards, true );
+		if ( false !== $whmcs_sf_pos && false !== $whmcs_desc_pos && $whmcs_sf_pos > $whmcs_desc_pos ) {
+			unset( $whmcs_show_cards[ $whmcs_sf_pos ] );
+			array_splice( $whmcs_show_cards, $whmcs_desc_pos, 0, array( 'setupfee' ) );
 		}
 		?>
 		<div class="whmcs-product-cards">

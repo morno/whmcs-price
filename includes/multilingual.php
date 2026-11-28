@@ -51,7 +51,7 @@ function whmcs_price_current_language(): string {
 	$lang = '';
 	switch ( whmcs_price_multilingual_plugin() ) {
 		case 'wpml':
-			$lang = (string) apply_filters( 'wpml_current_language', null );
+			$lang = (string) apply_filters( 'wpml_current_language', null ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML's public API hook.
 			break;
 		case 'polylang':
 			$lang = (string) pll_current_language( 'slug' );
@@ -77,7 +77,7 @@ function whmcs_price_multilingual_languages(): array {
 	$languages = array();
 	switch ( whmcs_price_multilingual_plugin() ) {
 		case 'wpml':
-			$active = apply_filters( 'wpml_active_languages', null, array( 'skip_missing' => 0 ) );
+			$active = apply_filters( 'wpml_active_languages', null, array( 'skip_missing' => 0 ) ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML's public API hook.
 			foreach ( is_array( $active ) ? $active : array() as $code => $info ) {
 				$languages[ (string) $code ] = (string) ( $info['translated_name'] ?? $info['native_name'] ?? $code );
 			}
@@ -195,7 +195,7 @@ function whmcs_price_register_translatable_strings(): void {
 			continue;
 		}
 		if ( 'wpml' === $plugin ) {
-			do_action( 'wpml_register_single_string', 'Mornolink for WHMCS', $label, $value );
+			do_action( 'wpml_register_single_string', 'Mornolink for WHMCS', $label, $value ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML's public API hook.
 		} elseif ( function_exists( 'pll_register_string' ) ) {
 			pll_register_string( $label, $value, 'Mornolink for WHMCS' );
 		}
@@ -219,7 +219,7 @@ function whmcs_price_translate_option( string $key, string $value ): string {
 	}
 	switch ( whmcs_price_multilingual_plugin() ) {
 		case 'wpml':
-			return (string) apply_filters( 'wpml_translate_single_string', $value, 'Mornolink for WHMCS', $labels[ $key ] );
+			return (string) apply_filters( 'wpml_translate_single_string', $value, 'Mornolink for WHMCS', $labels[ $key ] ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML's public API hook.
 		case 'polylang':
 			return function_exists( 'pll__' ) ? (string) pll__( $value ) : $value;
 	}

@@ -39,31 +39,31 @@ function whmcs_price_flush_page_cache(): void {
 	// --- Action-hook based (safe to fire even if plugin is not active) ---
 
 	// LiteSpeed Cache.
-	do_action( 'litespeed_purge_all' );
+	do_action( 'litespeed_purge_all' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Fires the page cache plugin's own purge hook.
 
 	// Hummingbird.
-	do_action( 'wphb_clear_page_cache' );
+	do_action( 'wphb_clear_page_cache' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Fires the page cache plugin's own purge hook.
 
 	// Breeze (Cloudways).
-	do_action( 'breeze_clear_all_cache' );
+	do_action( 'breeze_clear_all_cache' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Fires the page cache plugin's own purge hook.
 
 	// NitroPack.
-	do_action( 'nitropack_integration_purge_all' );
+	do_action( 'nitropack_integration_purge_all' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Fires the page cache plugin's own purge hook.
 
 	// Swift Performance.
-	do_action( 'swift_performance_after_clear_all_cache' );
+	do_action( 'swift_performance_after_clear_all_cache' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Fires the page cache plugin's own purge hook.
 
 	// Cache Enabler (KeyCDN).
-	do_action( 'cache_enabler_clear_complete_cache' );
+	do_action( 'cache_enabler_clear_complete_cache' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Fires the page cache plugin's own purge hook.
 
 	// Cachify.
-	do_action( 'cachify_flush_cache' );
+	do_action( 'cachify_flush_cache' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Fires the page cache plugin's own purge hook.
 
 	// Pantheon (managed hosting).
-	do_action( 'pantheon_cache_flush' );
+	do_action( 'pantheon_cache_flush' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Fires the page cache plugin's own purge hook.
 
 	// FlyingPress.
-	do_action( 'flying_press_purge_all' );
+	do_action( 'flying_press_purge_all' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Fires the page cache plugin's own purge hook.
 
 	// --- Function/class based (guarded before calling) ---
 
