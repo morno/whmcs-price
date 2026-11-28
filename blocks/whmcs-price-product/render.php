@@ -86,6 +86,40 @@ $whmcs_header_labels = array(
 
 $whmcs_wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_attr( $whmcs_display_style );
 
+// Billing cycle toggle (2.10.1): Cards and Pricing Grid only, needs 2+ cycles.
+$whmcs_toggle_cycles = array();
+if ( ! empty( $attributes['cycleToggle'] ) && 'table' !== $whmcs_display_style && whmcs_price_toggle_supported() ) {
+	$whmcs_toggle_cycles = whmcs_price_toggle_cycles( $attributes['toggleCycles'] ?? array() );
+	if ( count( $whmcs_toggle_cycles ) < 2 ) {
+		$whmcs_toggle_cycles = array();
+	}
+}
+
+/**
+ * Safe HTML for the cycle-dependent fields (price, setupfee) of one product.
+ * With the toggle on, one span per offered cycle; otherwise the configured cycle.
+ */
+$whmcs_cycle_field = function ( int $pid, string $field ) use ( $whmcs_toggle_cycles, $whmcs_bc_mapped, $whmcs_per_period, $whmcs_currency ): string {
+	$render = function ( string $bc ) use ( $pid, $field, $whmcs_per_period, $whmcs_currency ): string {
+		if ( 'setupfee' === $field ) {
+			return esc_html( WHMCS_Price_API::get_product_setup_fee( $pid, $bc, $whmcs_currency ) );
+		}
+		$value = WHMCS_Price_API::get_product_data( $pid, $bc, 'price', $whmcs_currency );
+		if ( 'NA' === $value ) {
+			return whmcs_price_unavailable_html();
+		}
+		$value = whmcs_price_strip_setup_fee( $value );
+		if ( ! empty( $whmcs_per_period ) ) {
+			$value = whmcs_price_format_per( $value, $bc, 1, $whmcs_per_period );
+		}
+		return wp_kses( $value, whmcs_price_price_kses() );
+	};
+
+	return $whmcs_toggle_cycles
+		? whmcs_price_cycle_values( $render, $whmcs_toggle_cycles )
+		: $render( $whmcs_bc_mapped );
+};
+
 ?>
 <div <?php echo wp_kses_data( get_block_wrapper_attributes( array( 'class' => $whmcs_wrapper_class ) ) ); ?>>
 
@@ -133,6 +167,11 @@ $whmcs_wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_att
 	<?php elseif ( 'cards' === $whmcs_display_style ) : ?>
 		<?php // Cards style - modern card-based layout. ?>
 		<?php
+		if ( $whmcs_toggle_cycles ) {
+			echo whmcs_price_toggle_open( $whmcs_toggle_cycles, whmcs_price_toggle_default( $whmcs_toggle_cycles, $whmcs_billing_cycle ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the helper.
+		}
+		?>
+		<?php
 		// Reorder: setupfee always renders before description for consistent card layout.
 		$whmcs_show_cards = $whmcs_show;
 		$whmcs_sf_pos   = array_search( 'setupfee', $whmcs_show_cards, true );
@@ -164,7 +203,9 @@ $whmcs_wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_att
 						<div class="whmcs-product-card__<?php echo esc_attr( $whmcs_attr_clean ); ?>">
 							<?php if ( 'setupfee' === $whmcs_attr_clean ) : ?>
 								<span class="whmcs-product-card__setupfee-label"><?php echo esc_html__( 'Setup Fee', 'whmcs-price' ); ?>:</span>
-								<span class="whmcs-product-card__setupfee-value"><?php echo esc_html( WHMCS_Price_API::get_product_setup_fee( intval( $whmcs_single_pid ), $whmcs_bc_mapped , $whmcs_currency ) ); ?></span>
+								<span class="whmcs-product-card__setupfee-value"><?php echo $whmcs_cycle_field( intval( $whmcs_single_pid ), 'setupfee' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the closure. ?></span>
+							<?php elseif ( 'price' === $whmcs_attr_clean && $whmcs_toggle_cycles ) : ?>
+								<span class="whmcs-product-card__price-value"><?php echo $whmcs_cycle_field( intval( $whmcs_single_pid ), 'price' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the closure. ?></span>
 							<?php elseif ( 'NA' === $whmcs_value ) : ?>
 								<?php echo whmcs_price_unavailable_html(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 							<?php elseif ( 'price' === $whmcs_attr_clean ) : ?>
@@ -179,9 +220,15 @@ $whmcs_wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_att
 				</article>
 			<?php endforeach; ?>
 		</div>
+		<?php echo $whmcs_toggle_cycles ? whmcs_price_toggle_close() : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed literal. ?>
 
 	<?php elseif ( 'grid' === $whmcs_display_style ) : ?>
 		<?php // Grid style - compact pricing grid. ?>
+		<?php
+		if ( $whmcs_toggle_cycles ) {
+			echo whmcs_price_toggle_open( $whmcs_toggle_cycles, whmcs_price_toggle_default( $whmcs_toggle_cycles, $whmcs_billing_cycle ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the helper.
+		}
+		?>
 		<div class="whmcs-product-grid">
 			<?php foreach ( $whmcs_pids as $whmcs_single_pid ) : ?>
 				<?php
@@ -205,8 +252,8 @@ $whmcs_wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_att
 						?>
 						<div class="whmcs-product-grid-item__field">
 							<span class="whmcs-product-grid-item__label"><?php echo esc_html( $whmcs_label ); ?></span>
-							<span class="whmcs-product-grid-item__value"><?php if ( 'setupfee' === $whmcs_attr_clean ) {
-								echo esc_html( WHMCS_Price_API::get_product_setup_fee( intval( $whmcs_single_pid ), $whmcs_bc_mapped , $whmcs_currency ) );
+							<span class="whmcs-product-grid-item__value"><?php if ( 'setupfee' === $whmcs_attr_clean || ( 'price' === $whmcs_attr_clean && $whmcs_toggle_cycles ) ) {
+								echo $whmcs_cycle_field( intval( $whmcs_single_pid ), $whmcs_attr_clean ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the closure.
 							} elseif ( 'NA' === $whmcs_value ) {
 								echo whmcs_price_unavailable_html(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 							} elseif ( 'price' === $whmcs_attr_clean ) {
@@ -219,6 +266,7 @@ $whmcs_wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_att
 				</div>
 			<?php endforeach; ?>
 		</div>
+		<?php echo $whmcs_toggle_cycles ? whmcs_price_toggle_close() : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed literal. ?>
 
 	<?php endif; ?>
 

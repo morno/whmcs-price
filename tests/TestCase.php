@@ -61,6 +61,7 @@ abstract class TestCase extends PHPUnitTestCase {
 
 		// Loaded here (not in the bootstrap) because it calls add_action() at load time.
 		require_once dirname( __DIR__ ) . '/includes/multilingual.php';
+		require_once dirname( __DIR__ ) . '/includes/cycle-toggle.php';
 	}
 
 	protected function tearDown(): void {

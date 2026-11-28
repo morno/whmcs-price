@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.10.1]
+
+### Added
+
+- **Billing period switcher**: Visitors can switch between billing cycles (e.g.
+  monthly / annually) on the Cards and Pricing Grid styles without reloading the page.
+  Block: Display Style → "Billing period switcher". Shortcode:
+  `[whmcs pid="1,2" bc="1y" style="cards" toggle="1m,1y"]`. Prices for every offered
+  cycle are rendered from the normal cache, so switching makes no requests. Uses the
+  Interactivity API (WordPress 6.5+); without JavaScript the configured cycle is
+  shown. Available in the block, the Elementor widget and the shortcode. (#27)
+
+### Changed
+
+- **Elementor widgets render through the blocks**: The Elementor product and domain
+  widgets now render with the block's own `render.php`, so their HTML, features and
+  defaults are identical to Gutenberg. They gain the Currency setting and the billing
+  period switcher, use the same labels and option lists as the block editor, and no
+  longer load the stylesheet twice. A parity test fails if a block setting is missing
+  from a builder widget. See `docs/page-builders.md`.
+- **Domain block**: The Per-Period Breakdown setting is now in the block sidebar. The
+  attribute existed but could only be set in Elementor.
+
+### Fixed
+
+- **Elementor domain widget**: On a newly added widget the Transaction Type setting was
+  hidden until "Show all transaction types" was toggled on and off.
+
 ## [2.10.0] - 2026-11-28
 
 ### Added

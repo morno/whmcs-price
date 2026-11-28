@@ -67,23 +67,14 @@ function whmcs_price_register_elementor_widgets( $widgets_manager ) {
  * @return void
  */
 function whmcs_price_elementor_enqueue_styles() {
-	// Reuse the block CSS files that are already compiled
-	if ( file_exists( WHMCS_PRICE_DIR . 'blocks/build/whmcs-price-product.css' ) ) {
-		wp_enqueue_style(
-			'whmcs-price-product-elementor',
-			WHMCS_PRICE_URL . 'blocks/build/whmcs-price-product.css',
-			array(),
-			WHMCS_PRICE_VERSION
-		);
-	}
-
-	if ( file_exists( WHMCS_PRICE_DIR . 'blocks/build/whmcs-price-domain.css' ) ) {
-		wp_enqueue_style(
-			'whmcs-price-domain-elementor',
-			WHMCS_PRICE_URL . 'blocks/build/whmcs-price-domain.css',
-			array(),
-			WHMCS_PRICE_VERSION
-		);
+	// Widgets render through the blocks, so use the blocks' own style handles
+	// (registered from block.json). render_block() enqueues them too; using the
+	// same handles avoids loading the stylesheet twice.
+	foreach ( array( 'product', 'domain' ) as $whmcs_block ) {
+		$whmcs_handle = 'whmcs-price-' . $whmcs_block . '-style';
+		if ( wp_style_is( $whmcs_handle, 'registered' ) ) {
+			wp_enqueue_style( $whmcs_handle );
+		}
 	}
 }
 add_action( 'elementor/frontend/after_enqueue_styles', 'whmcs_price_elementor_enqueue_styles' );

@@ -32,7 +32,9 @@ class WHMCS_Price_Elementor_Domain_Widget extends \Elementor\Widget_Base {
 	}
 
 	protected function register_controls() {
-		// Content Section
+		$options = whmcs_price_builder_options();
+
+		// Domain Settings (same order and labels as the block's sidebar).
 		$this->start_controls_section(
 			'content_section',
 			array(
@@ -48,7 +50,7 @@ class WHMCS_Price_Elementor_Domain_Widget extends \Elementor\Widget_Base {
 				'type'        => \Elementor\Controls_Manager::TEXT,
 				'default'     => '',
 				'placeholder' => 'com',
-				'description' => __( 'Domain extension without dot (e.g. com, net, se). Leave empty to show all TLDs.', 'whmcs-price' ),
+				'description' => __( 'Domain extension without dot, e.g. com, net, se. Leave empty to show all available TLDs.', 'whmcs-price' ),
 			)
 		);
 
@@ -58,30 +60,17 @@ class WHMCS_Price_Elementor_Domain_Widget extends \Elementor\Widget_Base {
 				'label'   => __( 'Registration Period', 'whmcs-price' ),
 				'type'    => \Elementor\Controls_Manager::SELECT,
 				'default' => '1y',
-				'options' => array(
-					'1y'  => __( '1 Year', 'whmcs-price' ),
-					'2y'  => __( '2 Years', 'whmcs-price' ),
-					'3y'  => __( '3 Years', 'whmcs-price' ),
-					'4y'  => __( '4 Years', 'whmcs-price' ),
-					'5y'  => __( '5 Years', 'whmcs-price' ),
-					'6y'  => __( '6 Years', 'whmcs-price' ),
-					'7y'  => __( '7 Years', 'whmcs-price' ),
-					'8y'  => __( '8 Years', 'whmcs-price' ),
-					'9y'  => __( '9 Years', 'whmcs-price' ),
-					'10y' => __( '10 Years', 'whmcs-price' ),
-				),
+				'options' => $options['reg_periods'],
 			)
 		);
 
 		$this->add_control(
 			'show_all_types',
 			array(
-				'label'        => __( 'Show All Transaction Types', 'whmcs-price' ),
+				'label'        => __( 'Show all transaction types', 'whmcs-price' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'whmcs-price' ),
-				'label_off'    => __( 'No', 'whmcs-price' ),
 				'return_value' => 'yes',
-				'default'      => 'no',
+				'default'      => '',
 				'description'  => __( 'Show Register, Renew, and Transfer prices together.', 'whmcs-price' ),
 			)
 		);
@@ -92,36 +81,14 @@ class WHMCS_Price_Elementor_Domain_Widget extends \Elementor\Widget_Base {
 				'label'     => __( 'Transaction Type', 'whmcs-price' ),
 				'type'      => \Elementor\Controls_Manager::SELECT,
 				'default'   => 'register',
-				'options'   => array(
-					'register' => __( 'Register', 'whmcs-price' ),
-					'renew'    => __( 'Renew', 'whmcs-price' ),
-					'transfer' => __( 'Transfer', 'whmcs-price' ),
-				),
-				'condition' => array(
-					'show_all_types' => '',
-				),
-			)
-		);
-
-		$this->add_control(
-			'per_period',
-			array(
-				'label'       => __( 'Per-Period Breakdown', 'whmcs-price' ),
-				'type'        => \Elementor\Controls_Manager::SELECT,
-				'default'     => '',
-				'options'     => array(
-					''      => __( 'None', 'whmcs-price' ),
-					'month' => __( 'Per month', 'whmcs-price' ),
-					'week'  => __( 'Per week', 'whmcs-price' ),
-					'day'   => __( 'Per day', 'whmcs-price' ),
-				),
-				'description' => __( 'Show e.g. 239 Kr/yr (19.91 Kr/mo) next to the price.', 'whmcs-price' ),
+				'options'   => $options['transaction_types'],
+				'condition' => array( 'show_all_types!' => 'yes' ),
 			)
 		);
 
 		$this->end_controls_section();
 
-		// Style Section
+		// Display Style.
 		$this->start_controls_section(
 			'style_section',
 			array(
@@ -133,154 +100,72 @@ class WHMCS_Price_Elementor_Domain_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'display_style',
 			array(
-				'label'   => __( 'Layout', 'whmcs-price' ),
+				'label'   => __( 'Choose how to display pricing', 'whmcs-price' ),
 				'type'    => \Elementor\Controls_Manager::SELECT,
 				'default' => 'table',
-				'options' => array(
-					'table'  => __( 'Table', 'whmcs-price' ),
-					'badge'  => __( 'Badge', 'whmcs-price' ),
-					'inline' => __( 'Inline', 'whmcs-price' ),
-				),
+				'options' => $options['domain_styles'],
+			)
+		);
+
+		$this->add_control(
+			'per_period',
+			array(
+				'label'       => __( 'Per-Period Breakdown', 'whmcs-price' ),
+				'type'        => \Elementor\Controls_Manager::SELECT,
+				'default'     => '',
+				'options'     => $options['per_period'],
+				'description' => __( 'Show the price divided by period alongside the full price.', 'whmcs-price' ),
+			)
+		);
+
+		$this->end_controls_section();
+
+		// Currency.
+		$this->start_controls_section(
+			'currency_section',
+			array(
+				'label' => __( 'Currency', 'whmcs-price' ),
+				'tab'   => \Elementor\Controls_Manager::TAB_CONTENT,
+			)
+		);
+
+		$this->add_control(
+			'currency',
+			array(
+				'label'       => __( 'WHMCS currency ID', 'whmcs-price' ),
+				'type'        => \Elementor\Controls_Manager::NUMBER,
+				'min'         => 0,
+				'default'     => '',
+				'description' => __( 'Optional. Leave empty to use the currency set for the page language, or the WHMCS default currency.', 'whmcs-price' ),
 			)
 		);
 
 		$this->end_controls_section();
 	}
 
-	protected function render() {
-		$settings = $this->get_settings_for_display();
-
-		$attributes = array(
-			'tld'             => sanitize_text_field( $settings['tld'] ?? '' ),
-			'transactionType' => sanitize_text_field( $settings['transaction_type'] ?? 'register' ),
-			'regPeriod'       => sanitize_text_field( $settings['reg_period'] ?? '1y' ),
-			'showAll'         => 'yes' === $settings['show_all_types'],
-			'displayStyle'    => sanitize_text_field( $settings['display_style'] ?? 'table' ),
-			'perPeriod'       => sanitize_text_field( $settings['per_period'] ?? '' ),
+	/**
+	 * Map widget settings to the domain block's attributes (block.json).
+	 *
+	 * @since  2.10.1
+	 * @param  array $settings Widget settings.
+	 * @return array Block attributes.
+	 */
+	public function to_block_attributes( array $settings ): array {
+		return array(
+			'tld'             => sanitize_text_field( (string) ( $settings['tld'] ?? '' ) ),
+			'transactionType' => sanitize_text_field( (string) ( $settings['transaction_type'] ?? 'register' ) ),
+			'regPeriod'       => sanitize_text_field( (string) ( $settings['reg_period'] ?? '1y' ) ),
+			'showAll'         => 'yes' === ( $settings['show_all_types'] ?? '' ),
+			'displayStyle'    => sanitize_text_field( (string) ( $settings['display_style'] ?? 'table' ) ),
+			'perPeriod'       => sanitize_text_field( (string) ( $settings['per_period'] ?? '' ) ),
+			'currency'        => whmcs_price_builder_currency( $settings['currency'] ?? '' ),
 		);
-
-		$this->render_domain_pricing( $attributes );
 	}
 
 	/**
-	 * Render domain pricing (reuses block render logic).
-	 *
-	 * @param array $attributes Widget attributes.
-	 * @return void
+	 * Render through the domain block, so the output is identical to Gutenberg.
 	 */
-	private function render_domain_pricing( $attributes ) {
-		$whmcs_tld              = $attributes['tld'];
-		$whmcs_transaction_type = $attributes['transactionType'];
-		$whmcs_reg_period_raw   = $attributes['regPeriod'];
-		$whmcs_show_all         = $attributes['showAll'];
-		$whmcs_display_style    = $attributes['displayStyle'];
-		$whmcs_per_period       = ! empty( $attributes['perPeriod'] ) ? $attributes['perPeriod'] : '';
-		$whmcs_per_period       = in_array( $whmcs_per_period, array( 'month', 'week', 'day' ), true ) ? $whmcs_per_period : '';
-
-		$whmcs_reg_period    = str_replace( 'y', '', $whmcs_reg_period_raw );
-		// Returns safe HTML (see the domain block's render.php for why).
-		$whmcs_fmt           = function( string $price ) use ( $whmcs_per_period, $whmcs_reg_period ): string {
-			if ( 'NA' === $price ) {
-				return whmcs_price_unavailable_html();
-			}
-			if ( empty( $whmcs_per_period ) ) {
-				return esc_html( $price );
-			}
-			return wp_kses( whmcs_price_format_per( $price, 'annually', (int) $whmcs_reg_period, $whmcs_per_period ), whmcs_price_price_kses() );
-		};
-		$whmcs_wrapper_class = 'whmcs-domain-display whmcs-domain-display--' . esc_attr( $whmcs_display_style );
-
-		echo '<div class="' . esc_attr( $whmcs_wrapper_class ) . '">';
-
-		if ( empty( $whmcs_tld ) ) {
-			// Show all TLDs
-			$whmcs_all_prices   = WHMCS_Price_API::get_all_domain_prices();
-			$whmcs_allowed_html = array(
-				'table'  => array( 'class' => true, 'id' => true ),
-				'thead'  => array(),
-				'tbody'  => array(),
-				'tfoot'  => array(),
-				'tr'     => array( 'class' => true ),
-				'th'     => array( 'scope' => true, 'class' => true ),
-				'td'     => array( 'class' => true ),
-				'strong' => array(),
-				'small'  => array(),
-				'span'   => array( 'class' => true ),
-				'p'      => array( 'class' => true ),
-				'ul'     => array( 'class' => true ),
-				'li'     => array( 'class' => true ),
-			);
-			echo '<div class="whmcs-domain-all">' . wp_kses( $whmcs_all_prices, $whmcs_allowed_html ) . '</div>';
-
-		} elseif ( $whmcs_show_all ) {
-			// Show all three transaction types
-			$whmcs_types = array(
-				'register' => __( 'Register', 'whmcs-price' ),
-				'renew'    => __( 'Renew', 'whmcs-price' ),
-				'transfer' => __( 'Transfer', 'whmcs-price' ),
-			);
-
-			if ( 'table' === $whmcs_display_style ) {
-				echo '<table class="whmcs-domain-table"><thead><tr>';
-				foreach ( $whmcs_types as $label ) {
-					echo '<th scope="col">' . esc_html( $label ) . '</th>';
-				}
-				echo '</tr></thead><tbody><tr>';
-				foreach ( array_keys( $whmcs_types ) as $type_key ) {
-					echo '<td>' . $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $type_key, $whmcs_reg_period ) ) . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $whmcs_fmt returns escaped HTML.
-				}
-				echo '</tr></tbody></table>';
-
-			} elseif ( 'badge' === $whmcs_display_style ) {
-				/* translators: %s: domain extension, e.g. ".com" */
-				echo '<div class="whmcs-domain-badges" role="list" aria-label="' . esc_attr( sprintf( __( '%s domain prices', 'whmcs-price' ), '.' . $whmcs_tld ) ) . '">';
-				echo '<div class="whmcs-domain-badges__tld" aria-hidden="true">.' . esc_html( $whmcs_tld ) . '</div>';
-				foreach ( $whmcs_types as $type_key => $type_label ) {
-					echo '<div class="whmcs-domain-badge" role="listitem">';
-					echo '<span class="whmcs-domain-badge__label">' . esc_html( $type_label ) . '</span>';
-					echo '<span class="whmcs-domain-badge__price">' . $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $type_key, $whmcs_reg_period ) ) . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $whmcs_fmt returns escaped HTML.
-					echo '</div>';
-				}
-				echo '</div>';
-
-			} else { // inline
-				echo '<div class="whmcs-domain-inline">';
-				echo '<strong class="whmcs-domain-inline__tld">.' . esc_html( $whmcs_tld ) . '</strong>';
-				foreach ( $whmcs_types as $type_key => $type_label ) {
-					echo '<span class="whmcs-domain-inline__item">';
-					echo esc_html( $type_label ) . ': <strong>' . $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $type_key, $whmcs_reg_period ) ) . '</strong>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $whmcs_fmt returns escaped HTML.
-					echo '</span>';
-				}
-				echo '</div>';
-			}
-		} else {
-			// Single TLD + single transaction type
-			if ( 'badge' === $whmcs_display_style ) {
-				$whmcs_type_labels = array(
-					'register' => __( 'Register', 'whmcs-price' ),
-					'renew'    => __( 'Renew', 'whmcs-price' ),
-					'transfer' => __( 'Transfer', 'whmcs-price' ),
-				);
-				echo '<div class="whmcs-domain-badge whmcs-domain-badge--single">';
-				echo '<span class="whmcs-domain-badge__tld">.' . esc_html( $whmcs_tld ) . '</span>';
-				echo '<span class="whmcs-domain-badge__label">' . esc_html( $whmcs_type_labels[ $whmcs_transaction_type ] ?? ucfirst( $whmcs_transaction_type ) ) . '</span>';
-				echo '<span class="whmcs-domain-badge__price">' . $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) ) . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $whmcs_fmt returns escaped HTML.
-				echo '</div>';
-
-			} elseif ( 'inline' === $whmcs_display_style ) {
-				echo '<span class="whmcs-domain-inline whmcs-domain-inline--single">';
-				echo '<strong>.' . esc_html( $whmcs_tld ) . '</strong> — ';
-				echo $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $whmcs_fmt returns escaped HTML.
-				echo '</span>';
-
-			} else {
-				echo '<div class="whmcs-price">';
-				echo $whmcs_fmt( WHMCS_Price_API::get_domain_price( $whmcs_tld, $whmcs_transaction_type, $whmcs_reg_period ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $whmcs_fmt returns escaped HTML.
-				echo '</div>';
-			}
-		}
-
-		echo wp_kses( whmcs_price_promo_notice( 'domain' ), array( 'p' => array( 'class' => true ), 'span' => array( 'class' => true ) ) );
-		echo '</div>';
+	protected function render() {
+		echo whmcs_price_render_block( 'domain', $this->to_block_attributes( $this->get_settings_for_display() ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped by the block's render.php.
 	}
 }

@@ -23,9 +23,8 @@
 
 // Only runs inside WHMCS. Blocks direct web access, and does nothing if the
 // file is ever loaded by WordPress (e.g. by a code scanner) instead of WHMCS.
-if ( ! defined( 'WHMCS' ) && ! defined( 'ABSPATH' ) ) {
-	exit( 'This file cannot be accessed directly' );
-}
+// Written as one line so WordPress Plugin Check recognises the ABSPATH guard.
+defined( 'WHMCS' ) || defined( 'ABSPATH' ) || exit;
 if ( ! defined( 'WHMCS' ) ) {
 	return;
 }

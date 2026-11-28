@@ -580,6 +580,7 @@ class WHMCSPrice {
 				onclick="this.select()" readonly />
 			<p class="description" style="margin-top:8px;"><?php esc_html_e( 'Billing cycles:', 'whmcs-price' ); ?> <code>1m</code> <code>3m</code> <code>6m</code> <code>1y</code> <code>2y</code> <code>3y</code></p>
 			<p class="description"><?php esc_html_e( 'Show:', 'whmcs-price' ); ?> <code>name</code> <code>description</code> <code>price</code> <code>setupfee</code></p>
+			<p class="description"><?php esc_html_e( 'Billing period switcher (cards, grid):', 'whmcs-price' ); ?> <code>style="cards" toggle="1m,1y"</code></p>
 			<a href="<?php echo esc_url( self::DOCS_URL . '/Displaying-Prices#product-pricing' ); ?>" target="_blank" rel="noopener noreferrer" style="font-size:12px;"><?php esc_html_e( 'Full reference ↗', 'whmcs-price' ); ?></a>
 		</div>
 		<?php

@@ -56,6 +56,20 @@
 			"type": "string",
 			"default": ""
 		},
+		"cycleToggle": {
+			"type": "boolean",
+			"default": false
+		},
+		"toggleCycles": {
+			"type": "array",
+			"default": [
+				"1m",
+				"1y"
+			],
+			"items": {
+				"type": "string"
+			}
+		},
 		"currency": {
 			"type": "string",
 			"default": ""

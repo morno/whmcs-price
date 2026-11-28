@@ -3,7 +3,7 @@
  * Plugin Name:       Mornolink for WHMCS
  * Plugin URI:        https://github.com/morno/whmcs-price
  * Description:       A modernized and secure way to display real-time pricing for products and domains from your WHMCS instance.
- * Version:           2.10.0
+ * Version:           2.10.1
  * Requires at least: 6.4
  * Requires PHP:      8.1
  * Requires Plugins:  
@@ -35,7 +35,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * * Used for file pathing and versioning throughout the plugin.
  * @since 2.2.0
  */
-define( 'WHMCS_PRICE_VERSION', '2.10.0' );
+define( 'WHMCS_PRICE_VERSION', '2.10.1' );
 define( 'WHMCS_PRICE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WHMCS_PRICE_URL', plugin_dir_url( __FILE__ ) );
 
@@ -109,6 +109,12 @@ require_once WHMCS_PRICE_DIR . 'includes/multilingual.php';
 require_once WHMCS_PRICE_DIR . 'includes/rate-limit.php';
 
 /**
+ * Billing cycle toggle for the Cards and Pricing Grid styles (Interactivity API).
+ * @since 2.10.1
+ */
+require_once WHMCS_PRICE_DIR . 'includes/cycle-toggle.php';
+
+/**
  * Load the Gutenberg Block Registration.
  * Handles block registration, Pattern Overrides (Block Bindings), and related hooks.
  */
@@ -157,6 +163,13 @@ require_once WHMCS_PRICE_DIR . 'includes/site-health.php';
  * Provides the generator tab UI function used by settings.php.
  */
 require_once WHMCS_PRICE_DIR . 'includes/shortcode/shortcode-generator.php';
+
+/**
+ * Shared rendering for page builders: widgets render through the blocks so
+ * every builder matches Gutenberg 1:1.
+ * @since 2.10.1
+ */
+require_once WHMCS_PRICE_DIR . 'includes/builders.php';
 
 /**
  * Load the Elementor Class.

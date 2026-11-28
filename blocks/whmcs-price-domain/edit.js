@@ -21,6 +21,13 @@ import {
 import { __, sprintf } from '@wordpress/i18n';
 import ServerSideRender from '@wordpress/server-side-render';
 
+const PER_PERIOD_OPTIONS = [
+	{ label: __( 'Disabled', 'whmcs-price' ),                            value: '' },
+	{ label: __( 'Per month — e.g. $99/yr ($8.25/mo)', 'whmcs-price' ), value: 'month' },
+	{ label: __( 'Per week — e.g. $99/yr ($1.90/wk)', 'whmcs-price' ),  value: 'week' },
+	{ label: __( 'Per day — e.g. $99/yr ($0.27/day)', 'whmcs-price' ),  value: 'day' },
+];
+
 const TRANSACTION_TYPE_OPTIONS = [
 	{ label: __( 'Register', 'whmcs-price' ),  value: 'register' },
 	{ label: __( 'Renew', 'whmcs-price' ),     value: 'renew' },
@@ -77,7 +84,7 @@ function InserterPreview() {
 }
 
 export default function Edit( { attributes, setAttributes } ) {
-	const { tld, transactionType, regPeriod, showAll, displayStyle, preview, currency } = attributes;
+	const { tld, transactionType, regPeriod, showAll, displayStyle, perPeriod, preview, currency } = attributes;
 	const blockProps = useBlockProps();
 
 	if ( preview ) {
@@ -129,6 +136,13 @@ export default function Edit( { attributes, setAttributes } ) {
 						selected={ displayStyle }
 						options={ DISPLAY_STYLE_OPTIONS }
 						onChange={ ( val ) => setAttributes( { displayStyle: val } ) }
+					/>
+					<SelectControl
+						label={ __( 'Per-Period Breakdown', 'whmcs-price' ) }
+						help={ __( 'Show the price divided by period alongside the full price.', 'whmcs-price' ) }
+						value={ perPeriod || '' }
+						options={ PER_PERIOD_OPTIONS }
+						onChange={ ( val ) => setAttributes( { perPeriod: val } ) }
 					/>
 				</PanelBody>
 				<PanelBody title={ __( 'Currency', 'whmcs-price' ) } initialOpen={ false }>

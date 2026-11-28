@@ -324,3 +324,96 @@
 		transition: none !important;
 	}
 }
+
+/* ==================== Billing cycle toggle (2.10.1) ==================== */
+
+/*
+ * Only the selected cycle's prices are shown. The wrapper's data-whmcs-selected
+ * is rendered by the server (works without JavaScript) and updated by
+ * assets/js/cycle-toggle.js. display: none also hides the other cycles from
+ * screen readers.
+ */
+.whmcs-cycle-switch[data-whmcs-selected="1m"] [data-whmcs-cycle]:not([data-whmcs-cycle="1m"]),
+.whmcs-cycle-switch[data-whmcs-selected="3m"] [data-whmcs-cycle]:not([data-whmcs-cycle="3m"]),
+.whmcs-cycle-switch[data-whmcs-selected="6m"] [data-whmcs-cycle]:not([data-whmcs-cycle="6m"]),
+.whmcs-cycle-switch[data-whmcs-selected="1y"] [data-whmcs-cycle]:not([data-whmcs-cycle="1y"]),
+.whmcs-cycle-switch[data-whmcs-selected="2y"] [data-whmcs-cycle]:not([data-whmcs-cycle="2y"]),
+.whmcs-cycle-switch[data-whmcs-selected="3y"] [data-whmcs-cycle]:not([data-whmcs-cycle="3y"]) {
+	display: none;
+}
+
+/* Segmented control built from native radio buttons (arrow keys work out of the box). */
+.whmcs-cycle-toggle {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 4px;
+	width: fit-content;
+	max-width: 100%;
+	margin: 0 auto 20px;
+	padding: 4px;
+	border: 1px solid #d5dae1;
+	border-radius: 999px;
+	background: #fff;
+	color: #1a202c;
+}
+
+.whmcs-cycle-toggle[hidden] {
+	display: none;
+}
+
+.whmcs-cycle-toggle__option {
+	position: relative;
+	margin: 0;
+	cursor: pointer;
+}
+
+/* Visually hidden but still focusable and announced. */
+.whmcs-cycle-toggle__input {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	opacity: 0;
+	cursor: pointer;
+}
+
+.whmcs-cycle-toggle__label {
+	display: block;
+	padding: 8px 18px;
+	border-radius: 999px;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1.4;
+	color: #1a202c;
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.whmcs-cycle-toggle__option:hover .whmcs-cycle-toggle__label {
+	background: #eef0fb;
+}
+
+.whmcs-cycle-toggle__input:checked + .whmcs-cycle-toggle__label {
+	background: #4c5fd5;
+	color: #fff;
+}
+
+.whmcs-cycle-toggle__input:focus-visible + .whmcs-cycle-toggle__label {
+	outline: 2px solid #4c5fd5;
+	outline-offset: 2px;
+}
+
+/* Windows High Contrast / forced colours: keep the selected option visible. */
+@media (forced-colors: active) {
+	.whmcs-cycle-toggle__input:checked + .whmcs-cycle-toggle__label {
+		outline: 2px solid CanvasText;
+	}
+}
+
+/* Block editor and Elementor editor: show the toggle (the view script does not run in their previews). */
+.editor-styles-wrapper .whmcs-cycle-toggle[hidden],
+.block-editor-block-list__layout .whmcs-cycle-toggle[hidden],
+.elementor-editor-active .whmcs-cycle-toggle[hidden] {
+	display: flex;
+}

@@ -16,6 +16,7 @@ import {
 	SelectControl,
 	CheckboxControl,
 	RadioControl,
+	ToggleControl,
 	Placeholder,
 	Spinner,
 } from '@wordpress/components';
@@ -89,7 +90,7 @@ function InserterPreview() {
 }
 
 export default function Edit( { attributes, setAttributes } ) {
-	const { pid, billingCycle, show, displayStyle, perPeriod, preview, currency } = attributes;
+	const { pid, billingCycle, show, displayStyle, perPeriod, preview, currency, cycleToggle, toggleCycles } = attributes;
 	const blockProps = useBlockProps();
 
 	if ( preview ) {
@@ -107,7 +108,19 @@ export default function Edit( { attributes, setAttributes } ) {
 		setAttributes( { show: updated } );
 	}
 
+	function handleToggleCycle( value, checked ) {
+		const current = Array.isArray( toggleCycles ) ? toggleCycles : [];
+		const updated = checked
+			? [ ...current, value ]
+			: current.filter( ( v ) => v !== value );
+		// Keep the canonical order (shortest cycle first), like render.php does.
+		setAttributes( {
+			toggleCycles: BILLING_CYCLE_OPTIONS.map( ( o ) => o.value ).filter( ( v ) => updated.includes( v ) ),
+		} );
+	}
+
 	const hasConfig = pid.trim() !== '';
+	const selectedCycles = Array.isArray( toggleCycles ) ? toggleCycles : [];
 
 	return (
 		<>
@@ -152,6 +165,30 @@ export default function Edit( { attributes, setAttributes } ) {
 						options={ PER_PERIOD_OPTIONS }
 						onChange={ ( val ) => setAttributes( { perPeriod: val } ) }
 					/>
+					{ displayStyle !== 'table' && (
+						<>
+							<ToggleControl
+								__nextHasNoMarginBottom
+								label={ __( 'Billing period switcher', 'whmcs-price' ) }
+								help={ __( 'Let visitors switch billing cycle without reloading the page. The billing cycle in Product Settings is shown first.', 'whmcs-price' ) }
+								checked={ !! cycleToggle }
+								onChange={ ( val ) => setAttributes( { cycleToggle: val } ) }
+							/>
+							{ cycleToggle && (
+								<fieldset>
+									<legend>{ __( 'Cycles to offer (choose at least two)', 'whmcs-price' ) }</legend>
+									{ BILLING_CYCLE_OPTIONS.map( ( option ) => (
+										<CheckboxControl
+											key={ option.value }
+											label={ option.label }
+											checked={ selectedCycles.includes( option.value ) }
+											onChange={ ( checked ) => handleToggleCycle( option.value, checked ) }
+										/>
+									) ) }
+								</fieldset>
+							) }
+						</>
+					) }
 				</PanelBody>
 				<PanelBody title={ __( 'Currency', 'whmcs-price' ) } initialOpen={ false }>
 					<TextControl

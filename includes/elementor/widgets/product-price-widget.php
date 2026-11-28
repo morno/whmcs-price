@@ -32,7 +32,9 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 	}
 
 	protected function register_controls() {
-		// Content Section
+		$options = whmcs_price_builder_options();
+
+		// Product Settings (same order and labels as the block's sidebar).
 		$this->start_controls_section(
 			'content_section',
 			array(
@@ -44,11 +46,11 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'product_ids',
 			array(
-				'label'       => __( 'Product IDs', 'whmcs-price' ),
+				'label'       => __( 'Product ID(s)', 'whmcs-price' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
 				'default'     => '',
 				'placeholder' => '1,2,3',
-				'description' => __( 'Comma-separated WHMCS Product IDs', 'whmcs-price' ),
+				'description' => __( 'Comma-separated WHMCS Product IDs, e.g. 1,2,3', 'whmcs-price' ),
 			)
 		);
 
@@ -58,14 +60,7 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 				'label'   => __( 'Billing Cycle', 'whmcs-price' ),
 				'type'    => \Elementor\Controls_Manager::SELECT,
 				'default' => '1y',
-				'options' => array(
-					'1m' => __( 'Monthly', 'whmcs-price' ),
-					'3m' => __( 'Quarterly', 'whmcs-price' ),
-					'6m' => __( 'Semi-Annually', 'whmcs-price' ),
-					'1y' => __( 'Annually', 'whmcs-price' ),
-					'2y' => __( 'Biennially', 'whmcs-price' ),
-					'3y' => __( 'Triennially', 'whmcs-price' ),
-				),
+				'options' => $options['billing_cycles'],
 			)
 		);
 
@@ -76,18 +71,13 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 				'type'     => \Elementor\Controls_Manager::SELECT2,
 				'multiple' => true,
 				'default'  => array( 'name', 'price' ),
-				'options'  => array(
-					'name'        => __( 'Name', 'whmcs-price' ),
-					'description' => __( 'Description', 'whmcs-price' ),
-					'price'       => __( 'Price', 'whmcs-price' ),
-					'setupfee'    => __( 'Setup Fee', 'whmcs-price' ),
-				),
+				'options'  => $options['product_fields'],
 			)
 		);
 
 		$this->end_controls_section();
 
-		// Style Section
+		// Display Style.
 		$this->start_controls_section(
 			'style_section',
 			array(
@@ -99,14 +89,10 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'display_style',
 			array(
-				'label'   => __( 'Layout', 'whmcs-price' ),
+				'label'   => __( 'Choose how to display products', 'whmcs-price' ),
 				'type'    => \Elementor\Controls_Manager::SELECT,
 				'default' => 'table',
-				'options' => array(
-					'table' => __( 'Table (Classic)', 'whmcs-price' ),
-					'cards' => __( 'Cards', 'whmcs-price' ),
-					'grid'  => __( 'Pricing Grid', 'whmcs-price' ),
-				),
+				'options' => $options['product_styles'],
 			)
 		);
 
@@ -116,19 +102,90 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 				'label'       => __( 'Per-Period Breakdown', 'whmcs-price' ),
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'default'     => '',
-				'options'     => array(
-					''      => __( 'Disabled', 'whmcs-price' ),
-					'month' => __( 'Per month — e.g. $99/yr ($8.25/mo)', 'whmcs-price' ),
-					'week'  => __( 'Per week — e.g. $99/yr ($1.90/wk)', 'whmcs-price' ),
-					'day'   => __( 'Per day — e.g. $99/yr ($0.27/day)', 'whmcs-price' ),
-				),
+				'options'     => $options['per_period'],
 				'description' => __( 'Show the price divided by period alongside the full price.', 'whmcs-price' ),
+			)
+		);
+
+		$this->add_control(
+			'cycle_toggle',
+			array(
+				'label'        => __( 'Billing period switcher', 'whmcs-price' ),
+				'type'         => \Elementor\Controls_Manager::SWITCHER,
+				'return_value' => 'yes',
+				'default'      => '',
+				'description'  => __( 'Let visitors switch billing cycle without reloading the page. The billing cycle in Product Settings is shown first.', 'whmcs-price' ),
+				'condition'    => array( 'display_style!' => 'table' ),
+			)
+		);
+
+		$this->add_control(
+			'toggle_cycles',
+			array(
+				'label'     => __( 'Cycles to offer (choose at least two)', 'whmcs-price' ),
+				'type'      => \Elementor\Controls_Manager::SELECT2,
+				'multiple'  => true,
+				'default'   => array( '1m', '1y' ),
+				'options'   => $options['billing_cycles'],
+				'condition' => array(
+					'display_style!' => 'table',
+					'cycle_toggle'   => 'yes',
+				),
+			)
+		);
+
+		$this->end_controls_section();
+
+		// Currency.
+		$this->start_controls_section(
+			'currency_section',
+			array(
+				'label' => __( 'Currency', 'whmcs-price' ),
+				'tab'   => \Elementor\Controls_Manager::TAB_CONTENT,
+			)
+		);
+
+		$this->add_control(
+			'currency',
+			array(
+				'label'       => __( 'WHMCS currency ID', 'whmcs-price' ),
+				'type'        => \Elementor\Controls_Manager::NUMBER,
+				'min'         => 0,
+				'default'     => '',
+				'description' => __( 'Optional. Leave empty to use the currency set for the page language, or the WHMCS default currency.', 'whmcs-price' ),
 			)
 		);
 
 		$this->end_controls_section();
 	}
 
+	/**
+	 * Map widget settings to the product block's attributes (block.json).
+	 *
+	 * @since  2.10.1
+	 * @param  array $settings Widget settings.
+	 * @return array Block attributes.
+	 */
+	public function to_block_attributes( array $settings ): array {
+		return array(
+			'pid'          => sanitize_text_field( (string) ( $settings['product_ids'] ?? '' ) ),
+			'billingCycle' => sanitize_text_field( (string) ( $settings['billing_cycle'] ?? '1y' ) ),
+			'show'         => ! empty( $settings['show_columns'] ) && is_array( $settings['show_columns'] )
+				? array_values( array_map( 'sanitize_text_field', $settings['show_columns'] ) )
+				: array( 'name', 'price' ),
+			'displayStyle' => sanitize_text_field( (string) ( $settings['display_style'] ?? 'table' ) ),
+			'perPeriod'    => sanitize_text_field( (string) ( $settings['per_period'] ?? '' ) ),
+			'cycleToggle'  => 'yes' === ( $settings['cycle_toggle'] ?? '' ),
+			'toggleCycles' => isset( $settings['toggle_cycles'] ) && is_array( $settings['toggle_cycles'] )
+				? array_values( array_map( 'sanitize_text_field', $settings['toggle_cycles'] ) )
+				: array( '1m', '1y' ),
+			'currency'     => whmcs_price_builder_currency( $settings['currency'] ?? '' ),
+		);
+	}
+
+	/**
+	 * Render through the product block, so the output is identical to Gutenberg.
+	 */
 	protected function render() {
 		$settings = $this->get_settings_for_display();
 
@@ -141,188 +198,6 @@ class WHMCS_Price_Elementor_Product_Widget extends \Elementor\Widget_Base {
 			return;
 		}
 
-		// Build attributes array mimicking block attributes
-		$attributes = array(
-			'pid'          => sanitize_text_field( $settings['product_ids'] ),
-			'billingCycle' => sanitize_text_field( $settings['billing_cycle'] ),
-			'show'         => ! empty( $settings['show_columns'] ) ? $settings['show_columns'] : array( 'name', 'price' ),
-			'displayStyle' => sanitize_text_field( $settings['display_style'] ),
-			'perPeriod'    => sanitize_text_field( $settings['per_period'] ?? '' ),
-		);
-
-		// Render using the block's render.php logic
-		$this->render_product_pricing( $attributes );
-	}
-
-	/**
-	 * Render product pricing (reuses block render logic).
-	 *
-	 * @param array $attributes Widget attributes.
-	 * @return void
-	 */
-	private function render_product_pricing( $attributes ) {
-		$whmcs_pid           = $attributes['pid'];
-		$whmcs_billing_cycle = $attributes['billingCycle'];
-		$whmcs_show          = $attributes['show'];
-		$whmcs_display_style = $attributes['displayStyle'];
-		$whmcs_per_period    = $attributes['perPeriod'] ?? '';
-
-		$whmcs_billing_cycles = array(
-			'1m' => 'monthly',
-			'3m' => 'quarterly',
-			'6m' => 'semiannually',
-			'1y' => 'annually',
-			'2y' => 'biennially',
-			'3y' => 'triennially',
-		);
-
-		$whmcs_bc_mapped = isset( $whmcs_billing_cycles[ $whmcs_billing_cycle ] ) ? $whmcs_billing_cycles[ $whmcs_billing_cycle ] : 'annually';
-		$whmcs_pids = array_filter(
-    		array_map( 'intval', explode( ',', $whmcs_pid ) ),
-    		fn( $p ) => $p > 0
-		);
-
-		$whmcs_header_labels = array(
-			'name'        => __( 'Name', 'whmcs-price' ),
-			'description' => __( 'Description', 'whmcs-price' ),
-			'price'       => __( 'Price', 'whmcs-price' ),
-			'setupfee'    => __( 'Setup Fee', 'whmcs-price' ),
-		);
-
-		$whmcs_wrapper_class = 'whmcs-product-display whmcs-product-display--' . esc_attr( $whmcs_display_style );
-
-		// Allowlist display style
-		$allowed_styles = array( 'table', 'cards', 'grid' );
-		if ( ! in_array( $whmcs_display_style, $allowed_styles, true ) ) {
-    		$whmcs_display_style = 'table';
-		}
-
-		// Allowlist show columns
-		$allowed_columns = array( 'name', 'description', 'price', 'setupfee' );
-		$whmcs_show = array_filter(
-    		$whmcs_show,
-    		fn( $col ) => in_array( $col, $allowed_columns, true )
-		);
-
-		echo '<div class="' . esc_attr( $whmcs_wrapper_class ) . '">';
-
-		if ( 'table' === $whmcs_display_style ) {
-			echo '<table class="whmcs-product-table"><thead><tr>';
-			foreach ( $whmcs_show as $whmcs_column ) {
-				$label = $whmcs_header_labels[ strtolower( trim( $whmcs_column ) ) ] ?? ucfirst( $whmcs_column );
-				echo '<th scope="col">' . esc_html( $label ) . '</th>';
-			}
-			echo '</tr></thead><tbody>';
-
-			foreach ( $whmcs_pids as $whmcs_single_pid ) {
-				echo '<tr>';
-				foreach ( $whmcs_show as $whmcs_attr ) {
-					$val              = WHMCS_Price_API::get_product_data( intval( $whmcs_single_pid ), $whmcs_bc_mapped, sanitize_text_field( $whmcs_attr ) );
-					$whmcs_attr_clean = strtolower( trim( $whmcs_attr ) );
-					if ( 'price' === $whmcs_attr_clean ) {
-						$val = whmcs_price_strip_setup_fee( $val );
-					}
-					if ( 'price' === $whmcs_attr_clean && ! empty( $whmcs_per_period ) ) {
-						$val = whmcs_price_format_per( $val, $whmcs_bc_mapped, 1, $whmcs_per_period );
-					}
-					if ( 'setupfee' === $whmcs_attr_clean ) {
-						echo '<td>' . esc_html( WHMCS_Price_API::get_product_setup_fee( intval( $whmcs_single_pid ), $whmcs_bc_mapped ) ) . '</td>';
-						continue;
-					}
-					if ( 'NA' === $val ) {
-						echo '<td>' . whmcs_price_unavailable_html() . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-					} elseif ( 'price' === $whmcs_attr_clean ) {
-						echo '<td>' . wp_kses( $val, whmcs_price_price_kses() ) . '</td>';
-					} elseif ( 'name' === $whmcs_attr_clean ) {
-						// The product name identifies each row for screen readers.
-						echo '<th scope="row">' . esc_html( wp_strip_all_tags( $val ) ) . '</th>';
-					} else {
-						echo '<td>' . esc_html( wp_strip_all_tags( $val ) ) . '</td>';
-					}
-				}
-				echo '</tr>';
-			}
-			echo '</tbody></table>';
-
-		} elseif ( 'cards' === $whmcs_display_style ) {
-			// Reorder: setupfee always renders before description for consistent card layout.
-			$whmcs_show_cards = $whmcs_show;
-			$sf_pos   = array_search( 'setupfee', $whmcs_show_cards, true );
-			$desc_pos = array_search( 'description', $whmcs_show_cards, true );
-			if ( false !== $sf_pos && false !== $desc_pos && $sf_pos > $desc_pos ) {
-				unset( $whmcs_show_cards[ $sf_pos ] );
-				array_splice( $whmcs_show_cards, $desc_pos, 0, array( 'setupfee' ) );
-			}
-			echo '<div class="whmcs-product-cards">';
-			foreach ( $whmcs_pids as $whmcs_single_pid ) {
-				// Each card is a self-contained article, labelled by its title.
-				$whmcs_title_id = in_array( 'name', $whmcs_show_cards, true ) ? wp_unique_id( 'whmcs-product-title-' ) : '';
-				$whmcs_heading  = whmcs_price_card_heading_tag();
-				echo '<article class="whmcs-product-card"' . ( $whmcs_title_id ? ' aria-labelledby="' . esc_attr( $whmcs_title_id ) . '"' : '' ) . '>';
-				foreach ( $whmcs_show_cards as $whmcs_attr ) {
-					$whmcs_value      = WHMCS_Price_API::get_product_data( intval( $whmcs_single_pid ), $whmcs_bc_mapped, sanitize_text_field( $whmcs_attr ) );
-					$whmcs_attr_clean = strtolower( trim( $whmcs_attr ) );
-					if ( 'price' === $whmcs_attr_clean ) {
-						$whmcs_value = whmcs_price_strip_setup_fee( $whmcs_value );
-					}
-					if ( 'price' === $whmcs_attr_clean && ! empty( $whmcs_per_period ) ) {
-						$whmcs_value = whmcs_price_format_per( $whmcs_value, $whmcs_bc_mapped, 1, $whmcs_per_period );
-					}
-					if ( 'setupfee' === $whmcs_attr_clean ) {
-						echo '<span class="whmcs-product-card__setupfee-label">' . esc_html__( 'Setup Fee', 'whmcs-price' ) . ':</span>';
-						echo '<span class="whmcs-product-card__setupfee-value">' . esc_html( WHMCS_Price_API::get_product_setup_fee( intval( $whmcs_single_pid ), $whmcs_bc_mapped ) ) . '</span>';
-					} elseif ( 'NA' === $whmcs_value ) {
-						echo whmcs_price_unavailable_html(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-					} elseif ( 'price' === $whmcs_attr_clean ) {
-						echo '<span class="whmcs-product-card__price-value">' . wp_kses( $whmcs_value, whmcs_price_price_kses() ) . '</span>';
-					} elseif ( 'name' === $whmcs_attr_clean ) {
-						echo '<' . esc_attr( $whmcs_heading ) . ' class="whmcs-product-card__title" id="' . esc_attr( $whmcs_title_id ) . '">' . esc_html( $whmcs_value ) . '</' . esc_attr( $whmcs_heading ) . '>';
-					} else {
-						echo '<p class="whmcs-product-card__description">' . esc_html( $whmcs_value ) . '</p>';
-					}
-				}
-				echo '</article>';
-			}
-			echo '</div>';
-
-		} elseif ( 'grid' === $whmcs_display_style ) {
-			echo '<div class="whmcs-product-grid">';
-			foreach ( $whmcs_pids as $whmcs_single_pid ) {
-				// Group each product's fields under its name for screen readers.
-				$whmcs_group_label = in_array( 'name', $whmcs_show, true )
-					? wp_strip_all_tags( WHMCS_Price_API::get_product_data( intval( $whmcs_single_pid ), $whmcs_bc_mapped, 'name' ) )
-					: '';
-				echo '<div class="whmcs-product-grid-item" role="group"'
-					. ( '' !== $whmcs_group_label && 'NA' !== $whmcs_group_label ? ' aria-label="' . esc_attr( $whmcs_group_label ) . '"' : '' ) . '>';
-				foreach ( $whmcs_show as $whmcs_attr ) {
-					$whmcs_value      = WHMCS_Price_API::get_product_data( intval( $whmcs_single_pid ), $whmcs_bc_mapped, sanitize_text_field( $whmcs_attr ) );
-					$whmcs_attr_clean = strtolower( trim( $whmcs_attr ) );
-					$whmcs_label      = $whmcs_header_labels[ $whmcs_attr_clean ] ?? ucfirst( $whmcs_attr );
-					if ( 'price' === $whmcs_attr_clean ) {
-						$whmcs_value = whmcs_price_strip_setup_fee( $whmcs_value );
-					}
-					if ( 'price' === $whmcs_attr_clean && ! empty( $whmcs_per_period ) ) {
-						$whmcs_value = whmcs_price_format_per( $whmcs_value, $whmcs_bc_mapped, 1, $whmcs_per_period );
-					}
-					echo '<div class="whmcs-product-grid-item__field">';
-					echo '<span class="whmcs-product-grid-item__label">' . esc_html( $whmcs_label ) . '</span>';
-					if ( 'setupfee' === $whmcs_attr_clean ) {
-						echo '<span class="whmcs-product-grid-item__value">' . esc_html( WHMCS_Price_API::get_product_setup_fee( intval( $whmcs_single_pid ), $whmcs_bc_mapped ) ) . '</span>';
-					} elseif ( 'NA' === $whmcs_value ) {
-						echo '<span class="whmcs-product-grid-item__value">' . whmcs_price_unavailable_html() . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-					} elseif ( 'price' === $whmcs_attr_clean ) {
-						echo '<span class="whmcs-product-grid-item__value">' . wp_kses( $whmcs_value, whmcs_price_price_kses() ) . '</span>';
-					} else {
-						echo '<span class="whmcs-product-grid-item__value">' . esc_html( wp_strip_all_tags( $whmcs_value ) ) . '</span>';
-					}
-					echo '</div>';
-				}
-				echo '</div>';
-			}
-			echo '</div>';
-		}
-
-		echo wp_kses( whmcs_price_promo_notice( 'product' ), array( 'p' => array( 'class' => true ), 'span' => array( 'class' => true ) ) );
-		echo '</div>';
+		echo whmcs_price_render_block( 'product', $this->to_block_attributes( $settings ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped by the block's render.php.
 	}
 }

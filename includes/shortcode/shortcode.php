@@ -28,6 +28,9 @@ defined( 'ABSPATH' ) || exit;
  *   @type string $reg  The registration period in years (e.g. '1', '2').
  *   @type string $per  Optional. Per-period breakdown: month | week | day.
  *                      E.g. per="month" on bc="1y" shows "$99.00/yr ($8.25/mo)".
+ *   @type string $toggle Optional (2.10.1). Billing cycles visitors can switch between
+ *                      on the cards and grid styles, e.g. toggle="1m,1y". toggle="1"
+ *                      offers monthly and annually. bc is the cycle shown first.
  * }
  * @return string HTML output containing the requested data or an empty string on failure.
  */
@@ -56,6 +59,7 @@ function whmcs_price_shortcode_handler( $atts ) {
         'per'   => '',     // Optional: month | week | day
         'style' => 'table', // Product display style: table | cards | grid
         'currency' => '',  // Optional WHMCS currency ID; empty = per language / WHMCS default (2.10.0+)
+        'toggle' => '',    // Optional billing cycle toggle, e.g. "1m,1y" (2.10.1+)
     ], $atts, 'whmcs');
 
     // Resolve the currency once: explicit attribute, else the language mapping.
@@ -124,7 +128,8 @@ function whmcs_price_shortcode_handler( $atts ) {
          * @param string $attr Column key (name, description, price, setupfee).
          * @return string
          */
-        $get_val = function( int $pid, string $attr ) use ( $bc_r, $atts, $currency ): string {
+        $get_val = function( int $pid, string $attr, ?string $bc = null ) use ( $bc_r, $atts, $currency ): string {
+            $bc_r = $bc ?? $bc_r;
             if ( 'setupfee' === $attr ) {
                 return WHMCS_Price_API::get_product_setup_fee( $pid, $bc_r, $currency );
             }
@@ -154,7 +159,32 @@ function whmcs_price_shortcode_handler( $atts ) {
             return esc_html( wp_strip_all_tags( $val ) );
         };
 
+        // Billing cycle toggle (2.10.1): cards and grid only, needs 2+ cycles.
+        $toggle_cycles = array();
+        if ( '' !== trim( $atts['toggle'] ) && 'table' !== $display_style && whmcs_price_toggle_supported() ) {
+            $toggle_raw    = in_array( strtolower( trim( $atts['toggle'] ) ), array( '1', 'yes', 'true' ), true ) ? '1m,1y' : $atts['toggle'];
+            $toggle_cycles = whmcs_price_toggle_cycles( $toggle_raw );
+            if ( count( $toggle_cycles ) < 2 ) {
+                $toggle_cycles = array();
+            }
+        }
+
+        /**
+         * Helper: safe HTML for a cycle-dependent field (price, setupfee),
+         * one span per cycle when the toggle is on.
+         */
+        $cycle_val = function( int $pid, string $attr ) use ( $toggle_cycles, $get_val, $render_val ): string {
+            return whmcs_price_cycle_values(
+                fn( string $bc ) => $render_val( $attr, $get_val( $pid, $attr, $bc ) ),
+                $toggle_cycles
+            );
+        };
+        $is_cycle_field = fn( string $attr ): bool => $toggle_cycles && in_array( $attr, array( 'price', 'setupfee' ), true );
+
         $output = '<div class="' . esc_attr( $wrapper_class ) . '">';
+        if ( $toggle_cycles ) {
+            $output .= whmcs_price_toggle_open( $toggle_cycles, whmcs_price_toggle_default( $toggle_cycles, $atts['bc'] ) );
+        }
 
         if ( 'cards' === $display_style ) {
             $output .= '<div class="whmcs-product-cards">';
@@ -164,10 +194,15 @@ function whmcs_price_shortcode_handler( $atts ) {
                 $heading  = whmcs_price_card_heading_tag();
                 $output  .= '<article class="whmcs-product-card"' . ( $title_id ? ' aria-labelledby="' . esc_attr( $title_id ) . '"' : '' ) . '>';
                 foreach ( $show as $attr ) {
-                    $val        = $get_val( $pid, $attr );
                     $attr_clean = strtolower( trim( $attr ) );
+                    $val        = $is_cycle_field( $attr_clean ) ? '' : $get_val( $pid, $attr );
                     $output    .= '<div class="whmcs-product-card__' . esc_attr( $attr_clean ) . '">';
-                    if ( 'name' === $attr_clean && 'NA' !== $val ) {
+                    if ( $is_cycle_field( $attr_clean ) && 'setupfee' === $attr_clean ) {
+                        $output .= '<span class="whmcs-product-card__setupfee-label">' . esc_html__( 'Setup Fee', 'whmcs-price' ) . ':</span>';
+                        $output .= '<span class="whmcs-product-card__setupfee-value">' . $cycle_val( $pid, $attr_clean ) . '</span>';
+                    } elseif ( $is_cycle_field( $attr_clean ) ) {
+                        $output .= '<span class="whmcs-product-card__price-value">' . $cycle_val( $pid, $attr_clean ) . '</span>';
+                    } elseif ( 'name' === $attr_clean && 'NA' !== $val ) {
                         $output .= '<' . $heading . ' class="whmcs-product-card__title" id="' . esc_attr( $title_id ) . '">' . esc_html( $val ) . '</' . $heading . '>';
                     } elseif ( 'setupfee' === $attr_clean ) {
                         $output .= '<span class="whmcs-product-card__setupfee-label">' . esc_html__( 'Setup Fee', 'whmcs-price' ) . ':</span>';
@@ -189,12 +224,13 @@ function whmcs_price_shortcode_handler( $atts ) {
                 $output     .= '<div class="whmcs-product-grid-item" role="group"'
                     . ( '' !== $group_label && 'NA' !== $group_label ? ' aria-label="' . esc_attr( $group_label ) . '"' : '' ) . '>';
                 foreach ( $show as $attr ) {
-                    $val        = $get_val( $pid, $attr );
                     $attr_clean = strtolower( trim( $attr ) );
                     $label      = $header_labels[ $attr_clean ] ?? ucfirst( $attr );
                     $output    .= '<div class="whmcs-product-grid-item__field">';
                     $output    .= '<span class="whmcs-product-grid-item__label">' . esc_html( $label ) . '</span>';
-                    $output    .= '<span class="whmcs-product-grid-item__value">' . $render_val( $attr_clean, $val ) . '</span>';
+                    $output    .= '<span class="whmcs-product-grid-item__value">'
+                        . ( $is_cycle_field( $attr_clean ) ? $cycle_val( $pid, $attr_clean ) : $render_val( $attr_clean, $get_val( $pid, $attr ) ) )
+                        . '</span>';
                     $output    .= '</div>';
                 }
                 $output .= '</div>';
@@ -224,6 +260,9 @@ function whmcs_price_shortcode_handler( $atts ) {
             $output .= '</tbody></table>';
         }
 
+        if ( $toggle_cycles ) {
+            $output .= whmcs_price_toggle_close();
+        }
         $output .= '</div>';
         $output .= whmcs_price_promo_notice( 'product' );
         return $output;
