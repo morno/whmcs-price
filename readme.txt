@@ -47,6 +47,12 @@ See [Domain Pricing](https://github.com/morno/whmcs-price/wiki/Domain-Pricing) i
 
 For the full changelog, see [CHANGELOG.md](https://github.com/morno/whmcs-price/blob/main/CHANGELOG.md).
 
+= 2.10.1 =
+* 1 bug fix, 1 new feature, 2 improvements
+
+= 2.10.0 =
+* 6 bug fixes, 7 new features, 3 improvements
+
 = 2.9.2 =
 * 3 improvements
 
